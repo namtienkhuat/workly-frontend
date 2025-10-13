@@ -1,0 +1,11 @@
+# tệp này là tệp cấu hình gốc
+root = true
+
+# Áp dụng cho tất cả các tệp
+[*]
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+indent_style = space
+indent_size = 2
