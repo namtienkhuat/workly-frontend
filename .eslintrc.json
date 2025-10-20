@@ -12,7 +12,7 @@
     "import/prefer-default-export": "off",
     "no-unused-vars": "off",
     "jsx-a11y/anchor-is-valid": "off",
-    "no-console": "warn",
+    "no-console": "off",
     "react/function-component-definition": "off",
     "import/no-extraneous-dependencies": "off"
   }
