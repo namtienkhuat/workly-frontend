@@ -4,44 +4,46 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { signupSchema, type SignupFormData } from '@/lib/validations/auth';
+import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import api from '@/utils/api';
 import { toast } from 'sonner';
 import { paths } from '@/configs/routes';
+import { useRouter } from 'next/navigation';
 
-const SignUpPage = () => {
+const SignInPage = () => {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     const {
         register,
         handleSubmit,
         formState: { errors },
-        reset,
-    } = useForm<SignupFormData>({
-        resolver: zodResolver(signupSchema),
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
     });
 
-    const onSubmit = async (data: SignupFormData) => {
+    const onSubmit = async (data: LoginFormData) => {
         setIsLoading(true);
 
         try {
-            await api.post('/auth/register', {
-                name: data.name,
-                email: data.email,
-                password: data.password,
-            });
+            const response = await api.post('/auth/login', data);
 
-            toast.success('Account created successfully!');
+            const { token } = response.data;
 
-            reset();
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
-            toast.error('Signup failed', {
-                description: errorMessage,
-            });
+            localStorage.setItem('authToken', token);
+
+            toast.success('Successfully signed in!');
+
+            router.push('/home');
+        } catch (error: any) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'An unexpected error occurred. Please try again.';
+            toast.error(errorMessage, { duration: 5000 });
         } finally {
             setIsLoading(false);
         }
@@ -53,26 +55,12 @@ const SignUpPage = () => {
                 <div className="rounded-lg border bg-white p-8 shadow-lg">
                     <div className="mb-8 text-center">
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                            Create an account
+                            Sign In to Account
                         </h1>
                         <p className="mt-2 text-sm text-gray-600">Get started with Workly today</p>
                     </div>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input
-                                id="name"
-                                type="text"
-                                placeholder="John Doe"
-                                {...register('name')}
-                                className={errors.name ? 'border-red-500' : ''}
-                            />
-                            {errors.name && (
-                                <p className="text-sm text-red-500">{errors.name.message}</p>
-                            )}
-                        </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input
@@ -107,12 +95,12 @@ const SignUpPage = () => {
                     </form>
 
                     <div className="mt-6 text-center text-sm">
-                        <span className="text-gray-600">Already have an account? </span>
+                        <span className="text-gray-600">No account yet? </span>
                         <Link
-                            href={paths.signin}
+                            href={paths.signup}
                             className="font-medium text-primary hover:underline"
                         >
-                            Sign in
+                            Sign up
                         </Link>
                     </div>
                 </div>
@@ -121,4 +109,4 @@ const SignUpPage = () => {
     );
 };
 
-export default SignUpPage;
+export default SignInPage;
