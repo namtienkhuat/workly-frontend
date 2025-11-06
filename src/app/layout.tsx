@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import '@/styles/global.css';
 import { ReactNode } from 'react';
-import { Toaster } from 'sonner';
+import MainProviders from '@/providers/MainProviders';
 
 export const metadata: Metadata = {
     title: 'Workly',
@@ -16,14 +16,9 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body>
-                {children}
-                <Toaster
-                    position="top-right"
-                    expand={false}
-                    richColors
-                    closeButton
-                    duration={3000}
-                />
+                <MainProviders>
+                    <main className="min-h-screen">{children}</main>
+                </MainProviders>
             </body>
         </html>
     );

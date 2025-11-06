@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '@/utils/api';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 
 interface HealthResponse {
     status: string;
@@ -18,7 +18,7 @@ const Page = () => {
         setLoading(true);
         setError('');
         try {
-            const response = await api.get<HealthResponse>('/health');
+            const response = await api.get<HealthResponse>('/companies');
             console.log(response.data);
             setHealth(response.data);
         } catch (err) {

@@ -1,0 +1,65 @@
+import { QueryFunctionContext, useQuery } from '@tanstack/react-query';
+import api from '@/utils/api';
+
+export type QueryFn<T> = (context: QueryFunctionContext) => Promise<T>;
+
+export const getDataWithStatus: QueryFn<any> = async ({ queryKey }: QueryFunctionContext) => {
+    const [url, params] = queryKey as [string, Record<string, any>];
+    if (!url) {
+        throw new Error('The query key is missing.');
+    }
+    try {
+        const response = await api.get(url, { params });
+        return {
+            data: response.data,
+            statusCode: response.status,
+            status: true,
+        };
+    } catch (error: any) {
+        return {
+            status: false,
+            message: error.response.data.message,
+        };
+    }
+};
+
+export function useData<T>(
+    queryKey: [string, Record<string, any>],
+    queryFn: QueryFn<{ data: T; status: number }>,
+    enabled: boolean = true,
+    refetchOnWindowFocus: boolean = true,
+    retry: any = 3,
+    gcTime: number = 10 * 60 * 1000, // Default 5 minutes
+    staleTime: number = 10 * 60 * 1000, // Default 0
+    retryDelay: number = 3000
+) {
+    const { data, isLoading, error, refetch, isFetching } = useQuery<
+        {
+            data: any;
+            status: number;
+        },
+        Error
+    >({
+        queryKey,
+        queryFn,
+        enabled,
+        refetchOnWindowFocus,
+        retry,
+        gcTime,
+        staleTime,
+        retryDelay,
+    });
+
+    return {
+        data: data?.data ?? null,
+        status: data?.status,
+        isLoading,
+        error,
+        refetch,
+        isFetching,
+    };
+}
+
+export function useGetCompanyProfile(id: string) {
+    return useData([`/companies/${id}`, {}], getDataWithStatus);
+}
