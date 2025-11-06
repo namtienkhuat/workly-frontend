@@ -14,8 +14,8 @@ export default function RootLayout({
     children: ReactNode;
 }>) {
     return (
-        <html lang="en">
-            <body>
+        <html lang="en" className="mdl-js">
+            <body cz-shortcut-listen="true">
                 <MainProviders>
                     <main className="min-h-screen">{children}</main>
                 </MainProviders>

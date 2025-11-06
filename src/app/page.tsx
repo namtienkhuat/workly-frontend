@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '@/utils/api';
 import { Button } from '@/components/ui/Button';
+import Link from 'next/link';
+import { paths } from '@/configs/routes';
 
 interface HealthResponse {
     status: string;
@@ -80,9 +82,12 @@ const Page = () => {
                 </div>
 
                 <div className="text-center">
-                    <a href="/signup" className="text-sm font-medium text-primary hover:underline">
+                    <Link
+                        href={paths.signup}
+                        className="text-sm font-medium text-primary hover:underline"
+                    >
                         Go to Signup →
-                    </a>
+                    </Link>
                 </div>
             </div>
         </div>
