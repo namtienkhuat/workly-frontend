@@ -22,16 +22,18 @@ export const editCompanySchema = z.object({
         .max(new Date().getFullYear(), 'Founded year can not be in the future'),
     size: z.enum(Object.values(CompanySize)),
     industryId: z.string().min(1, 'Industry must be provided'),
-    website: z.url({ message: 'Website must be a valid url' }).optional(),
+    website: z.url({ message: 'Website must be a valid url' }).or(z.literal('')).optional(),
     logoUrl: z
         .url({
             message: 'LogoURL must be valid',
         })
+        .or(z.literal(''))
         .optional(),
     bannerUrl: z
         .url({
             message: 'BannerURL must be valid',
         })
+        .or(z.literal(''))
         .optional(),
 });
 

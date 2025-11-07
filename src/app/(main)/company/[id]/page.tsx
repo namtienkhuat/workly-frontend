@@ -18,16 +18,18 @@ const CompanyProfilePage = () => {
     return (
         <Card>
             <CardHeader className="py-0 pt-4">
-                <CardTitle className="text-3xl">Overview</CardTitle>
+                <CardTitle className="text-2xl">Overview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div>
-                    <p className="text-sm leading-6 text-gray-500">{companyProfile.description}</p>
+                <div className="pt-2">
+                    <p className="text-sm leading-6 text-gray-700 whitespace-pre-wrap">
+                        {companyProfile.description}
+                    </p>
                 </div>
 
                 {companyProfile.website && (
                     <div>
-                        <h3 className="text-lg font-semibold ">Website</h3>
+                        <h3 className="text-lg font-semibold">Website</h3>
                         <a
                             href={companyProfile.website}
                             target="_blank"
@@ -40,18 +42,20 @@ const CompanyProfilePage = () => {
                 )}
 
                 <div>
-                    <h3 className="text-lg font-semibold ">Industry</h3>
-                    <p className="text-sm text-gray-500">{companyProfile.industry.name}</p>
+                    <h3 className="text-lg font-semibold">Industry</h3>
+                    <p className="text-sm text-gray-700">{companyProfile.industry.name}</p>
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-semibold ">Company size</h3>
-                    <p className="text-sm text-gray-500">{companyProfile.size}</p>
+                    <h3 className="text-lg font-semibold">Company size</h3>
+                    <p className="text-sm text-gray-700">
+                        {companyProfile.size || 'Not specified'}
+                    </p>
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-semibold ">Founded year</h3>
-                    <p className="text-sm text-gray-500">{companyProfile.foundedYear}</p>
+                    <h3 className="text-lg font-semibold">Founded year</h3>
+                    <p className="text-sm text-gray-700">{companyProfile.foundedYear}</p>
                 </div>
             </CardContent>
         </Card>
