@@ -1,29 +1,26 @@
-export const FEED_ROUTES = ['/', '/home', '/feed'];
-export const DETAILS_ROUTES = ['/company', '/company/'];
+export type RouteLayoutType = 'empty' | '2-column' | '3-column';
 
-export const NUMBER_OF_EMPLOYEES = [
-    {
-        label: '1-10',
-        value: '1-10',
-    },
-    {
-        label: '11-50',
-        value: '11-50',
-    },
-    {
-        label: '51-200',
-        value: '51-200',
-    },
-    {
-        label: '201-500',
-        value: '201-500',
-    },
-    {
-        label: '501-1000',
-        value: '501-1000',
-    },
-    {
-        label: '> 1000',
-        value: '> 1000',
-    },
-];
+export interface RouteLayoutConfig {
+    pattern: string;
+    layout: RouteLayoutType;
+}
+
+/**
+ * Routes with 1-column layout (empty screen - no sidebars, centered content)
+ * Add specific routes here that should have full-width, centered layout
+ * Note: More specific routes (e.g., /company/new) should be added here
+ * to override general patterns (e.g., /company) from other route arrays
+ */
+export const EMPTY_ROUTES: string[] = ['/manage-company', '/company/new'];
+
+/**
+ * Routes with 2-column layout (main content + right sidebar)
+ * Routes starting with these patterns will get 2-column layout
+ */
+export const TWO_COLUMN_ROUTES: string[] = ['/company', '/company/'];
+
+/**
+ * Routes with 3-column layout (left sidebar + main content + right sidebar)
+ * Routes starting with these patterns will get 3-column layout
+ */
+export const THREE_COLUMN_ROUTES: string[] = ['/', '/home', '/feed'];

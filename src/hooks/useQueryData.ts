@@ -63,3 +63,7 @@ export function useData<T>(
 export function useGetCompanyProfile(id: string) {
     return useData([`/companies/${id}`, {}], getDataWithStatus);
 }
+
+export function useGetIndustry(queryParams: Record<string, any> = {}) {
+    return useData(['/industries', queryParams], getDataWithStatus);
+}

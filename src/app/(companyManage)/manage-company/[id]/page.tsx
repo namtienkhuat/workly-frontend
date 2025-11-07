@@ -73,11 +73,6 @@ const ManageCompanyPage = () => {
                         {companyProfile.size || 'Not specified'}
                     </p>
                 </div>
-
-                <div>
-                    <h3 className="text-lg font-semibold">Location</h3>
-                    <p className="text-sm text-gray-700">{companyProfile.location}</p>
-                </div>
             </CardContent>
         </Card>
     );
