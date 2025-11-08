@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import api from '@/utils/api';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { paths } from '@/configs/routes';
+import { paths } from '@/configs/route';
 
 interface HealthResponse {
     status: string;

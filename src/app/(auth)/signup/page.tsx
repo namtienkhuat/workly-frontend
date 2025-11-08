@@ -4,16 +4,18 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { signupSchema, type SignupFormData } from '@/lib/validations/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import api from '@/utils/api';
 import { toast } from 'sonner';
-import { paths } from '@/configs/routes';
+import { paths } from '@/configs/route';
 
 const SignUpPage = () => {
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
     const {
         register,
@@ -28,17 +30,22 @@ const SignUpPage = () => {
         setIsLoading(true);
 
         try {
-            await api.post('/auth/register', {
+            await api.post('/auth/signup', {
                 name: data.name,
                 email: data.email,
                 password: data.password,
             });
 
-            toast.success('Account created successfully!');
+            toast.success('Account created successfully!', {
+                description: 'Please sign in to continue.',
+            });
 
             reset();
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
+
+            router.push(paths.signin);
+        } catch (err: any) {
+            const errorMessage =
+                err.response?.data?.message || err.message || 'Failed to create account';
             toast.error('Signup failed', {
                 description: errorMessage,
             });

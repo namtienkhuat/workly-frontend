@@ -8,10 +8,11 @@ import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import api from '@/utils/api';
 import { toast } from 'sonner';
-import { paths } from '@/configs/routes';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import { OAuthButtons } from '@/components/auth/OAuthButtons';
+import { paths } from '@/configs/route';
 
 const SignInPage = () => {
     const router = useRouter();
@@ -29,21 +30,22 @@ const SignInPage = () => {
         setIsLoading(true);
 
         try {
-            const response = await api.post('/auth/login', data);
+            const result = await signIn('credentials', {
+                email: data.email,
+                password: data.password,
+                redirect: false,
+            });
 
-            const { token } = response.data;
-
-            localStorage.setItem('authToken', token);
-
-            toast.success('Successfully signed in!');
-
-            router.push('/home');
-        } catch (error: any) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : 'An unexpected error occurred. Please try again.';
-            toast.error(errorMessage, { duration: 5000 });
+            if (result?.error) {
+                toast.error('Sign-in failed', {
+                    description: result.error,
+                });
+            } else if (result?.ok) {
+                toast.success('Successfully signed in!');
+                router.push('/home');
+            }
+        } catch (error) {
+            toast.error('An unexpected error occurred.');
         } finally {
             setIsLoading(false);
         }
@@ -55,9 +57,19 @@ const SignInPage = () => {
                 <div className="rounded-lg border bg-white p-8 shadow-lg">
                     <div className="mb-8 text-center">
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                            Sign In to Account
+                            Sign In to Your Account
                         </h1>
                         <p className="mt-2 text-sm text-gray-600">Get started with Workly today</p>
+                    </div>
+
+                    <OAuthButtons />
+
+                    <div className="my-6 flex items-center">
+                        <div className="flex-grow border-t border-gray-300"></div>
+                        <span className="mx-4 flex-shrink text-sm text-gray-500">
+                            OR CONTINUE WITH EMAIL
+                        </span>
+                        <div className="flex-grow border-t border-gray-300"></div>
                     </div>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -76,7 +88,17 @@ const SignInPage = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="password">Password</Label>
+
+                                <Link
+                                    href={paths.forgotPassword}
+                                    className="text-sm font-medium text-primary hover:underline"
+                                >
+                                    Forgot password?
+                                </Link>
+                            </div>
+
                             <Input
                                 id="password"
                                 type="password"
@@ -90,7 +112,7 @@ const SignInPage = () => {
                         </div>
 
                         <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? 'Creating account...' : 'Sign up'}
+                            {isLoading ? 'Signing in...' : 'Sign in'}
                         </Button>
                     </form>
 
