@@ -1,5 +1,5 @@
-import { PostResponse } from "@/app/(profile)/model/ProfileModel";
 import { apiPaths } from "@/configs/routes";
+import { PostResponse } from "@/models/profileModel";
 import { getPaging } from "@/utils/api";
 import { PagingResponse } from "@/utils/models/ResponseType";
 
