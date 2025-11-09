@@ -40,15 +40,15 @@ const ManageCompanyPage = () => {
                 <CardTitle className="text-2xl">Overview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div>
-                    <p className="text-sm leading-6 text-gray-700">
-                        {companyProfile.description || 'No description available.'}
+                <div className="pt-2">
+                    <p className="text-sm leading-6 text-gray-700 whitespace-pre-wrap">
+                        {companyProfile.description}
                     </p>
                 </div>
 
-                <div>
-                    <h3 className="text-lg font-semibold">Website</h3>
-                    {companyProfile.website ? (
+                {companyProfile.website && (
+                    <div>
+                        <h3 className="text-lg font-semibold">Website</h3>
                         <a
                             href={companyProfile.website}
                             target="_blank"
@@ -57,10 +57,8 @@ const ManageCompanyPage = () => {
                         >
                             {companyProfile.website}
                         </a>
-                    ) : (
-                        <p className="text-sm text-gray-700">Not provided</p>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 <div>
                     <h3 className="text-lg font-semibold">Industry</h3>
@@ -75,8 +73,8 @@ const ManageCompanyPage = () => {
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-semibold">Location</h3>
-                    <p className="text-sm text-gray-700">{companyProfile.location}</p>
+                    <h3 className="text-lg font-semibold">Founded year</h3>
+                    <p className="text-sm text-gray-700">{companyProfile.foundedYear}</p>
                 </div>
             </CardContent>
         </Card>

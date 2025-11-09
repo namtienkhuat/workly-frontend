@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useParams, useRouter } from 'next/navigation';
@@ -25,91 +25,50 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useGetCompanyProfile } from '@/hooks/useQueryData';
-import { NUMBER_OF_EMPLOYEES } from '@/constants';
-import api from '@/utils/api';
-import z from 'zod';
-
-const industry = [
-    { label: 'IT', value: 'IT' },
-    { label: 'Marketing', value: 'Marketing' },
-    { label: 'Sales', value: 'Sales' },
-    { label: 'Finance', value: 'Finance' },
-    { label: 'Education', value: 'Education' },
-    { label: 'Healthcare', value: 'Healthcare' },
-    { label: 'Manufacturing', value: 'Manufacturing' },
-    { label: 'Retail', value: 'Retail' },
-    { label: 'Other', value: 'Other' },
-];
-
-const editCompanySchema = z.object({
-    name: z.string().min(1, 'Company name is required'),
-    description: z.string().optional(),
-    website: z.string().url('Invalid URL').optional().or(z.literal('')),
-    industryId: z.string().min(1, 'Industry must be provided'),
-    numberOfEmployees: z.enum(['1-10', '11-50', '51-200', '201-500', '501-1000', '> 1000']),
-    foundedYear: z
-        .number()
-        .int('Founded year must be an integer')
-        .min(1800, 'Founded year looks wrong')
-        .max(new Date().getFullYear(), 'Founded year cannot be in the future')
-        .optional(),
-    location: z.string().optional(),
-});
-
-type EditCompanyFormData = z.infer<typeof editCompanySchema>;
+import { EditCompanyFormData, editCompanySchema } from '@/lib/validations/company';
+import SelectIndustry from '@/app/(main)/company/new/_components/SelectIndustry';
+import { CompanyProfile, CompanySize } from '@/types/global';
+import { patchCompanyProfileData } from '@/services/apiServices';
 
 const EditCompanyPage = () => {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
-    const { data: companyProfileData, isLoading: isLoadingProfile } = useGetCompanyProfile(
-        id as string
-    );
-    const companyProfile = companyProfileData?.data?.company;
+    const {
+        data: companyProfileData,
+        isLoading: isLoadingProfile,
+        refetch: refetchCompanyProfile,
+    } = useGetCompanyProfile(id);
+    const companyProfile: CompanyProfile = companyProfileData?.data?.company ?? {};
 
     const {
         register,
         handleSubmit,
         control,
-        formState: { errors },
-        reset,
+        formState: { errors, isDirty },
     } = useForm<EditCompanyFormData>({
         resolver: zodResolver(editCompanySchema),
         defaultValues: {
-            name: companyProfile?.name || '',
-            description: companyProfile?.description || '',
-            website: companyProfile?.website || '',
-            industryId: companyProfile?.industry?.id || '',
-            location: companyProfile?.location || '',
+            ...companyProfile,
+            industryId: companyProfile.industry?.industryId,
         },
     });
-
-    useEffect(() => {
-        if (companyProfile) {
-            reset({
-                name: companyProfile.name || '',
-                description: companyProfile.description || '',
-                website: companyProfile.website || '',
-                industryId: companyProfile.industry?.id || '',
-                location: companyProfile.location || '',
-            });
-        }
-    }, [companyProfile, reset]);
 
     const onSubmit = async (formData: EditCompanyFormData) => {
         setIsLoading(true);
 
-        try {
-            await api.patch(`/companies/${id}`, { company: formData });
+        const { success, message } = await patchCompanyProfileData(id, formData);
+        setIsLoading(false);
+
+        if (success) {
             toast.success('Company information updated successfully!');
-            router.refresh();
-        } catch (error: any) {
+            refetchCompanyProfile();
+            router.push(`/manage-company/${id}`);
+        } else {
             toast.error('Failed to update company', {
-                description: error.response?.data?.message || 'Unknown error',
+                description: message,
             });
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -128,6 +87,8 @@ const EditCompanyPage = () => {
             </Card>
         );
     }
+
+    if (!companyProfile) return <div>Company not found</div>;
 
     return (
         <Card>
@@ -152,7 +113,7 @@ const EditCompanyPage = () => {
                         <FieldLabel>Description</FieldLabel>
                         <Textarea
                             placeholder="Company description"
-                            rows={5}
+                            autoResize
                             {...register('description')}
                         />
                         <FieldError
@@ -182,18 +143,7 @@ const EditCompanyPage = () => {
                             name="industryId"
                             control={control}
                             render={({ field }) => (
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Choose industry" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {industry.map((item) => (
-                                            <SelectItem key={item.value} value={item.value}>
-                                                {item.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SelectIndustry value={field.value} onChange={field.onChange} />
                             )}
                         />
                         <FieldError
@@ -207,37 +157,31 @@ const EditCompanyPage = () => {
                             Number of employees <span className="text-red-500">*</span>
                         </FieldLabel>
                         <Controller
-                            name="numberOfEmployees"
+                            name="size"
                             control={control}
-                            render={({ field }) => (
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select number of employees" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {NUMBER_OF_EMPLOYEES.map((item) => (
-                                            <SelectItem key={item.value} value={item.value}>
-                                                {item.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
+                            render={({ field }) => {
+                                return (
+                                    <Select
+                                        value={field.value || ''}
+                                        onValueChange={field.onChange}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Choose number of employees" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.values(CompanySize).map((item) => (
+                                                <SelectItem key={item} value={item}>
+                                                    {item}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                );
+                            }}
                         />
                         <FieldError
                             className="mt-1 text-xs"
-                            errors={
-                                errors.numberOfEmployees ? [errors.numberOfEmployees] : undefined
-                            }
-                        />
-                    </Field>
-
-                    <Field className="gap-2">
-                        <FieldLabel>Location</FieldLabel>
-                        <Input placeholder="City, Country" {...register('location')} />
-                        <FieldError
-                            className="mt-1 text-xs"
-                            errors={errors.location ? [errors.location] : undefined}
+                            errors={errors.size ? [errors.size] : undefined}
                         />
                     </Field>
                 </CardContent>
@@ -250,7 +194,7 @@ const EditCompanyPage = () => {
                     >
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={isLoading}>
+                    <Button type="submit" disabled={isLoading || !isDirty}>
                         {isLoading ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </CardFooter>

@@ -1,14 +1,22 @@
 'use client';
 
-import React from 'react';
-import { Card, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import React, { useMemo } from 'react';
+import { Card, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { MessageSquareIcon, UserIcon } from 'lucide-react';
 import { useGetCompanyProfile } from '@/hooks/useQueryData';
-import SkeletonLayout from '../_components/SkeletonLayout';
 import { CompanyProfile } from '@/types/global';
+import SkeletonLayout from '../_components/SkeletonLayout';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+interface TabConfig {
+    label: string;
+    path: string;
+    exact?: boolean;
+}
 
 const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
     const pathname = usePathname();
@@ -18,19 +26,22 @@ const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
     const { data: companyProfileData, isLoading } = useGetCompanyProfile(id);
     const companyProfile: CompanyProfile = companyProfileData?.data?.company;
 
-    const isActive = (href: string, exact: boolean = false) => {
+    const tabs: TabConfig[] = useMemo(
+        () => [
+            { label: 'About', path: basePath, exact: true },
+            { label: 'Posts', path: `${basePath}/post` },
+            { label: 'Jobs', path: `${basePath}/job` },
+        ],
+        [basePath]
+    );
+
+    const isTabActive = (tab: TabConfig): boolean => {
         if (!pathname) return false;
-        if (exact) return pathname === href;
-        return pathname === href || pathname.startsWith(`${href}/`);
+        if (tab.exact) return pathname === tab.path;
+        return pathname === tab.path || pathname.startsWith(`${tab.path}/`);
     };
 
-    const tabClass = (active: boolean) =>
-        active
-            ? 'px-2 py-1 border-b-2 border-primary text-primary hover:bg-primary/10 rounded-t-md'
-            : 'px-2 py-1 border-b-2 border-transparent text-muted-foreground hover:bg-primary/10 rounded-t-md';
-
     if (isLoading) return <SkeletonLayout />;
-
     if (!companyProfile) return <div>Company not found</div>;
 
     return (
@@ -44,20 +55,19 @@ const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
                         <div className="mt-4 flex items-center justify-between">
                             <div className="flex flex-col gap-2">
                                 <CardTitle className="text-3xl">{companyProfile.name}</CardTitle>
-                                <CardDescription className="flex items-center gap-1 text-muted-foreground">
-                                    <span>{companyProfile.industry.name}</span>
-                                    <span>•</span>
-                                    {companyProfile.location}
-                                    <span>•</span>
-                                    {1234} followers
-                                </CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="outline">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => toast.info('This feature is not available yet')}
+                                >
                                     <MessageSquareIcon className="w-4 h-4" />
                                     Message
                                 </Button>
-                                <Button variant="outline">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => toast.info('This feature is not available yet')}
+                                >
                                     <UserIcon className="w-4 h-4" />
                                     Following
                                 </Button>
@@ -68,34 +78,30 @@ const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
                     <CardFooter className="px-2 py-1">
                         <div className="w-full border-t">
                             <nav className="flex gap-4 font-bold text-base py-2">
-                                <Link
-                                    href={basePath}
-                                    className={tabClass(isActive(basePath, true))}
-                                    aria-current={isActive(basePath, true) ? 'page' : undefined}
-                                >
-                                    About
-                                </Link>
-                                <Link
-                                    href={`${basePath}/post`}
-                                    className={tabClass(isActive(`${basePath}/post`))}
-                                    aria-current={isActive(`${basePath}/post`) ? 'page' : undefined}
-                                >
-                                    Posts
-                                </Link>
-                                <Link
-                                    href={`${basePath}/job`}
-                                    className={tabClass(isActive(`${basePath}/job`))}
-                                    aria-current={isActive(`${basePath}/job`) ? 'page' : undefined}
-                                >
-                                    Jobs
-                                </Link>
+                                {tabs.map((tab) => {
+                                    const isActive = isTabActive(tab);
+                                    return (
+                                        <Link
+                                            key={tab.path}
+                                            href={tab.path}
+                                            className={cn(
+                                                'px-2 py-1 border-b-2 rounded-t-md transition-colors',
+                                                isActive
+                                                    ? 'border-primary text-primary hover:bg-primary/10'
+                                                    : 'border-transparent text-muted-foreground hover:bg-primary/10'
+                                            )}
+                                            aria-current={isActive ? 'page' : undefined}
+                                        >
+                                            {tab.label}
+                                        </Link>
+                                    );
+                                })}
                             </nav>
                         </div>
                     </CardFooter>
                 </Card>
             </div>
 
-            {/* Page content */}
             <div className="mt-4">
                 <div className="mx-auto max-w-5xl">{children}</div>
             </div>

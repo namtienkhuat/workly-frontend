@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/Button';
@@ -21,53 +23,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { createCompanySchema, type CreateCompanyFormData } from '@/lib/validations/company';
-import { toast } from 'sonner';
-import { NUMBER_OF_EMPLOYEES } from '@/constants';
+import { CompanySize } from '@/types/global';
 import { postCompanyPage } from '@/services/apiServices';
-
-const industry = [
-    {
-        label: 'IT',
-        value: 'IT',
-    },
-    {
-        label: 'Marketing',
-        value: 'Marketing',
-    },
-    {
-        label: 'Sales',
-        value: 'Sales',
-    },
-    {
-        label: 'Finance',
-        value: 'Finance',
-    },
-    {
-        label: 'Education',
-        value: 'Education',
-    },
-    {
-        label: 'Healthcare',
-        value: 'Healthcare',
-    },
-    {
-        label: 'Manufacturing',
-        value: 'Manufacturing',
-    },
-    {
-        label: 'Retail',
-        value: 'Retail',
-    },
-    {
-        label: 'Other',
-        value: 'Other',
-    },
-];
+import SelectIndustry from './SelectIndustry';
+import { createCompanySchema, type CreateCompanyFormData } from '@/lib/validations/company';
 
 const CreateCompanyCard = () => {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-
     const {
         register,
         handleSubmit,
@@ -80,12 +43,12 @@ const CreateCompanyCard = () => {
 
     const onSubmit = async (formData: CreateCompanyFormData) => {
         setIsLoading(true);
-
-        const { success, message } = await postCompanyPage({ company: formData });
+        const { success, message, data } = await postCompanyPage(formData);
         setIsLoading(false);
 
         if (success) {
             toast.success('Company created successfully!');
+            router.push(`/manage-company/${data.company.companyId}`);
             reset();
         } else {
             toast.error('Failed to create company', {
@@ -101,7 +64,7 @@ const CreateCompanyCard = () => {
                     Create company page
                 </CardTitle>
                 <CardDescription>
-                    Fill in the information and create a company page in one minute!
+                    Fill in the information and create a company page!
                 </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -124,18 +87,7 @@ const CreateCompanyCard = () => {
                             name="industryId"
                             control={control}
                             render={({ field }) => (
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Choose industry" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {industry.map((item) => (
-                                            <SelectItem key={item.value} value={item.value}>
-                                                {item.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SelectIndustry value={field.value} onChange={field.onChange} />
                             )}
                         />
                         <FieldError
@@ -148,7 +100,7 @@ const CreateCompanyCard = () => {
                             Number of employees <span className="text-red-500">*</span>
                         </FieldLabel>
                         <Controller
-                            name="numberOfEmployees"
+                            name="size"
                             control={control}
                             render={({ field }) => (
                                 <Select value={field.value} onValueChange={field.onChange}>
@@ -156,9 +108,9 @@ const CreateCompanyCard = () => {
                                         <SelectValue placeholder="Choose number of employees" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {NUMBER_OF_EMPLOYEES.map((item) => (
-                                            <SelectItem key={item.value} value={item.value}>
-                                                {item.label}
+                                        {Object.values(CompanySize).map((item) => (
+                                            <SelectItem key={item} value={item}>
+                                                {item}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -167,9 +119,7 @@ const CreateCompanyCard = () => {
                         />
                         <FieldError
                             className="mt-1 text-xs"
-                            errors={
-                                errors.numberOfEmployees ? [errors.numberOfEmployees] : undefined
-                            }
+                            errors={errors.size ? [errors.size] : undefined}
                         />
                     </Field>
                     <Field className="gap-2">
@@ -198,6 +148,7 @@ const CreateCompanyCard = () => {
                             type="button"
                             variant="secondary"
                             className="bg-gray-200 text-gray-900 hover:bg-gray-300"
+                            onClick={() => toast.info('This feature is not available yet')}
                         >
                             Join team
                         </Button>
