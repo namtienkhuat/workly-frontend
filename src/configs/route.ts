@@ -12,5 +12,6 @@ export const apiPaths = {
     login: '/api/auth/login',
     signup: '/api/auth/signup',
     getPosts: '/api/posts',
+    getProfilePost: "/myPost",
     getPostById: (id: string) => `/api/posts/${id}`,
 };

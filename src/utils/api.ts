@@ -1,5 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-
+import {
+	ResponseData,
+	PagingResponse,
+	ResponseList,
+} from "./models/ResponseType";
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 let authToken: string | null = null;
@@ -23,6 +27,7 @@ const api = axios.create({
         // 'Access-Control-Allow-Headers':
         //     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version',
     },
+    timeout: 5000
 });
 
 // Request interceptor
@@ -62,5 +67,144 @@ api.interceptors.response.use(
         }
     }
 );
+type GetRequestType = {
+	url: string;
+	params?: any;
+	timeout?: number;
+};
+
+type RequestBodyType<T> = {
+	url: string;
+	data?: T;
+	timeout?: number;
+};
+
+export async function getData<U>({
+	url,
+	params,
+	timeout,
+}: GetRequestType): Promise<ResponseData<U>> {
+	return get<ResponseData<U>>({ url, params, timeout });
+}
+
+export async function getList<U>({
+	url,
+	params,
+	timeout,
+}: GetRequestType): Promise<ResponseList<U>> {
+	return get<ResponseList<U>>({ url, params, timeout });
+}
+
+export async function getPaging<U>({
+	url,
+	params,
+	timeout,
+}: GetRequestType): Promise<PagingResponse<U>> {
+	return get<PagingResponse<U>>({ url, params, timeout });
+}
+
+export async function postData<D, R>({
+	url,
+	data,
+	timeout,
+}: RequestBodyType<D>): Promise<ResponseData<R>> {
+	return post<D, ResponseData<R>>({ url, data, timeout });
+}
+
+export async function postText<D, R>({
+	url,
+	data,
+	timeout,
+}: RequestBodyType<D>): Promise<ResponseData<R>> {
+	const reponse = await api.post(url, data, {
+		timeout,
+		headers: {
+			'Content-Type': 'text/plain',
+		},
+	});
+	return reponse.data as ResponseData<R>;
+}
+
+function postDownloadFile({ url, data, timeout }: any): Promise<any> {
+	return api.post(url, data, { timeout, responseType: 'blob' });
+}
+
+export async function postFormList<D, R>({
+	url,
+	data,
+	timeout,
+}: RequestBodyType<D>): Promise<ResponseList<R>> {
+	const reponse = await api.postForm(url, data, { timeout });
+	return reponse.data as ResponseList<R>;
+}
+
+export async function postForm<D, R>({
+	url,
+	data,
+	timeout,
+}: RequestBodyType<D>): Promise<ResponseData<R>> {
+	const reponse = await api.postForm(url, data, { timeout });
+	return reponse.data as ResponseData<R>;
+}
+
+export async function putData<D, R>({
+	url,
+	data,
+	timeout,
+}: RequestBodyType<D>): Promise<ResponseData<R>> {
+	return put<D, ResponseData<R>>({ url, data, timeout });
+}
+
+export async function delData<D, R>({
+	url,
+	data,
+}: RequestBodyType<D>): Promise<ResponseData<R>> {
+	return del<D, ResponseData<R>>({ url, data });
+}
+
+async function get<R>({ url, params, timeout }: GetRequestType): Promise<R> {
+	const reponse = await api.get(url, { params, timeout });
+	return reponse.data as R;
+}
+
+async function post<D, R>({
+	url,
+	data,
+	timeout,
+}: RequestBodyType<D>): Promise<R> {
+	const reponse = await api.post(url, data, { timeout });
+	return reponse.data as R;
+}
+
+export async function del<T, R>({ url, data }: RequestBodyType<T>): Promise<R> {
+	const reponse = await api.delete(url, { data });
+	return reponse.data as R;
+}
+
+export async function put<T, R>({ url, data }: RequestBodyType<T>): Promise<R> {
+	const reponse = await api.put(url, data);
+	return reponse.data as R;
+}
+
+export async function doSaveFile({ url, data, timeout }: any): Promise<any> {
+	const res = await postDownloadFile({ url, data, timeout });
+	const filename = res.headers['content-disposition']
+		.split(';')
+		.find((n: string) => n.includes('filename='))
+		.replace('filename=', '')
+		.trim();
+	const orgFileName = decodeURIComponent(filename);
+	const downloadUrl = window.URL.createObjectURL(
+		new Blob([res.data], { type: 'octet/stream' })
+	);
+	const link = document.createElement('a');
+	link.href = downloadUrl;
+	link.setAttribute('download', orgFileName);
+	document.body.appendChild(link);
+	link.click();
+
+	window.URL.revokeObjectURL(downloadUrl);
+	link.remove();
+}
 
 export default api;
