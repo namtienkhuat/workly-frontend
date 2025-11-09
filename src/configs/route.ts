@@ -1,14 +1,12 @@
-// For client-side routes (page navigation)
 export const paths = {
     home: '/',
     signin: '/signin',
     signup: '/signup',
+    forgotPassword: '/forgot-password',
     profile: '/user/profile',
-    // Example of a dynamic route
     postDetail: (id: string) => `/posts/${id}`,
 };
 
-// For Backend API endpoints
 export const apiPaths = {
     login: '/api/auth/login',
     signup: '/api/auth/signup',
