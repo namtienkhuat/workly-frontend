@@ -4,7 +4,7 @@ import GitHub from 'next-auth/providers/github';
 import Facebook from 'next-auth/providers/facebook';
 import Credentials from 'next-auth/providers/credentials';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 if (!BACKEND_API_URL) {
     throw new Error('Missing NEXT_PUBLIC_BACKEND_API_URL environment variable');
