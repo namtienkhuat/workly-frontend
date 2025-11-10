@@ -27,8 +27,6 @@ export interface CreatePostDTO {
 
 export interface PostResponse {
     _id: string;
-    author_type: AuthorType;
-    author_id: string;
     content: string;
     media_url: MediaItem[];
     visibility: PostVisibilityType;
