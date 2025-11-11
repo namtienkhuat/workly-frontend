@@ -4,6 +4,7 @@ export const paths = {
     signup: '/signup',
     forgotPassword: '/forgot-password',
     profile: '/user/profile',
+    selectRole: '/select-role',
     postDetail: (id: string) => `/posts/${id}`,
 };
 

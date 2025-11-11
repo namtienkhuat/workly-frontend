@@ -5,17 +5,17 @@ import * as RadioGroup from '@radix-ui/react-radio-group';
 import { OnboardingFormData } from '@/lib/validations/onboarding';
 
 const optionsData = {
-    workStatus: ['Đã có việc làm', 'Thất nghiệp', 'Đang học tập', 'Trong thời kỳ quân ngũ'],
+    workStatus: ['Employed', 'Unemployed', 'Student', 'On military service'],
     experienceLevel: [
-        'Dưới 1 năm',
-        '1-2 năm',
-        '2-4 năm',
-        '4-6 năm',
-        '6-10 năm',
-        '10-15 năm',
-        'Hơn 15 năm',
+        'Less than 1 year',
+        '1-2 years',
+        '2-4 years',
+        '4-6 years',
+        '6-10 years',
+        '10-15 years',
+        'More than 15 years',
     ],
-    jobSearchStatus: ['Tắt trạng thái tìm việc', 'Bật trạng thái tìm việc', 'Sẵn sàng phỏng vấn'],
+    jobSearchStatus: ['Not looking for a job', 'Actively looking', 'Open to offers'],
 };
 
 const QuestionBlock = ({ title, options, value, onValueChange, error }: any) => (
@@ -35,6 +35,7 @@ const QuestionBlock = ({ title, options, value, onValueChange, error }: any) => 
                     id={`${title}-${option}`}
                     className="cursor-pointer rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                 >
+                    {/* The label now correctly wraps the option text for accessibility */}
                     <label htmlFor={`${title}-${option}`}>{option}</label>
                 </RadioGroup.Item>
             ))}
@@ -52,7 +53,7 @@ export default function JobStatusStep() {
     return (
         <div className="flex flex-col">
             <h1 className="mb-8 text-center text-3xl font-bold text-gray-800">
-                Thiết lập hồ sơ cá nhân
+                Set up your profile
             </h1>
 
             <Controller
@@ -60,7 +61,7 @@ export default function JobStatusStep() {
                 control={control}
                 render={({ field }) => (
                     <QuestionBlock
-                        title="Tình trạng việc làm hiện tại của bạn là gì?"
+                        title="What is your current employment status?"
                         options={optionsData.workStatus}
                         value={field.value}
                         onValueChange={field.onChange}
@@ -74,7 +75,7 @@ export default function JobStatusStep() {
                 control={control}
                 render={({ field }) => (
                     <QuestionBlock
-                        title="Bạn có bao nhiêu năm kinh nghiệm?"
+                        title="How many years of experience do you have?"
                         options={optionsData.experienceLevel}
                         value={field.value}
                         onValueChange={field.onChange}
@@ -88,7 +89,7 @@ export default function JobStatusStep() {
                 control={control}
                 render={({ field }) => (
                     <QuestionBlock
-                        title="Tình trạng tìm kiếm công việc của bạn?"
+                        title="What is your job search status?"
                         options={optionsData.jobSearchStatus}
                         value={field.value}
                         onValueChange={field.onChange}

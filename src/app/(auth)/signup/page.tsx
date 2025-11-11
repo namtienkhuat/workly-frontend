@@ -37,12 +37,12 @@ const SignUpPage = () => {
             });
 
             toast.success('Account created successfully!', {
-                description: 'Please sign in to continue.',
+                description: 'Lets set up your profile.',
             });
 
             reset();
 
-            router.push(paths.signin);
+            router.push(paths.home);
         } catch (err: any) {
             const errorMessage =
                 err.response?.data?.message || err.message || 'Failed to create account';

@@ -13,16 +13,16 @@ export default function ConfirmInfoStep() {
         <div className="flex flex-col">
             {/* Header */}
             <h1 className="mb-2 text-center text-3xl font-bold text-gray-800">
-                Xác nhận thông tin
+                Confirm Information
             </h1>
             <p className="mb-8 text-center text-gray-500">
-                Hãy chắc chắn rằng thông tin của bạn là chính xác.
+                Please make sure your information is correct.
             </p>
 
             <div className="space-y-6">
                 <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                        Tên <span className="text-red-500">*</span>
+                        Name <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1">
                         <input
@@ -34,7 +34,7 @@ export default function ConfirmInfoStep() {
                                     ? 'border-red-500 focus:ring-red-500'
                                     : 'border-gray-300 focus:ring-green-400'
                             }`}
-                            placeholder="Nguyễn Văn A"
+                            placeholder="John Doe"
                         />
                     </div>
                     {errors.name && (
@@ -66,7 +66,7 @@ export default function ConfirmInfoStep() {
 
                 <div>
                     <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                        Tên tài khoản <span className="text-red-500">*</span>
+                        Username <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1">
                         <input
@@ -78,7 +78,7 @@ export default function ConfirmInfoStep() {
                                     ? 'border-red-500 focus:ring-red-500'
                                     : 'border-gray-300 focus:ring-green-400'
                             }`}
-                            placeholder="nguyenvana"
+                            placeholder="johndoe"
                         />
                     </div>
                     {errors.username && (

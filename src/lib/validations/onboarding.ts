@@ -1,28 +1,28 @@
 import { z } from 'zod';
 
 export const confirmInfoSchema = z.object({
-    name: z.string().min(1, 'Tên là bắt buộc.'),
-    email: z.string().min(1, 'Email là bắt buộc.').email('Email không hợp lệ.'),
-    username: z.string().min(3, 'Tên tài khoản phải có ít nhất 3 ký tự.'),
+    name: z.string().min(1, 'Name is required.'),
+    email: z.string().min(1, 'Email is required.').email('Invalid email address.'),
+    username: z.string().min(3, 'Username must be at least 3 characters.'),
 });
 export type ConfirmInfoFormData = z.infer<typeof confirmInfoSchema>;
 
 export const createProfileSchema = z.object({
-    name: z.string().min(1, 'Tên là bắt buộc.'),
-    phone: z.string().min(10, 'Số điện thoại không hợp lệ.'),
-    email: z.string().min(1, 'Email là bắt buộc.').email('Email không hợp lệ.'),
-    profession: z.string().min(1, 'Nghề nghiệp là bắt buộc.'),
-    companyPosition: z.string().min(1, 'Vị trí là bắt buộc.'),
-    location: z.string().min(1, 'Địa điểm là bắt buộc.'),
+    name: z.string().min(1, 'Name is required.'),
+    phone: z.string().min(10, 'Invalid phone number.'),
+    email: z.string().min(1, 'Email is required.').email('Invalid email address.'),
+    profession: z.string().min(1, 'Profession is required.'),
+    companyPosition: z.string().min(1, 'Position is required.'),
+    location: z.string().min(1, 'Location is required.'),
 });
 export type CreateProfileFormData = z.infer<typeof createProfileSchema>;
 
 export const onboardingSchema = z
     .object({
         role: z.enum(['user', 'company']),
-        name: z.string().min(1, 'Tên là bắt buộc.').optional(),
-        email: z.string().email('Email không hợp lệ').optional(),
-        username: z.string().min(3, 'Tên tài khoản phải có ít nhất 3 ký tự.').optional(),
+        name: z.string().min(1, 'Name is required.').optional(),
+        email: z.string().email('Invalid email address.').optional(),
+        username: z.string().min(3, 'Username must be at least 3 characters.').optional(),
         workStatus: z.string().optional(),
         experienceLevel: z.string().optional(),
         jobSearchStatus: z.string().optional(),
@@ -42,7 +42,7 @@ export const onboardingSchema = z
             return true;
         },
         {
-            message: "Vui lòng nhập công ty trước đây hoặc chọn 'Không có kinh nghiệm'.",
+            message: "Please enter your previous company or check 'No experience'.",
             path: ['previousCompany'],
         }
     );

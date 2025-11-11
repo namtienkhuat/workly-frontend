@@ -8,6 +8,11 @@ export enum CompanySize {
     '1000+' = '1000+',
 }
 
+export enum UserRole {
+    USER = 'USER',
+    ADMIN = 'ADMIN',
+}
+
 export interface CompanyProfile {
     companyId: string;
     name: string;
@@ -23,4 +28,35 @@ export interface CompanyProfile {
 export interface Industry {
     industryId: string;
     name: string;
+}
+
+export interface Skill {
+    skillId: string;
+    name: string;
+}
+
+export interface School {
+    schoolId: string;
+    name: string;
+}
+
+export interface Education {
+    schoolId: string;
+    school: School;
+    degree: string;
+    major: string;
+    startDate: string;
+    endDate?: string;
+    description: string;
+}
+
+export interface UserProfile {
+    userId: string;
+    name: string;
+    email: string;
+    username: string;
+    role: UserRole;
+    industries: Industry[];
+    skills: Skill[];
+    educations: [];
 }
