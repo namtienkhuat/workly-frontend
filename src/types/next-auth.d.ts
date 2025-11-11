@@ -3,12 +3,12 @@ import { DefaultSession } from 'next-auth';
 
 declare module 'next-auth' {
     interface User {
-        token?: string;
+        apiToken?: string;
         id?: string;
     }
 
     interface Session {
-        token?: string;
+        apiToken?: string;
         user: {
             id?: string;
         } & DefaultSession['user'];

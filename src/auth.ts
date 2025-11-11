@@ -77,7 +77,7 @@ export const { handlers, auth } = NextAuth({
                     if (!res.ok || !responseData.success)
                         throw new Error('OAuth authentication failed');
                     const { user: backendUser, token } = responseData.data;
-                    user.token = token;
+                    user.apiToken = token;
                     user.id = backendUser.id;
                 } catch (e) {
                     console.error('Error calling /auth/oauth:', e);
@@ -88,18 +88,17 @@ export const { handlers, auth } = NextAuth({
         },
         async jwt({ token, user }) {
             if (user) {
-                return {
-                    user,
-                    token: user.token,
-                };
+                // @ts-ignore
+                token.apiToken = user.token;
+                token.id = user.id;
             }
             return token;
         },
         async session({ session, token }) {
             // @ts-ignore
-            session.token = token.token;
+            session.apiToken = token.apiToken;
             // @ts-ignore
-            session.user = token.user;
+            session.user.id = token.id;
             return session;
         },
     },

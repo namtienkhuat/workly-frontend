@@ -36,7 +36,7 @@ const SignInPage = () => {
             if (result?.error) {
                 return toast('login error');
             }
-            router.push('/settings');
+            router.push(paths.home);
         } catch (error) {
         } finally {
             setIsLoading(false);
