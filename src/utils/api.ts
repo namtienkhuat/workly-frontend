@@ -2,6 +2,16 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+    authToken = token;
+};
+
+export const getAuthToken = (): string | null => {
+    return authToken;
+};
+
 const api = axios.create({
     baseURL: BACKEND_URL,
     withCredentials: true,
@@ -18,6 +28,10 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
+        // Use cached token for fast, synchronous access
+        if (authToken) {
+            config.headers.Authorization = `Bearer ${authToken}`;
+        }
         return config;
     },
     (error: AxiosError) => {

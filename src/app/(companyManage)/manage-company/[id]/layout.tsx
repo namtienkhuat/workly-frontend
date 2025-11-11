@@ -28,8 +28,10 @@ const ManageCompanyLayout = ({ children }: { children: React.ReactNode }) => {
         () => [
             { label: 'Overview', path: basePath, exact: true },
             { label: 'Edit Information', path: `${basePath}/edit` },
-            { label: 'Create Post', path: `${basePath}/create-post` },
-            { label: 'Create Job', path: `${basePath}/create-job` },
+            { label: 'Admins', path: `${basePath}/admins` },
+            { label: 'Posts', path: `${basePath}/posts` },
+            { label: 'Hiring', path: `${basePath}/hiring` },
+            { label: 'Candidates', path: `${basePath}/candidates` },
         ],
         [basePath]
     );
