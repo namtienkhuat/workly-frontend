@@ -18,9 +18,9 @@ export default function ExperienceStep() {
     return (
         <div className="w-full max-w-2xl animate-fade-in rounded-lg bg-white p-8 text-gray-800 shadow-md">
             <h1 className="mb-2 text-center text-3xl font-bold text-gray-800">
-                Công việc trước đây của bạn là gì?
+                What was your most recent job?
             </h1>
-            <p className="mb-8 text-center text-gray-500">Chia sẻ kinh nghiệm làm việc đã có.</p>
+            <p className="mb-8 text-center text-gray-500">Share your past work experience.</p>
 
             <div className="grid">
                 {' '}
@@ -28,7 +28,7 @@ export default function ExperienceStep() {
                     {' '}
                     <label className="text-sm font-medium text-gray-700">
                         {' '}
-                        Công ty <span className="text-red-500">*</span>
+                        Company <span className="text-red-500">*</span>
                     </label>
                     <input
                         className={`mt-1 w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 ${
@@ -62,7 +62,7 @@ export default function ExperienceStep() {
                                 </Checkbox.Indicator>
                             </Checkbox.Root>
                             <label className="pl-3 text-sm text-gray-700" htmlFor="no-experience">
-                                Tôi không có bất kỳ kinh nghiệm làm việc nào
+                                I dont have any work experience
                             </label>
                         </div>
                     )}

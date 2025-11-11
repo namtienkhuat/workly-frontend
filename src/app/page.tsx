@@ -20,7 +20,7 @@ const Page = () => {
         setLoading(true);
         setError('');
         try {
-            const response = await api.get<HealthResponse>('/companies');
+            const response = await api.get<HealthResponse>('/users/me');
             console.log(response.data);
             setHealth(response.data);
         } catch (err) {

@@ -24,28 +24,25 @@ const SignInPage = () => {
         formState: { errors },
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: 'onboarding@gmail.com',
+            password: 'Password@123',
+        },
     });
 
     const onSubmit = async (data: LoginFormData) => {
         setIsLoading(true);
-
         try {
             const result = await signIn('credentials', {
-                email: data.email,
-                password: data.password,
+                ...data,
                 redirect: false,
             });
-
+            console.log('result', result);
             if (result?.error) {
-                toast.error('Sign-in failed', {
-                    description: result.error,
-                });
-            } else if (result?.ok) {
-                toast.success('Successfully signed in!');
-                router.push('/home');
+                return toast('login error');
             }
+            router.push('/settings');
         } catch (error) {
-            toast.error('An unexpected error occurred.');
         } finally {
             setIsLoading(false);
         }

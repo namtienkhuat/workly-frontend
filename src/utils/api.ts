@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { getSession } from 'next-auth/react';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -17,13 +18,13 @@ const api = axios.create({
 
 // Request interceptor
 api.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-        // You can add any request modifications here
-        // For example: adding auth token
-        // const token = localStorage.getItem('token');
-        // if (token) {
-        //     config.headers.Authorization = `Bearer ${token}`;
-        // }
+    async (config: InternalAxiosRequestConfig) => {
+        const authSession = await getSession();
+        const token = authSession?.token;
+
+        if (token) {
+            config.headers.Authorization = token;
+        }
         return config;
     },
     (error: AxiosError) => {

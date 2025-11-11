@@ -43,15 +43,17 @@ export const { handlers, auth } = NextAuth({
                             password: credentials.password,
                         }),
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
                     });
 
                     const responseData = await res.json();
                     if (!res.ok || !responseData.success) {
                         throw new Error(responseData.message || 'Invalid email or password');
                     }
-
-                    const { user, token } = responseData.data;
-                    return { ...user, apiToken: token };
+                    return {
+                        ...responseData.data.user,
+                        token: responseData.data.token,
+                    };
                 } catch (e: any) {
                     throw new Error(e.message);
                 }
@@ -60,7 +62,7 @@ export const { handlers, auth } = NextAuth({
     ],
     callbacks: {
         async signIn({ user, account, profile }) {
-            if (account?.provider !== 'credentials') {
+            if (account?.provider == 'google') {
                 try {
                     const res = await fetch(`${BACKEND_API_URL}/auth/oauth`, {
                         method: 'POST',
@@ -74,9 +76,8 @@ export const { handlers, auth } = NextAuth({
                     const responseData = await res.json();
                     if (!res.ok || !responseData.success)
                         throw new Error('OAuth authentication failed');
-
                     const { user: backendUser, token } = responseData.data;
-                    user.apiToken = token;
+                    user.token = token;
                     user.id = backendUser.id;
                 } catch (e) {
                     console.error('Error calling /auth/oauth:', e);
@@ -87,21 +88,22 @@ export const { handlers, auth } = NextAuth({
         },
         async jwt({ token, user }) {
             if (user) {
-                // @ts-ignore
-                token.apiToken = user.apiToken;
-                token.id = user.id;
+                return {
+                    ...token,
+                    user,
+                    token: user.token,
+                };
             }
             return token;
         },
         async session({ session, token }) {
+            console.log('token11111', token);
+
             // @ts-ignore
-            session.apiToken = token.apiToken;
+            session.token = token.token;
             // @ts-ignore
-            session.user.id = token.id;
+            session.user = token.user;
             return session;
         },
-    },
-    pages: {
-        signIn: '/signin',
     },
 });
