@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 
 export const config = {
-    matcher: ['/home/:path*', '/dashboard/:path*', '/profile', '/settings', '/onboarding'],
+    matcher: ['/home/:path*', '/dashboard/:path*', '/profile', '/onboarding'],
 };
 
 const nextAuthMiddleware = auth((req) => {

@@ -17,7 +17,7 @@ export const EMPTY_ROUTES: string[] = ['/manage-company', '/company/new'];
  * Routes with 2-column layout (main content + right sidebar)
  * Routes starting with these patterns will get 2-column layout
  */
-export const TWO_COLUMN_ROUTES: string[] = ['/company', '/company/'];
+export const TWO_COLUMN_ROUTES: string[] = ['/company', '/company/', '/profile'];
 
 /**
  * Routes with 3-column layout (left sidebar + main content + right sidebar)

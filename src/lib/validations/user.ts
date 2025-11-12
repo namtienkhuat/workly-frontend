@@ -4,13 +4,13 @@ import { z } from 'zod';
 export const editUserProfileSchema = z.object({
     name: z.string().min(1, 'Name is required.'),
     email: z.string().email('Invalid email address.'),
-    username: z.string().min(3, 'Username must be at least 3 characters.'),
+    // username: z.string().min(3, 'Username must be at least 3 characters.'),
 });
 
 export type EditUserProfileFormData = z.infer<typeof editUserProfileSchema>;
 
 export const editUserSkillsSchema = z.object({
-    skillIds: z.array(z.string()).min(1, 'Please select at least one skill.'),
+    skillIds: z.array(z.string()),
 });
 
 export type EditUserSkillsFormData = z.infer<typeof editUserSkillsSchema>;

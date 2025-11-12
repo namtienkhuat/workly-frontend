@@ -39,6 +39,7 @@ const EditEducationPage = () => {
         refetch: refetchUserProfile,
     } = useGetMe();
     const userProfile: UserProfile = userProfileData?.data;
+    console.log('userProfile: ', userProfile);
 
     const defaultEducations = userProfile?.educations || [];
 
@@ -147,7 +148,7 @@ const EditEducationPage = () => {
                             </Field>
 
                             <Field className="gap-2">
-                                <FieldLabel>Field of Study</FieldLabel>
+                                <FieldLabel>Major</FieldLabel>
                                 <Controller
                                     name={`educations.${index}.major`}
                                     control={control}
@@ -201,6 +202,27 @@ const EditEducationPage = () => {
                                     />
                                 </Field>
                             </div>
+
+                            <Field className="gap-2">
+                                <FieldLabel>Description</FieldLabel>
+                                <Controller
+                                    name={`educations.${index}.description`}
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Input
+                                            {...field}
+                                            placeholder="Can you describe your major, degree e.g.,"
+                                        />
+                                    )}
+                                />
+                                <FieldError
+                                    errors={
+                                        errors.educations?.[index]?.major
+                                            ? [errors.educations?.[index]?.major]
+                                            : undefined
+                                    }
+                                />
+                            </Field>
                         </div>
                     ))}
 

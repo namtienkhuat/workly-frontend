@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGetUserProfile } from '@/hooks/useQueryData';
 import { useParams } from 'next/navigation';
-import { UserProfile } from '@/types/global';
+import { Skill, UserProfile } from '@/types/global';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
@@ -27,6 +27,7 @@ const UserProfilePage = () => {
 
     const { data: userProfileData, isLoading } = useGetUserProfile(id);
     const userProfile: UserProfile = userProfileData?.data;
+    const skillsFromProfile = userProfileData?.data?.relationships?.skills || [];
 
     if (isLoading) return <AboutPageSkeleton />;
     if (!userProfile) return <div>User not found</div>;
@@ -49,14 +50,14 @@ const UserProfilePage = () => {
                 <div>
                     <h3 className="text-lg font-semibold">Skills</h3>
                     <div className="flex flex-wrap gap-2 pt-2">
-                        {userProfile.skills?.length > 0 ? (
-                            userProfile.skills.map((skill) => (
+                        {skillsFromProfile?.length > 0 ? (
+                            skillsFromProfile.map((skill: Skill) => (
                                 <Badge key={skill.skillId} variant="secondary">
                                     {skill.name}
                                 </Badge>
                             ))
                         ) : (
-                            <p className="text-sm text-gray-500">No skills listed.</p>
+                            <p className="text-sm text-gray-500">Add your skills.</p>
                         )}
                     </div>
                 </div>

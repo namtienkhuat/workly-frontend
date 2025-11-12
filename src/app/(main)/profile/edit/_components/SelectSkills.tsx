@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Badge } from '@/components/ui/badge'; // <-- Dùng Badge để hiển thị
+import { Badge } from '@/components/ui/badge';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import {
     Command,
@@ -14,42 +14,29 @@ import {
     CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { useGetSkills } from '@/hooks/useQueryData';
+import { useGetAllSkills, useGetMe } from '@/hooks/useQueryData';
 import { Skill } from '@/types/global';
 
 interface SelectSkillsProps {
     value?: string[];
     onChange: (value: string[]) => void;
+    skillsFromProfile?: Skill[];
 }
 
-const SelectSkills = ({ value: selectedIds = [], onChange }: SelectSkillsProps) => {
+const SelectSkills = ({
+    value: selectedIds = [],
+    onChange,
+    skillsFromProfile = [],
+}: SelectSkillsProps) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
 
-    const { data: skillsData, isLoading } = useGetSkills({ search });
-    // const allSkills: Skill[] = skillsData?.data ?? [];
-    const allSkills: Skill[] = [
-        { skillId: 'skill_01', name: 'JavaScript' },
-        { skillId: 'skill_02', name: 'TypeScript' },
-        { skillId: 'skill_03', name: 'React' },
-        { skillId: 'skill_04', name: 'Node.js' },
-        { skillId: 'skill_05', name: 'Express' },
-        { skillId: 'skill_06', name: 'HTML/CSS' },
-        { skillId: 'skill_07', name: 'GraphQL' },
-        { skillId: 'skill_08', name: 'SQL' },
-        { skillId: 'skill_09', name: 'PostgreSQL' },
-        { skillId: 'skill_10', name: 'MongoDB' },
-        { skillId: 'skill_11', name: 'Docker' },
-        { skillId: 'skill_12', name: 'Kubernetes' },
-        { skillId: 'skill_13', name: 'AWS' },
-        { skillId: 'skill_14', name: 'CI/CD' },
-        { skillId: 'skill_15', name: 'Unit Testing' },
-        { skillId: 'skill_16', name: 'E2E Testing' },
-        { skillId: 'skill_17', name: 'Microservices' },
-        { skillId: 'skill_18', name: 'Design Patterns' },
-        { skillId: 'skill_19', name: 'Algorithms' },
-        { skillId: 'skill_20', name: 'System Design' },
-    ];
+    const { data: skillsData, isLoading } = useGetAllSkills({ search });
+    const allSkillsFromSearch: Skill[] = skillsData?.data ?? [];
+    const uniqueSkills = new Map<string, Skill>();
+    skillsFromProfile.forEach((skill: Skill) => uniqueSkills.set(skill.skillId, skill));
+    allSkillsFromSearch.forEach((skill) => uniqueSkills.set(skill.skillId, skill));
+    const allSkills = Array.from(uniqueSkills.values());
 
     const selectedSkills = allSkills.filter((skill) => selectedIds.includes(skill.skillId));
 
@@ -93,6 +80,7 @@ const SelectSkills = ({ value: selectedIds = [], onChange }: SelectSkillsProps) 
                     <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
+
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                 <Command shouldFilter={false}>
                     <CommandInput

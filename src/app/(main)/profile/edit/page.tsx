@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -32,17 +32,24 @@ const EditProfilePage = () => {
         isLoading: isLoadingProfile,
         refetch: refetchUserProfile,
     } = useGetMe();
-    const userProfile: UserProfile = userProfileData?.data;
+    const userProfile: UserProfile = userProfileData?.data?.user;
 
     const {
         register,
         handleSubmit,
         control,
         formState: { errors, isDirty },
+        reset,
     } = useForm<EditUserProfileFormData>({
         resolver: zodResolver(editUserProfileSchema),
-        defaultValues: userProfile,
+        // defaultValues: userProfile,
     });
+
+    useEffect(() => {
+        if (userProfile) {
+            reset(userProfile);
+        }
+    }, [userProfile, reset]);
 
     const onSubmit = async (formData: EditUserProfileFormData) => {
         setIsLoading(true);
@@ -52,7 +59,13 @@ const EditProfilePage = () => {
 
         if (success) {
             toast.success('Profile updated successfully!');
-            refetchUserProfile();
+            const refetchResult = await refetchUserProfile();
+
+            const latestUserProfile = refetchResult.data?.data?.user;
+
+            if (latestUserProfile) {
+                reset(latestUserProfile);
+            }
         } else {
             toast.error('Failed to update profile', {
                 description: message,
@@ -60,7 +73,10 @@ const EditProfilePage = () => {
         }
     };
 
-    if (isLoadingProfile) {
+    if (isLoadingProfile || !userProfile) {
+        if (!userProfile && !isLoadingProfile) {
+            return <div>User not found</div>;
+        }
         return (
             <Card>
                 <CardHeader>
@@ -102,13 +118,13 @@ const EditProfilePage = () => {
                         <FieldError errors={errors.email ? [errors.email] : undefined} />
                     </Field>
 
-                    <Field className="gap-2">
+                    {/* <Field className="gap-2">
                         <FieldLabel>
                             Username <span className="text-red-500">*</span>
                         </FieldLabel>
                         <Input placeholder="Your username" {...register('username')} />
                         <FieldError errors={errors.username ? [errors.username] : undefined} />
-                    </Field>
+                    </Field> */}
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2">
                     <Button type="submit" disabled={isLoading || !isDirty}>

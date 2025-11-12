@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form'; // <-- Import Controller
+import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
@@ -16,35 +16,45 @@ import {
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { toast } from 'sonner';
 import { useGetMe } from '@/hooks/useQueryData';
-import { UserProfile } from '@/types/global';
 import { patchUserSkills } from '@/services/apiServices';
 import { EditUserSkillsFormData, editUserSkillsSchema } from '@/lib/validations/user';
 import SelectSkills from '../_components/SelectSkills';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Skill } from '@/types/global';
 
 const EditSkillsPage = () => {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [initialValuesLoaded, setInitialValuesLoaded] = useState(false);
 
     const {
         data: userProfileData,
         isLoading: isLoadingProfile,
         refetch: refetchUserProfile,
     } = useGetMe();
-    const userProfile: UserProfile = userProfileData?.data;
 
-    const defaultSkillIds = userProfile?.skills?.map((skill) => skill.skillId) || [];
+    const skillsFromProfile = userProfileData?.data?.relationships?.skills || [];
 
     const {
         handleSubmit,
         control,
         formState: { errors, isDirty },
+        reset,
     } = useForm<EditUserSkillsFormData>({
         resolver: zodResolver(editUserSkillsSchema),
-        values: {
-            skillIds: defaultSkillIds,
+        defaultValues: {
+            skillIds: [],
         },
     });
+
+    useEffect(() => {
+        if (!isLoadingProfile && !initialValuesLoaded) {
+            const initialSkillIds = skillsFromProfile.map((skill: Skill) => skill.skillId);
+
+            reset({ skillIds: initialSkillIds });
+            setInitialValuesLoaded(true);
+        }
+    }, [isLoadingProfile, skillsFromProfile, reset, initialValuesLoaded]);
 
     const onSubmit = async (formData: EditUserSkillsFormData) => {
         setIsLoading(true);
@@ -54,15 +64,16 @@ const EditSkillsPage = () => {
 
         if (success) {
             toast.success('Skills updated successfully!');
+
+            reset({ skillIds: formData.skillIds }, { keepDirty: false });
+
             refetchUserProfile();
         } else {
-            toast.error('Failed to update skills', {
-                description: message,
-            });
+            toast.error('Failed to update skills', { description: message });
         }
     };
 
-    if (isLoadingProfile) {
+    if (isLoadingProfile || !initialValuesLoaded) {
         return (
             <Card>
                 <CardHeader>
@@ -95,7 +106,11 @@ const EditSkillsPage = () => {
                             name="skillIds"
                             control={control}
                             render={({ field }) => (
-                                <SelectSkills value={field.value} onChange={field.onChange} />
+                                <SelectSkills
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    skillsFromProfile={skillsFromProfile}
+                                />
                             )}
                         />
 
@@ -103,7 +118,15 @@ const EditSkillsPage = () => {
                     </Field>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2">
-                    <Button type="submit" disabled={isLoading || !isDirty}>
+                    <Button
+                        type="submit"
+                        disabled={isLoading || !isDirty}
+                        className={
+                            isDirty
+                                ? 'bg-green-600 hover:bg-green-700'
+                                : 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        }
+                    >
                         {isLoading ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </CardFooter>

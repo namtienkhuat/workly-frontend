@@ -13,7 +13,7 @@ import {
     CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { useGetSchools } from '@/hooks/useQueryData';
+import { useGetAllSchools } from '@/hooks/useQueryData';
 import { School } from '@/types/global';
 
 interface SelectSchoolProps {
@@ -25,7 +25,7 @@ const SelectSchool = ({ value, onChange }: SelectSchoolProps) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
 
-    const { data: schoolData, isLoading: isLoadingSchools } = useGetSchools({
+    const { data: schoolData, isLoading: isLoadingSchools } = useGetAllSchools({
         search: search,
     });
     const schoolList: School[] = schoolData?.data ?? [];

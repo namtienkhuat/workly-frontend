@@ -102,6 +102,7 @@ export const patchChangePassword = async (formData: ChangePasswordFormData) => {
         const payload = {
             currentPassword: formData.currentPassword,
             newPassword: formData.newPassword,
+            confirmNewPassword: formData.confirmNewPassword,
         };
 
         const { data } = await api.patch('/users/me/change-password', payload);
@@ -109,7 +110,7 @@ export const patchChangePassword = async (formData: ChangePasswordFormData) => {
         return {
             status: 'success',
             success: true,
-            data: data.data,
+            data: data.message,
         };
     } catch (error: any) {
         return {
@@ -127,7 +128,7 @@ export const deleteMyAccount = async () => {
         return {
             status: 'success',
             success: true,
-            data: data.data,
+            data: data.message,
         };
     } catch (error: any) {
         return {

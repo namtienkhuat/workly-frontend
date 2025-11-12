@@ -47,10 +47,11 @@ const ProfileLayoutSkeleton = () => {
 
 const UserSettingsLayout = ({ children }: { children: React.ReactNode }) => {
     const pathname = usePathname();
-    const basePath = '/settings';
+    const basePath = '/profile/edit';
 
     const { data: userProfileData, isLoading } = useGetMe();
     const userProfile: UserProfile = userProfileData?.data;
+    const userInfo = userProfileData?.data?.user || {};
 
     const tabs: TabConfig[] = useMemo(
         () => [
@@ -77,7 +78,7 @@ const UserSettingsLayout = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <div className="flex flex-col my-10">
+        <div className="flex flex-col">
             <div>
                 <Card className="mx-auto max-w-5xl">
                     <div className="w-full h-40 bg-muted" />
@@ -85,12 +86,12 @@ const UserSettingsLayout = ({ children }: { children: React.ReactNode }) => {
                         <div className="h-24 w-24 rounded-full border bg-background" />{' '}
                         <div className="mt-4 flex items-center justify-between">
                             <div className="flex flex-col gap-2">
-                                <CardTitle className="text-3xl">{userProfile.name}</CardTitle>
-                                <p className="text-muted-foreground">{userProfile.email}</p>
+                                <CardTitle className="text-3xl">{userInfo.name}</CardTitle>
+                                <p className="text-muted-foreground">{userInfo.email}</p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button variant="outline" asChild>
-                                    <Link href={`/profile/${userProfile.userId}`}>
+                                    <Link href={`/profile/${userInfo.userId}`}>
                                         View Public Page
                                     </Link>
                                 </Button>

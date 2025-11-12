@@ -10,7 +10,7 @@ import { useGetUserProfile } from '@/hooks/useQueryData';
 import { UserProfile } from '@/types/global';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import ProfileSkeleton from '../../settings/_components/ProfileSkeleton';
+import ProfileSkeleton from '@/app/(main)/profile/edit/_components/ProfileSkeleton';
 
 interface TabConfig {
     label: string;
@@ -24,12 +24,13 @@ const PublicProfileLayout = ({ children }: { children: React.ReactNode }) => {
     const basePath = `/profile/${id}`;
 
     const { data: userProfileData, isLoading } = useGetUserProfile(id);
-    const userProfile: UserProfile = userProfileData?.data;
+    const userProfile: UserProfile = userProfileData?.data?.user;
 
     const tabs: TabConfig[] = useMemo(
         () => [
             { label: 'About', path: basePath, exact: true },
             { label: 'Posts', path: `${basePath}/post` },
+            { label: 'Edit Profile', path: `/profile/edit` },
         ],
         [basePath]
     );
