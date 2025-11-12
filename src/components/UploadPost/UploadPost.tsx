@@ -1,12 +1,13 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import CommonService from "../../services/common/commonService"
-import { CreatePostDTO, PostVisibilityType } from "@/models/profileModel";
-import { apiPaths } from "@/configs/routes";
-import ProfileService from "@/services/profile/profileService";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import CommonService from '../../services/common/commonService';
+import { CreatePostDTO, PostVisibilityType } from '@/models/profileModel';
+import { apiPaths } from '@/configs/routes';
+import ProfileService from '@/services/profile/profileService';
+import { toast } from 'sonner';
+import Image from 'next/image';
 
 type PreviewFile = {
     url: string;
@@ -38,16 +39,16 @@ export default function UploadPostModal() {
             const result = await CommonService.uploadFilesToServer(files, apiPaths.uploadFile, {
                 onProgress: setProgress,
                 onUploadingChange: setUploading,
-            })
-            return result
+            });
+            return result;
         } catch (error) {
-            console.error("Upload failed:", error);
+            console.error('Upload failed:', error);
             throw error;
         }
     };
     function filesArrayToFileList(files: PreviewFile[]): FileList {
         const dataTransfer = new DataTransfer();
-        files.forEach(file => dataTransfer.items.add(file.file));
+        files.forEach((file) => dataTransfer.items.add(file.file));
         return dataTransfer.files;
     }
     const onSubmit = async (data: FormData) => {
@@ -75,7 +76,7 @@ export default function UploadPostModal() {
             toast.success('Successfully!');
         } catch (err) {
             console.error(err);
-            toast.error("error");
+            toast.error('error');
             setProgress(0);
         }
     };
@@ -150,13 +151,16 @@ export default function UploadPostModal() {
                         {/* Form */}
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <textarea
-                                {...register("description")}
+                                {...register('description')}
                                 placeholder="Bạn đang nghĩ gì?"
                                 className="w-full p-3 border rounded-md dark:bg-gray-800 dark:text-white"
                                 rows={6}
                             />
                             <div className="max-w-sm mx-auto mt-6">
-                                <label htmlFor="mode" className="block mb-2 text-sm font-medium text-gray-700">
+                                <label
+                                    htmlFor="mode"
+                                    className="block mb-2 text-sm font-medium text-gray-700"
+                                >
                                     Chọn chế độ
                                 </label>
                                 <select
@@ -171,7 +175,8 @@ export default function UploadPostModal() {
                                 </select>
 
                                 <p className="mt-4 text-sm text-gray-600">
-                                    Bạn đã chọn: <span className="font-semibold text-blue-600">{mode}</span>
+                                    Bạn đã chọn:{' '}
+                                    <span className="font-semibold text-blue-600">{mode}</span>
                                 </p>
                             </div>
 
@@ -179,7 +184,7 @@ export default function UploadPostModal() {
                                 type="file"
                                 multiple
                                 accept="image/*,video/*"
-                                {...register("media")}
+                                {...register('media')}
                                 onChange={handleFileChange}
                                 disabled={isSubmitting}
                                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 
@@ -203,16 +208,18 @@ export default function UploadPostModal() {
                                 <div className="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto">
                                     {previews.map((file, index) => (
                                         <div key={index} className="relative group">
-                                            {file.type.startsWith("video/") ? (
+                                            {file.type.startsWith('video/') ? (
                                                 <video
                                                     src={file.url}
                                                     controls
                                                     className="w-full max-h-64 rounded-md object-cover"
                                                 />
                                             ) : (
-                                                <img
+                                                <Image
                                                     src={file.url}
                                                     alt={`preview-${index}`}
+                                                    width={500} // Bắt buộc phải có width và height
+                                                    height={300}
                                                     className="w-full max-h-64 object-cover rounded-md"
                                                 />
                                             )}
@@ -256,8 +263,8 @@ export default function UploadPostModal() {
                                     {isSubmitting
                                         ? progress > 0 && progress < 100
                                             ? `Đang tải lên... ${progress}%`
-                                            : "Đang đăng..."
-                                        : "Đăng bài"}
+                                            : 'Đang đăng...'
+                                        : 'Đăng bài'}
                                 </button>
                             </div>
                         </form>
