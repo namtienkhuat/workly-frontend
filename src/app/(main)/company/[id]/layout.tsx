@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
 import { usePathname, useParams, useRouter } from 'next/navigation';
@@ -11,6 +11,7 @@ import { CompanyProfile } from '@/types/global';
 import SkeletonLayout from '../_components/SkeletonLayout';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface TabConfig {
     label: string;
@@ -19,6 +20,8 @@ interface TabConfig {
 }
 
 const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
+    const [isBannerError, setIsBannerError] = useState(false);
+    const [isLogoError, setIsLogoError] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
     const { id } = useParams<{ id: string }>();
@@ -49,10 +52,38 @@ const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex flex-col">
             <div>
                 <Card className="mx-auto max-w-5xl ">
-                    <div className="w-full h-40 bg-muted" />
+                    <div className="relative w-full h-40 bg-muted overflow-hidden rounded-t-lg">
+                        {companyProfile.bannerUrl && !isBannerError ? (
+                            <Image
+                                src={companyProfile.bannerUrl}
+                                alt={companyProfile.name}
+                                fill
+                                className="object-cover rounded-t-lg"
+                                loading="lazy"
+                                onError={() => setIsBannerError(true)}
+                            />
+                        ) : (
+                            <div className="w-full h-40 bg-gradient-to-r from-muted to-muted/80 rounded-t-lg" />
+                        )}
+                    </div>
 
                     <CardContent className="-mt-12">
-                        <div className="h-24 w-24 rounded-md border bg-background" />
+                        {/* LOGO */}
+                        <div className="h-36 w-36 rounded-full overflow-hidden relative">
+                            {companyProfile.logoUrl && !isLogoError ? (
+                                <Image
+                                    src={companyProfile.logoUrl}
+                                    alt={companyProfile.name}
+                                    loading="lazy"
+                                    fill
+                                    className="object-cover"
+                                    onError={() => setIsLogoError(true)}
+                                />
+                            ) : (
+                                <div className="h-36 w-36 rounded-full border-muted bg-white" />
+                            )}
+                        </div>
+
                         <div className="mt-4 flex items-center justify-between">
                             <div className="flex flex-col gap-2">
                                 <CardTitle className="text-3xl">{companyProfile.name}</CardTitle>

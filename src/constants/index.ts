@@ -11,7 +11,7 @@ export interface RouteLayoutConfig {
  * Note: More specific routes (e.g., /company/new) should be added here
  * to override general patterns (e.g., /company) from other route arrays
  */
-export const EMPTY_ROUTES: string[] = ['/manage-company', '/company/new'];
+export const EMPTY_ROUTES: string[] = ['/manage-company', '/company/new', '/health'];
 
 /**
  * Routes with 2-column layout (main content + right sidebar)
