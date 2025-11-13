@@ -42,6 +42,28 @@ export const patchCompanyProfileData = async (id: string, company: EditCompanyFo
     }
 };
 
+export const patchCompanyMedia = async (id: string, formData: FormData) => {
+    try {
+        const { data } = await api.patch(`/companies/${id}/media`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
 // USER
 export const patchUserProfile = async (formData: EditUserProfileFormData) => {
     try {

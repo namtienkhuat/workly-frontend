@@ -18,8 +18,6 @@ function matchesAnyPrefix(pathname: string, patterns: string[]): boolean {
 }
 
 function getLayoutType(pathname: string): RouteLayoutType {
-    // Check empty routes FIRST (most specific) to catch routes like /company/new
-    // before they match the more general /company pattern
     if (matchesAnyPrefix(pathname, EMPTY_ROUTES)) {
         return 'empty';
     }
@@ -30,7 +28,6 @@ function getLayoutType(pathname: string): RouteLayoutType {
         return '3-column';
     }
 
-    // default to empty layout
     return 'empty';
 }
 
