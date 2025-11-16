@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useParams } from 'next/navigation';
 import { useGetCompanyProfile } from '@/hooks/useQueryData';
 import { CompanyProfile } from '@/types/global';
+import CompanyInfoSkeleton from '@/components/company/CompanyInfoSkeleton';
 
 const ManageCompanyPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -12,16 +13,7 @@ const ManageCompanyPage = () => {
     const companyProfile: CompanyProfile = companyProfileData?.data?.company;
 
     if (isLoading) {
-        return (
-            <Card>
-                <CardHeader className="py-0 pt-4">
-                    <div className="h-8 w-32 bg-muted animate-pulse rounded" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="h-24 w-full bg-muted animate-pulse rounded" />
-                </CardContent>
-            </Card>
-        );
+        return <CompanyInfoSkeleton />;
     }
 
     if (!companyProfile) {

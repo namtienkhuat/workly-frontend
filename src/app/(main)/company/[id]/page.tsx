@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGetCompanyProfile } from '@/hooks/useQueryData';
 import { useParams } from 'next/navigation';
 import { CompanyProfile } from '@/types/global';
-import SkeletonLayout from '../_components/SkeletonLayout';
+import CompanyInfoSkeleton from '@/components/company/CompanyInfoSkeleton';
 
 const CompanyProfilePage = () => {
     const { id } = useParams<{ id: string }>();
     const { data: companyProfileData, isLoading } = useGetCompanyProfile(id);
     const companyProfile: CompanyProfile = companyProfileData?.data?.company;
 
-    if (isLoading) return <SkeletonLayout />;
+    if (isLoading) return <CompanyInfoSkeleton />;
     if (!companyProfile) return <div>Company not found</div>;
 
     return (

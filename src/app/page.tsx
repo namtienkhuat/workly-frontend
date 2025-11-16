@@ -20,7 +20,7 @@ const Page = () => {
         setLoading(true);
         setError('');
         try {
-            const response = await api.get<HealthResponse>('/users/me');
+            const response = await api.get<HealthResponse>('/me');
             setHealth(response.data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to connect to backend');

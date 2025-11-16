@@ -1,135 +1,31 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { Card, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import Link from 'next/link';
-import { usePathname, useParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
-import { MessageSquareIcon, UserIcon } from 'lucide-react';
+import React from 'react';
+import { Card, CardFooter } from '@/components/ui/card';
+import { useParams } from 'next/navigation';
 import { useGetCompanyProfile } from '@/hooks/useQueryData';
 import { CompanyProfile } from '@/types/global';
-import SkeletonLayout from '../_components/SkeletonLayout';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import Image from 'next/image';
-
-interface TabConfig {
-    label: string;
-    path: string;
-    exact?: boolean;
-}
+import CompanyHeader from '@/components/company/CompanyHeader';
+import CompanyTabNav from '@/components/company/CompanyTabNav';
+import CompanySkeletonHeader from '@/components/company/CompanySkeletonHeader';
 
 const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
-    const [isBannerError, setIsBannerError] = useState(false);
-    const [isLogoError, setIsLogoError] = useState(false);
-    const pathname = usePathname();
-    const router = useRouter();
     const { id } = useParams<{ id: string }>();
-    const basePath = `/company/${id}`;
 
     const { data: companyProfileData, isLoading } = useGetCompanyProfile(id);
     const companyProfile: CompanyProfile = companyProfileData?.data?.company;
 
-    const tabs: TabConfig[] = useMemo(
-        () => [
-            { label: 'About', path: basePath, exact: true },
-            { label: 'Posts', path: `${basePath}/post` },
-            { label: 'Jobs', path: `${basePath}/job` },
-        ],
-        [basePath]
-    );
-
-    const isTabActive = (tab: TabConfig): boolean => {
-        if (!pathname) return false;
-        if (tab.exact) return pathname === tab.path;
-        return pathname === tab.path || pathname.startsWith(`${tab.path}/`);
-    };
-
-    if (isLoading) return <SkeletonLayout />;
+    if (isLoading) return <CompanySkeletonHeader />;
     if (!companyProfile) return <div>Company not found</div>;
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col mb-20">
             <div>
                 <Card className="mx-auto max-w-5xl ">
-                    <div className="relative w-full h-40 bg-muted overflow-hidden rounded-t-lg">
-                        {companyProfile.bannerUrl && !isBannerError ? (
-                            <Image
-                                src={companyProfile.bannerUrl}
-                                alt={companyProfile.name}
-                                fill
-                                className="object-cover rounded-t-lg"
-                                loading="lazy"
-                                onError={() => setIsBannerError(true)}
-                            />
-                        ) : (
-                            <div className="w-full h-40 bg-gradient-to-r from-muted to-muted/80 rounded-t-lg" />
-                        )}
-                    </div>
-
-                    <CardContent className="-mt-12">
-                        {/* LOGO */}
-                        <div className="h-36 w-36 rounded-full overflow-hidden relative">
-                            {companyProfile.logoUrl && !isLogoError ? (
-                                <Image
-                                    src={companyProfile.logoUrl}
-                                    alt={companyProfile.name}
-                                    loading="lazy"
-                                    fill
-                                    className="object-cover"
-                                    onError={() => setIsLogoError(true)}
-                                />
-                            ) : (
-                                <div className="h-36 w-36 rounded-full border-muted bg-white" />
-                            )}
-                        </div>
-
-                        <div className="mt-4 flex items-center justify-between">
-                            <div className="flex flex-col gap-2">
-                                <CardTitle className="text-3xl">{companyProfile.name}</CardTitle>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => router.push(`/chat/company/${id}`)}
-                                >
-                                    <MessageSquareIcon className="w-4 h-4" />
-                                    Message
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => toast.info('This feature is not available yet')}
-                                >
-                                    <UserIcon className="w-4 h-4" />
-                                    Following
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
+                    <CompanyHeader companyProfile={companyProfile} />
 
                     <CardFooter className="px-2 py-1">
-                        <div className="w-full border-t">
-                            <nav className="flex gap-4 font-bold text-base py-2">
-                                {tabs.map((tab) => {
-                                    const isActive = isTabActive(tab);
-                                    return (
-                                        <Link
-                                            key={tab.path}
-                                            href={tab.path}
-                                            className={cn(
-                                                'px-2 py-1 border-b-2 rounded-t-md transition-colors',
-                                                isActive
-                                                    ? 'border-primary text-primary hover:bg-primary/10'
-                                                    : 'border-transparent text-muted-foreground hover:bg-primary/10'
-                                            )}
-                                            aria-current={isActive ? 'page' : undefined}
-                                        >
-                                            {tab.label}
-                                        </Link>
-                                    );
-                                })}
-                            </nav>
-                        </div>
+                        <CompanyTabNav companyId={id} />
                     </CardFooter>
                 </Card>
             </div>
