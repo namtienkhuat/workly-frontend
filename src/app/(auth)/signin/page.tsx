@@ -10,9 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
-import { OAuthButtons } from '@/components/auth/OAuthButtons';
 import { paths } from '@/configs/route';
+import { postSignin } from '@/services/apiServices';
 
 const SignInPage = () => {
     const router = useRouter();
@@ -26,21 +25,20 @@ const SignInPage = () => {
         resolver: zodResolver(loginSchema),
     });
 
-    const onSubmit = async (data: LoginFormData) => {
+    const onSubmit = async (payload: LoginFormData) => {
         setIsLoading(true);
-        try {
-            const result = await signIn('credentials', {
-                ...data,
-                redirect: false,
+        const { success, message } = await postSignin(payload);
+        setIsLoading(false);
+
+        if (success) {
+            toast.success('Login successful', {
+                description: 'Redirecting to home...',
             });
-            if (result?.error) {
-                return toast('login error');
-            }
             router.push(paths.home);
-        } catch (error) {
-            console.error('Login error:', error);
-        } finally {
-            setIsLoading(false);
+        } else {
+            toast.error('Login failed', {
+                description: message || 'Unknown error',
+            });
         }
     };
 
@@ -55,15 +53,14 @@ const SignInPage = () => {
                         <p className="mt-2 text-sm text-gray-600">Get started with Workly today</p>
                     </div>
 
-                    <OAuthButtons />
-
-                    <div className="my-6 flex items-center">
+                    {/* <OAuthButtons /> */}
+                    {/* <div className="my-6 flex items-center">
                         <div className="flex-grow border-t border-gray-300"></div>
                         <span className="mx-4 flex-shrink text-sm text-gray-500">
                             OR CONTINUE WITH EMAIL
                         </span>
                         <div className="flex-grow border-t border-gray-300"></div>
-                    </div>
+                    </div> */}
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="space-y-2">
@@ -83,13 +80,6 @@ const SignInPage = () => {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Password</Label>
-
-                                <Link
-                                    href={paths.forgotPassword}
-                                    className="text-sm font-medium text-primary hover:underline"
-                                >
-                                    Forgot password?
-                                </Link>
                             </div>
 
                             <Input
@@ -102,6 +92,13 @@ const SignInPage = () => {
                             {errors.password && (
                                 <p className="text-sm text-red-500">{errors.password.message}</p>
                             )}
+
+                            <Link
+                                href={paths.forgotPassword}
+                                className="flex justify-end text-sm font-medium text-primary hover:underline"
+                            >
+                                Forgot password?
+                            </Link>
                         </div>
 
                         <Button type="submit" className="w-full" disabled={isLoading}>

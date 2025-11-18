@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import {
     Card,
@@ -110,7 +109,7 @@ const DeleteAccountSection = () => {
 
         if (success) {
             toast.success('Account deleted successfully.');
-            await signOut({ redirect: true, callbackUrl: '/' });
+            router.push('/');
         } else {
             toast.error('Failed to delete account', {
                 description: message,

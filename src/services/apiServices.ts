@@ -1,3 +1,5 @@
+import { TOKEN_KEY } from '@/constants';
+import { LoginFormData, SignupFormData } from '@/lib/validations/auth';
 import { CreateCompanyFormData, EditCompanyFormData } from '@/lib/validations/company';
 import {
     ChangePasswordFormData,
@@ -6,6 +8,68 @@ import {
 } from '@/lib/validations/user';
 import api from '@/utils/api';
 
+///////////////////////////////////////////////////////////////////////
+// AUTH
+export const postSignin = async (payload: LoginFormData) => {
+    try {
+        const { data } = await api.post('/auth/signin', payload);
+        if (data.success) {
+            localStorage.setItem(TOKEN_KEY, data.data.token);
+        }
+        return {
+            status: 'success',
+            success: true,
+            data: data.data.user,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
+export const postSignup = async (payload: SignupFormData) => {
+    try {
+        const { data } = await api.post('/auth/signup', payload);
+        if (data.success) {
+            localStorage.setItem(TOKEN_KEY, data.data.token);
+        }
+        return {
+            status: 'success',
+            success: true,
+            data: data.data.user,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
+export const logout = async () => {
+    try {
+        const { data } = await api.post('/auth/signout');
+        localStorage.removeItem(TOKEN_KEY);
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
+///////////////////////////////////////////////////////////////////////
+// COMPANY
 export const postCompanyPage = async (company: CreateCompanyFormData) => {
     try {
         const { data } = await api.post('/companies', company);
@@ -64,6 +128,58 @@ export const patchCompanyMedia = async (id: string, formData: FormData) => {
     }
 };
 
+export const followCompany = async (companyId: string) => {
+    try {
+        const { data } = await api.post(`/companies/${companyId}/follow`);
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
+export const unfollowCompany = async (companyId: string) => {
+    try {
+        const { data } = await api.delete(`/companies/${companyId}/follow`);
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
+export const getFollowCompanyStatus = async (companyId: string) => {
+    try {
+        const { data } = await api.get(`/companies/${companyId}/is-following`);
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
+///////////////////////////////////////////////////////////////////////
 // USER
 export const patchUserProfile = async (formData: EditUserProfileFormData) => {
     try {
