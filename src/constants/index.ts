@@ -1,3 +1,5 @@
+export const TOKEN_KEY = 'workly_token';
+
 export type RouteLayoutType = 'empty' | '2-column' | '3-column';
 
 export interface RouteLayoutConfig {

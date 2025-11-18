@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
@@ -27,12 +27,8 @@ import { CompanySize } from '@/types/global';
 import { postCompanyPage } from '@/services/apiServices';
 import SelectIndustry from './SelectIndustry';
 import { createCompanySchema, type CreateCompanyFormData } from '@/lib/validations/company';
-import { useSession } from 'next-auth/react';
-import { paths } from '@/configs/route';
 
 const CreateCompanyCard = () => {
-    const { status } = useSession();
-
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const {
@@ -60,14 +56,6 @@ const CreateCompanyCard = () => {
             });
         }
     };
-
-    useEffect(() => {
-        if (status === 'loading') return;
-
-        if (status === 'unauthenticated') {
-            router.push(paths.signin);
-        }
-    }, [status]);
 
     return (
         <Card className="max-w-md mt-6 shadow-sm">

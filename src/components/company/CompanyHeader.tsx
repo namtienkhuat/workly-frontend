@@ -10,7 +10,6 @@ import clsx from 'clsx';
 import { Badge } from '../ui/badge';
 import { followCompany, getFollowCompanyStatus, unfollowCompany } from '@/services/apiServices';
 import { toast } from 'sonner';
-import { useSession } from 'next-auth/react';
 import { CompanyFollowerModal } from './CompanyFollowerModal';
 
 interface CompanyHeaderProps {
@@ -26,15 +25,12 @@ const CompanyHeader = ({
     handleBannerClick,
     handleLogoClick,
 }: CompanyHeaderProps) => {
-    const { status } = useSession();
     const [isBannerError, setIsBannerError] = useState(false);
     const [isLogoError, setIsLogoError] = useState(false);
     const [isFollowing, setIsFollowing] = useState<boolean>(companyProfile.isFollowing ?? false);
     const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
 
     useEffect(() => {
-        // only load after check auth
-        if (status === 'loading') return;
         if (isEditable) return setIsFollowing(false);
 
         const getIsFollowing = async () => {
@@ -42,7 +38,7 @@ const CompanyHeader = ({
             setIsFollowing(data?.isFollowing ?? false);
         };
         getIsFollowing();
-    }, [status]);
+    }, []);
 
     const handleFollow = async () => {
         const { success, message } = await followCompany(companyProfile.companyId);
