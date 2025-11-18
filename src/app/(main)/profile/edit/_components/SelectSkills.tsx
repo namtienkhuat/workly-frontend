@@ -33,6 +33,7 @@ const SelectSkills = ({
 
     const { data: skillsData, isLoading } = useGetAllSkills({ search });
     const allSkillsFromSearch: Skill[] = skillsData?.data ?? [];
+
     const uniqueSkills = new Map<string, Skill>();
     skillsFromProfile.forEach((skill: Skill) => uniqueSkills.set(skill.skillId, skill));
     allSkillsFromSearch.forEach((skill) => uniqueSkills.set(skill.skillId, skill));

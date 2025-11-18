@@ -3,10 +3,10 @@
 import React, { useMemo } from 'react';
 import { Card, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
-import { usePathname, useParams } from 'next/navigation';
+import { usePathname, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { MessageSquareIcon, UserPlusIcon } from 'lucide-react';
-import { useGetUserProfile } from '@/hooks/useQueryData';
+import { useGetMe, useGetUserProfile } from '@/hooks/useQueryData';
 import { UserProfile } from '@/types/global';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -20,17 +20,22 @@ interface TabConfig {
 
 const PublicProfileLayout = ({ children }: { children: React.ReactNode }) => {
     const pathname = usePathname();
+    const router = useRouter();
     const { id } = useParams<{ id: string }>();
     const basePath = `/profile/${id}`;
 
     const { data: userProfileData, isLoading } = useGetUserProfile(id);
     const userProfile: UserProfile = userProfileData?.data?.user;
 
+    const { data: meData } = useGetMe();
+    const me: UserProfile = meData?.data?.user;
+
+    const isCurrentUser = me?.userId === userProfile?.userId;
+
     const tabs: TabConfig[] = useMemo(
         () => [
             { label: 'About', path: basePath, exact: true },
             { label: 'Posts', path: `${basePath}/post` },
-            { label: 'Edit Profile', path: `/profile/edit` },
         ],
         [basePath]
     );
@@ -57,22 +62,28 @@ const PublicProfileLayout = ({ children }: { children: React.ReactNode }) => {
                                 <CardTitle className="text-3xl">{userProfile.name}</CardTitle>
                                 <p className="text-muted-foreground">{userProfile.username}</p>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => toast.info('This feature is not available yet')}
-                                >
-                                    <MessageSquareIcon className="w-4 h-4 mr-2" />
-                                    Message
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => toast.info('This feature is not available yet')}
-                                >
-                                    <UserPlusIcon className="w-4 h-4 mr-2" />
-                                    Follow
-                                </Button>
-                            </div>
+
+                            {/* ✅ Chỉ chính chủ không thấy */}
+                            {!isCurrentUser && (
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => router.push(`/chat/user/${id}`)}
+                                    >
+                                        <MessageSquareIcon className="w-4 h-4 mr-2" />
+                                        Message
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            toast.info('This feature is not available yet')
+                                        }
+                                    >
+                                        <UserPlusIcon className="w-4 h-4 mr-2" />
+                                        Follow
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter className="px-2 py-1">
@@ -96,6 +107,21 @@ const PublicProfileLayout = ({ children }: { children: React.ReactNode }) => {
                                         </Link>
                                     );
                                 })}
+
+                                {/* ✅ Chỉ chính chủ mới thấy */}
+                                {isCurrentUser && (
+                                    <Link
+                                        href="/profile/edit"
+                                        className={cn(
+                                            'px-2 py-1 border-b-2 rounded-t-md transition-colors',
+                                            pathname.startsWith('/profile/edit')
+                                                ? 'border-primary text-primary hover:bg-primary/10'
+                                                : 'border-transparent text-muted-foreground hover:bg-primary/10'
+                                        )}
+                                    >
+                                        Edit Profile
+                                    </Link>
+                                )}
                             </nav>
                         </div>
                     </CardFooter>

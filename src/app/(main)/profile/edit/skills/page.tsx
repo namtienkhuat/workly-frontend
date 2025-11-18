@@ -118,15 +118,7 @@ const EditSkillsPage = () => {
                     </Field>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2">
-                    <Button
-                        type="submit"
-                        disabled={isLoading || !isDirty}
-                        className={
-                            isDirty
-                                ? 'bg-green-600 hover:bg-green-700'
-                                : 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                        }
-                    >
+                    <Button type="submit" disabled={isLoading || !isDirty}>
                         {isLoading ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </CardFooter>

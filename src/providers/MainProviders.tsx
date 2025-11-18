@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { setAuthToken } from '@/utils/api';
+import { ChatProvider } from '@/providers/ChatProvider';
+import { ChatInitializer } from '@/features/chat/components';
 
 const TokenSync = () => {
     const { data: session, status } = useSession();
@@ -26,7 +28,11 @@ const MainProviders = ({ children }: { children: React.ReactNode }) => {
         <SessionProvider>
             <TokenSync />
             <QueryClientProvider client={queryClient}>
-                {children}
+                {/* Initialize chat socket and load conversations globally */}
+                <ChatInitializer />
+                
+                <ChatProvider>{children}</ChatProvider>
+
                 <Toaster
                     position="top-right"
                     expand={false}

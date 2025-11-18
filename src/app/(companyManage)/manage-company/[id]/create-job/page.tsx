@@ -83,7 +83,10 @@ const CreateJobPage = () => {
                         <FieldLabel>
                             Job Title <span className="text-red-500">*</span>
                         </FieldLabel>
-                        <Input placeholder="e.g., Senior Software Engineer" {...register('title')} />
+                        <Input
+                            placeholder="e.g., Senior Software Engineer"
+                            {...register('title')}
+                        />
                         <FieldError
                             className="mt-1 text-xs"
                             errors={errors.title ? [errors.title] : undefined}
@@ -109,7 +112,10 @@ const CreateJobPage = () => {
                         <FieldLabel>
                             Location <span className="text-red-500">*</span>
                         </FieldLabel>
-                        <Input placeholder="e.g., San Francisco, CA or Remote" {...register('location')} />
+                        <Input
+                            placeholder="e.g., San Francisco, CA or Remote"
+                            {...register('location')}
+                        />
                         <FieldError
                             className="mt-1 text-xs"
                             errors={errors.location ? [errors.location] : undefined}
@@ -203,4 +209,3 @@ const CreateJobPage = () => {
 };
 
 export default CreateJobPage;
-

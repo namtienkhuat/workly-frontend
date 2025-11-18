@@ -57,6 +57,7 @@ const UserSettingsLayout = ({ children }: { children: React.ReactNode }) => {
         () => [
             { label: 'Edit Profile', path: basePath, exact: true },
             { label: 'Skills', path: `${basePath}/skills` },
+            { label: 'Industries', path: `${basePath}/industries` },
             { label: 'Education', path: `${basePath}/education` },
             { label: 'Account', path: `${basePath}/account` },
         ],

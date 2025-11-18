@@ -97,7 +97,6 @@ export default function OnboardingController() {
     };
 
     const onSubmit = (data: OnboardingFormData) => {
-        console.log('FINAL ONBOARDING DATA:', data);
         alert('🎉 Onboarding hoàn tất! Kiểm tra console để xem dữ liệu.');
     };
 
