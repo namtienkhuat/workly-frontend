@@ -19,6 +19,8 @@ export const getAuthToken = (): string | null => {
 const api = axios.create({
 	baseURL: BACKEND_URL,
 	timeout: 15000
+	baseURL: BACKEND_URL,
+	timeout: 15000
 });
 
 // Request interceptor
