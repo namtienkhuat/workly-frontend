@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import CommonService from "../../services/common/commonService"
 import { CreatePostDTO, PostVisibilityType } from "@/models/profileModel";
-import { apiPaths } from "@/configs/routes";
+import { apiPaths } from "@/configs/route";
 import ProfileService from "@/services/profile/profileService";
 import { toast } from "sonner";
 

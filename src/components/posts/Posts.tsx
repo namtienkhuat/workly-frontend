@@ -10,13 +10,13 @@ const Posts = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true; // tránh set state khi component đã unmount
+    let isMounted = true;
 
     const fetchPosts = async () => {
       try {
         const response = await ProfileService.getProfilePostPaging({});
         if (isMounted) {
-          setPosts(response?.data || []); // tùy API của bạn
+          setPosts(response?.data || []);
           toast.success("Tải bài viết thành công");
         }
       } catch (error) {

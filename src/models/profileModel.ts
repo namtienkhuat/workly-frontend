@@ -31,3 +31,12 @@ export interface PostResponse {
     media_url: MediaItem[];
     visibility: PostVisibilityType;
 }
+
+export interface Follower {
+    userId: string;
+    name: string;
+    username: string;
+    avatarUrl?: string;
+    headline?: string;
+    followedAt?: string;
+}

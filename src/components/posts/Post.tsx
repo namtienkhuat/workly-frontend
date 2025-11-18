@@ -176,7 +176,7 @@ const Post = ({ post }: PostProps) => {
         </div>
 
         {/* Comments */}
-        {commentOpen && <Comments />}
+        {commentOpen && <Comments postId={post._id} />}
       </div>
     </div>
   );

@@ -7,14 +7,13 @@ export interface PagingResponse<T> extends Response {
 	recordsFiltered: number;
 	totalPage: number;
 	page: number;
-	results: T[];
+	data: T[];
 	statistic?: T;
-	data?: any;
 }
 export interface ResponseData<T> extends Response {
-	result: T;
+	data: T;
 }
 
 export interface ResponseList<T> extends Response {
-	results: T[];
+	data: T[];
 }

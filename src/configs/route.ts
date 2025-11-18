@@ -19,5 +19,8 @@ export const apiPaths = {
     getTest: "/posts/test",
     createPost: "/posts/create",
     getVideo: "/posts/video",
+    createComment: "/posts/comment/create",
+    getCommentById: "/posts/comment",
+    getAllComment: "/posts/comment/list",
     getPostById: (id: string) => `/api/posts/${id}`,
 };

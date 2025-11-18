@@ -1,4 +1,4 @@
-import { apiPaths } from "@/configs/routes";
+import { apiPaths } from "@/configs/route";
 import { CreatePostDTO, PostResponse } from "@/models/profileModel";
 import { getData, getPaging, postData } from "@/utils/api";
 import { PagingResponse, ResponseData } from "@/utils/models/ResponseType";
