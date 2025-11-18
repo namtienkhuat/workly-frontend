@@ -5,6 +5,8 @@ export const paths = {
     forgotPassword: '/forgot-password',
     profile: '/user/profile',
     selectRole: '/select-role',
+    testPost: '/test',
+    // Example of a dynamic route
     postDetail: (id: string) => `/posts/${id}`,
 };
 
@@ -12,5 +14,13 @@ export const apiPaths = {
     login: '/api/auth/login',
     signup: '/api/auth/signup',
     getPosts: '/api/posts',
+    getProfilePost: "/posts/myPost",
+    uploadFile: "/posts/uploads",
+    getTest: "/posts/test",
+    createPost: "/posts/create",
+    getVideo: "/posts/video",
+    createComment: "/posts/comment/create",
+    getCommentById: "/posts/comment",
+    getAllComment: "/posts/comment/list",
     getPostById: (id: string) => `/api/posts/${id}`,
 };
