@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosProgressEvent, RawAxiosRequestHeaders } from 'axios';
+import axios, { AxiosError, AxiosProgressEvent, InternalAxiosRequestConfig, RawAxiosRequestHeaders } from 'axios';
 import {
 	ResponseData,
 	PagingResponse,
@@ -24,18 +24,18 @@ const api = axios.create({
 
 // Request interceptor
 api.interceptors.request.use(
-	// (config: InternalAxiosRequestConfig) => {
-	// 	// You can add any request modifications here
-	// 	// For example: adding auth token
-	// 	// const token = localStorage.getItem('token');
-	// 	// if (token) {
-	// 	//     config.headers.Authorization = `Bearer ${token}`;
-	// 	// }
-	// 	return config;
-	// },
-	// (error: AxiosError) => {
-	// 	return Promise.reject(error);
-	// }
+	(config: InternalAxiosRequestConfig) => {
+		// You can add any request modifications here
+		// For example: adding auth token
+		// const token = localStorage.getItem('token');
+		// if (token) {
+		//     config.headers.Authorization = `Bearer ${token}`;
+		// }
+		return config;
+	},
+	(error: AxiosError) => {
+		return Promise.reject(error);
+	}
 );
 
 // Response interceptor for error handling
