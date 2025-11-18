@@ -1,11 +1,17 @@
+'use client';
 import { CompanyProfile } from '@/types/global';
 import Image from 'next/image';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CardContent, CardDescription, CardTitle } from '../ui/card';
 import { Button } from '../ui/Button';
 import Link from 'next/link';
-import { EditIcon, MessageSquareIcon, PlusIcon, UserIcon } from 'lucide-react';
+import { EditIcon, MessageSquareIcon, PlusIcon, UserCheck, UserRoundPlus } from 'lucide-react';
 import clsx from 'clsx';
+import { Badge } from '../ui/badge';
+import { followCompany, getFollowCompanyStatus, unfollowCompany } from '@/services/apiServices';
+import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
+import { CompanyFollowerModal } from './CompanyFollowerModal';
 
 interface CompanyHeaderProps {
     isEditable?: boolean;
@@ -20,8 +26,45 @@ const CompanyHeader = ({
     handleBannerClick,
     handleLogoClick,
 }: CompanyHeaderProps) => {
+    const { status } = useSession();
     const [isBannerError, setIsBannerError] = useState(false);
     const [isLogoError, setIsLogoError] = useState(false);
+    const [isFollowing, setIsFollowing] = useState<boolean>(companyProfile.isFollowing ?? false);
+    const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
+
+    useEffect(() => {
+        // only load after check auth
+        if (status === 'loading') return;
+        if (isEditable) return setIsFollowing(false);
+
+        const getIsFollowing = async () => {
+            const { data } = await getFollowCompanyStatus(companyProfile.companyId);
+            setIsFollowing(data?.isFollowing ?? false);
+        };
+        getIsFollowing();
+    }, [status]);
+
+    const handleFollow = async () => {
+        const { success, message } = await followCompany(companyProfile.companyId);
+        if (success) {
+            setIsFollowing(true);
+        } else {
+            toast.error('Failed to follow company', {
+                description: message,
+            });
+        }
+    };
+
+    const handleUnfollow = async () => {
+        const { success, message } = await unfollowCompany(companyProfile.companyId);
+        if (success) {
+            setIsFollowing(false);
+        } else {
+            toast.error('Failed to unfollow company', {
+                description: message,
+            });
+        }
+    };
 
     return (
         <>
@@ -95,10 +138,24 @@ const CompanyHeader = ({
                 <div className="mt-2 flex items-start justify-between">
                     <div className="flex flex-col gap-2">
                         <CardTitle className="text-3xl">{companyProfile.name}</CardTitle>
-                        <CardDescription className="text-sm text-muted-foreground">
-                            {companyProfile.description}
+
+                        <CardDescription className="flex gap-2 mt-2">
+                            <Badge variant="outline">{companyProfile.industry.name}</Badge>
+                            <Badge variant="outline">Employees: {companyProfile.size}</Badge>
+                            {(companyProfile.followersCount || 0) > 0 && (
+                                <Badge
+                                    variant="outline"
+                                    className="cursor-pointer hover:bg-primary/10 hover:text-primary"
+                                    onClick={() => {
+                                        setIsFollowerModalOpen(true);
+                                    }}
+                                >
+                                    Followers: {companyProfile.followersCount}
+                                </Badge>
+                            )}
                         </CardDescription>
                     </div>
+
                     <div className="flex items-center gap-2">
                         {isEditable ? (
                             <Button variant="outline" asChild>
@@ -110,23 +167,43 @@ const CompanyHeader = ({
                             <div className="flex items-center gap-2">
                                 <Button
                                     variant="outline"
-                                    // onClick={() => toast.info('This feature is not available yet')}
+                                    // onClick={}
                                 >
                                     <MessageSquareIcon className="w-4 h-4" />
                                     Message
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    // onClick={() => toast.info('This feature is not available yet')}
+                                    className={clsx(
+                                        isFollowing &&
+                                            'bg-primary text-primary-foreground hover:bg-primary/90'
+                                    )}
+                                    onClick={isFollowing ? handleUnfollow : handleFollow}
                                 >
-                                    <UserIcon className="w-4 h-4" />
-                                    Following
+                                    {isFollowing ? (
+                                        <>
+                                            <UserCheck className="w-4 h-4" />
+                                            Following
+                                        </>
+                                    ) : (
+                                        <>
+                                            <UserRoundPlus className="w-4 h-4" />
+                                            Follow
+                                        </>
+                                    )}
                                 </Button>
                             </div>
                         )}
                     </div>
                 </div>
             </CardContent>
+
+            <CompanyFollowerModal
+                companyId={companyProfile.companyId}
+                open={isFollowerModalOpen}
+                onOpenChange={setIsFollowerModalOpen}
+                followersCount={companyProfile.followersCount || 0}
+            />
         </>
     );
 };
