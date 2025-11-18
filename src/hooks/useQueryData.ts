@@ -1,4 +1,9 @@
-import { QueryFunctionContext, useQuery, useMutation, UseMutationOptions } from '@tanstack/react-query';
+import {
+    QueryFunctionContext,
+    useQuery,
+    useMutation,
+    UseMutationOptions,
+} from '@tanstack/react-query';
 import api from '@/utils/api';
 
 export type QueryFn<T> = (context: QueryFunctionContext) => Promise<T>;
@@ -98,6 +103,14 @@ export function useGetAllIndustries(queryParams: Record<string, any> = {}) {
     return useData([`/users/industries`, queryParams], getDataWithStatus);
 }
 
+export function useGetCompanyFollowers(
+    id: string,
+    queryParams: Record<string, any> = {},
+    enabled: boolean = true
+) {
+    return useData([`/companies/${id}/followers`, queryParams], getDataWithStatus, enabled);
+}
+
 // Mutation functions
 interface CreateConversationPayload {
     participantId: string;
@@ -110,7 +123,9 @@ interface ConversationResponse {
     data: any;
 }
 
-export const createConversation = async (payload: CreateConversationPayload): Promise<ConversationResponse> => {
+export const createConversation = async (
+    payload: CreateConversationPayload
+): Promise<ConversationResponse> => {
     try {
         const response = await api.post('/conversations', payload);
         return response.data;

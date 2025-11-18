@@ -23,6 +23,8 @@ export interface CompanyProfile {
     website?: string;
     logoUrl?: string;
     bannerUrl?: string;
+    followersCount?: number;
+    isFollowing?: boolean;
 }
 
 export interface Industry {
@@ -56,7 +58,18 @@ export interface UserProfile {
     email: string;
     username: string;
     role: UserRole;
+    avatarUrl?: string;
+    bgCoverUrl?: string;
     industries: Industry[];
     skills: Skill[];
     educations: [];
+}
+
+export interface Follower {
+    userId: string;
+    name: string;
+    username: string;
+    avatarUrl?: string;
+    headline?: string;
+    followedAt?: string;
 }
