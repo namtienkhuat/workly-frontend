@@ -38,6 +38,7 @@ const SignInPage = () => {
             }
             router.push(paths.home);
         } catch (error) {
+            console.error('Login error:', error);
         } finally {
             setIsLoading(false);
         }

@@ -15,6 +15,12 @@ export const editUserSkillsSchema = z.object({
 
 export type EditUserSkillsFormData = z.infer<typeof editUserSkillsSchema>;
 
+export const editUserIndustriesSchema = z.object({
+    industryIds: z.array(z.string()),
+});
+
+export type EditUserIndustriesFormData = z.infer<typeof editUserIndustriesSchema>;
+
 export const educationEntrySchema = z.object({
     schoolId: z.string().min(1, 'School is required.'),
     degree: z.string().min(1, 'Degree is required.'),

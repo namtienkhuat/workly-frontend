@@ -79,6 +79,24 @@ export async function patchUserSkills(formData: { skillIds: string[] }) {
     }
 }
 
+export async function patchUserIndustries(formData: { industryIds: string[] }) {
+    try {
+        const { data } = await api.patch('/users/me/industries', formData);
+
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+}
+
 export const patchUserEducation = async (formData: EditUserEducationFormData) => {
     try {
         const { data } = await api.patch('/users/me/educations', formData.educations);

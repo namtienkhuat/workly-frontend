@@ -1,4 +1,4 @@
-import { QueryFunctionContext, useQuery } from '@tanstack/react-query';
+import { QueryFunctionContext, useQuery, useMutation, UseMutationOptions } from '@tanstack/react-query';
 import api from '@/utils/api';
 
 export type QueryFn<T> = (context: QueryFunctionContext) => Promise<T>;
@@ -77,6 +77,7 @@ export function useGetMe() {
 export function useGetSkills(queryParams: Record<string, any> = {}) {
     return useData([`skills`, queryParams], getDataWithStatus);
 }
+
 export function useGetAllSkills(queryParams: Record<string, any> = {}) {
     return useData(['/users/skills', queryParams], getDataWithStatus);
 }
@@ -90,5 +91,52 @@ export function useGetAllSchools(queryParams: Record<string, any> = {}) {
 }
 
 export function useGetUserProfile(id: string) {
-    return useData([`/users/${id}?include=skill`, {}], getDataWithStatus);
+    return useData([`/users/${id}?include=skill,education,industry`, {}], getDataWithStatus);
+}
+
+export function useGetAllIndustries(queryParams: Record<string, any> = {}) {
+    return useData([`/users/industries`, queryParams], getDataWithStatus);
+}
+
+// Mutation functions
+interface CreateConversationPayload {
+    participantId: string;
+    participantType: 'USER' | 'COMPANY';
+}
+
+interface ConversationResponse {
+    success: boolean;
+    message: string;
+    data: any;
+}
+
+export const createConversation = async (payload: CreateConversationPayload): Promise<ConversationResponse> => {
+    try {
+        const response = await api.post('/conversations', payload);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to create conversation');
+    }
+};
+
+export function useCreateConversation(
+    options?: UseMutationOptions<ConversationResponse, Error, CreateConversationPayload>
+) {
+    return useMutation<ConversationResponse, Error, CreateConversationPayload>({
+        mutationFn: createConversation,
+        ...options,
+    });
+}
+
+// Chat-related queries
+export function useGetConversations(queryParams: Record<string, any> = {}) {
+    return useData(['/conversations', queryParams], getDataWithStatus);
+}
+
+export function useGetConversationById(conversationId: string) {
+    return useData([`/conversations/${conversationId}`, {}], getDataWithStatus);
+}
+
+export function useGetMessages(conversationId: string, queryParams: Record<string, any> = {}) {
+    return useData([`/messages/${conversationId}`, queryParams], getDataWithStatus);
 }

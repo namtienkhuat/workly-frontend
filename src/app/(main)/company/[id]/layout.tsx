@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
-import { usePathname, useParams } from 'next/navigation';
+import { usePathname, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { MessageSquareIcon, UserIcon } from 'lucide-react';
 import { useGetCompanyProfile } from '@/hooks/useQueryData';
@@ -20,6 +20,7 @@ interface TabConfig {
 
 const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
     const pathname = usePathname();
+    const router = useRouter();
     const { id } = useParams<{ id: string }>();
     const basePath = `/company/${id}`;
 
@@ -59,7 +60,7 @@ const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
                             <div className="flex items-center gap-2">
                                 <Button
                                     variant="outline"
-                                    onClick={() => toast.info('This feature is not available yet')}
+                                    onClick={() => router.push(`/chat/company/${id}`)}
                                 >
                                     <MessageSquareIcon className="w-4 h-4" />
                                     Message

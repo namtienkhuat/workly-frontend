@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGetUserProfile } from '@/hooks/useQueryData';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Skill, UserProfile } from '@/types/global';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,7 @@ const UserProfilePage = () => {
     const { data: userProfileData, isLoading } = useGetUserProfile(id);
     const userProfile: UserProfile = userProfileData?.data;
     const skillsFromProfile = userProfileData?.data?.relationships?.skills || [];
+    const educationsFromProfile = userProfileData?.data?.relationships?.educations || [];
 
     if (isLoading) return <AboutPageSkeleton />;
     if (!userProfile) return <div>User not found</div>;
@@ -65,11 +66,11 @@ const UserProfilePage = () => {
                 <div>
                     <h3 className="text-lg font-semibold">Education</h3>
                     <div className="space-y-4 pt-2">
-                        {userProfile.educations?.length > 0 ? (
-                            userProfile.educations.map((edu: any) => (
+                        {educationsFromProfile.length > 0 ? (
+                            educationsFromProfile.map((edu: any) => (
                                 <div key={edu.educationId || edu.schoolId} className="flex">
                                     <div>
-                                        <p className="font-semibold">{edu.school.name}</p>
+                                        <p className="font-semibold">{edu.name}</p>
                                         <p className="text-sm text-gray-700">{edu.degree}</p>
                                         <p className="text-sm text-gray-500">{edu.major}</p>
                                         <p className="text-sm text-gray-500">

@@ -47,6 +47,7 @@ export const { handlers, auth } = NextAuth({
                     });
 
                     const responseData = await res.json();
+
                     if (!res.ok || !responseData.success) {
                         throw new Error(responseData.message || 'Invalid email or password');
                     }
@@ -87,18 +88,24 @@ export const { handlers, auth } = NextAuth({
             return true;
         },
         async jwt({ token, user }) {
+            console.log('user', user);
+
             if (user) {
                 // @ts-ignore
                 token.apiToken = user.token;
                 token.id = user.id;
+                token.user = user;
             }
             return token;
         },
         async session({ session, token }) {
+            console.log('token', token);
             // @ts-ignore
             session.apiToken = token.apiToken;
             // @ts-ignore
-            session.user.id = token.id;
+            session.user.id = token.user.userId;
+            // @ts-ignore
+            session.userId = token.user.userId;
             return session;
         },
     },
