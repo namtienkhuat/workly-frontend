@@ -183,7 +183,7 @@ export const getFollowCompanyStatus = async (companyId: string) => {
 // USER
 export const patchUserProfile = async (formData: EditUserProfileFormData) => {
     try {
-        const { data } = await api.patch(`/users/me`, formData);
+        const { data } = await api.patch(`/me`, formData);
 
         return {
             status: 'success',
@@ -201,7 +201,7 @@ export const patchUserProfile = async (formData: EditUserProfileFormData) => {
 
 export async function patchUserSkills(formData: { skillIds: string[] }) {
     try {
-        const { data } = await api.patch('/users/me/skills', formData);
+        const { data } = await api.patch('/me/skills', formData);
 
         return {
             status: 'success',
@@ -219,7 +219,7 @@ export async function patchUserSkills(formData: { skillIds: string[] }) {
 
 export async function patchUserIndustries(formData: { industryIds: string[] }) {
     try {
-        const { data } = await api.patch('/users/me/industries', formData);
+        const { data } = await api.patch('/me/industries', formData);
 
         return {
             status: 'success',
@@ -237,7 +237,30 @@ export async function patchUserIndustries(formData: { industryIds: string[] }) {
 
 export const patchUserEducation = async (formData: EditUserEducationFormData) => {
     try {
-        const { data } = await api.patch('/users/me/educations', formData.educations);
+        const { data } = await api.patch('/me/educations', formData.educations);
+
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
+export const patchUserMedia = async (formData: FormData) => {
+    try {
+        // Acepts: avatar, background
+        const { data } = await api.patch(`/me/media`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
 
         return {
             status: 'success',
@@ -261,7 +284,7 @@ export const patchChangePassword = async (formData: ChangePasswordFormData) => {
             confirmNewPassword: formData.confirmNewPassword,
         };
 
-        const { data } = await api.patch('/users/me/change-password', payload);
+        const { data } = await api.patch('/me/change-password', payload);
 
         return {
             status: 'success',
@@ -279,7 +302,7 @@ export const patchChangePassword = async (formData: ChangePasswordFormData) => {
 
 export const deleteMyAccount = async () => {
     try {
-        const { data } = await api.delete('/users/me');
+        const { data } = await api.delete('/me');
 
         return {
             status: 'success',

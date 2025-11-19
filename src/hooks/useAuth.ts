@@ -3,9 +3,8 @@ import { UserProfile } from '@/types/global';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/utils/api';
 
-const fetchMe = async (): Promise<UserProfile> => {
+const fetchMe = async (): Promise<{ data: UserProfile }> => {
     const response = await api.get('/auth/me');
-    console.log('fetchMe response:', response);
     return response.data;
 };
 
@@ -16,7 +15,7 @@ export const useAuth = () => {
         data: user,
         isLoading,
         isError,
-    } = useQuery<UserProfile, Error>({
+    } = useQuery<{ data: UserProfile }, Error>({
         queryKey: ['auth', 'me'],
         queryFn: fetchMe,
         staleTime: 1000 * 60 * 5, // 5 minutes
@@ -40,7 +39,7 @@ export const useAuth = () => {
     };
 
     return {
-        user: user ?? null,
+        user: user?.data ?? null,
         isLoading,
         isAuthenticated,
         isError,

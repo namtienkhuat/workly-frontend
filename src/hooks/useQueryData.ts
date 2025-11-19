@@ -76,7 +76,7 @@ export function useGetIndustry(queryParams: Record<string, any> = {}) {
 }
 
 export function useGetMe() {
-    return useData(['/users/me?include=education,industry,skill', {}], getDataWithStatus);
+    return useData(['/me?include=education,industry,skill', {}], getDataWithStatus);
 }
 
 export function useGetSkills(queryParams: Record<string, any> = {}) {
@@ -93,6 +93,10 @@ export function useGetSchools(queryParams: Record<string, any> = {}) {
 
 export function useGetAllSchools(queryParams: Record<string, any> = {}) {
     return useData(['/users/schools', queryParams], getDataWithStatus);
+}
+
+export function useGetUserBasicInfo(id: string) {
+    return useData([`/users/${id}`, {}], getDataWithStatus);
 }
 
 export function useGetUserProfile(id: string) {

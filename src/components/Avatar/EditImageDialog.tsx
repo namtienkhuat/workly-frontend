@@ -7,10 +7,11 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog';
-import AvatarCropper from '@/components/AvatarCropper';
-import { Loader2 } from 'lucide-react';
 
-interface EditLogoDialogProps {
+import { Loader2 } from 'lucide-react';
+import AvatarCropper from './AvatarCropper';
+
+interface EditImageDialogProps {
     open: boolean;
     initialImageUrl?: string;
     aspectRatio?: number;
@@ -19,14 +20,14 @@ interface EditLogoDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
-const EditLogoDialog = ({
+const EditImageDialog = ({
     open,
     onOpenChange,
     initialImageUrl,
     aspectRatio = 1,
     onCropComplete,
     isSubmitting,
-}: EditLogoDialogProps) => {
+}: EditImageDialogProps) => {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl">
@@ -53,4 +54,4 @@ const EditLogoDialog = ({
     );
 };
 
-export default EditLogoDialog;
+export default EditImageDialog;

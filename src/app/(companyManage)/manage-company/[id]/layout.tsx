@@ -5,12 +5,12 @@ import { Card, CardFooter } from '@/components/ui/card';
 import { useParams } from 'next/navigation';
 import { useGetCompanyProfile } from '@/hooks/useQueryData';
 import { CompanyProfile } from '@/types/global';
-import EditLogoDialog from '../_components/EditLogoDialog';
 import { toast } from 'sonner';
 import { patchCompanyMedia } from '@/services/apiServices';
 import CompanyHeader from '@/components/company/CompanyHeader';
 import CompanyTabNav from '@/components/company/CompanyTabNav';
 import CompanySkeletonHeader from '@/components/company/CompanySkeletonHeader';
+import EditImageDialog from '@/components/Avatar/EditImageDialog';
 
 const ManageCompanyLayout = ({ children }: { children: React.ReactNode }) => {
     const { id } = useParams<{ id: string }>();
@@ -97,14 +97,14 @@ const ManageCompanyLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
 
             {/* Avatar Cropper Dialog */}
-            <EditLogoDialog
+            <EditImageDialog
                 open={isAvatarDialogOpen}
                 onOpenChange={setIsAvatarDialogOpen}
                 initialImageUrl={companyProfile?.logoUrl ? companyProfile.logoUrl : undefined}
                 onCropComplete={handleLogoCropComplete}
                 isSubmitting={isSubmitting}
             />
-            <EditLogoDialog
+            <EditImageDialog
                 open={isBannerDialogOpen}
                 onOpenChange={setIsBannerDialogOpen}
                 initialImageUrl={companyProfile?.bannerUrl ? companyProfile.bannerUrl : undefined}
