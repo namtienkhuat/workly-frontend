@@ -211,8 +211,8 @@ const CompanyHeader = ({
                                 <Button
                                     variant="outline"
                                     className={clsx(
-                                        isFollowing &&
-                                            'bg-primary text-primary-foreground hover:bg-primary/90'
+                                        !isFollowing &&
+                                            'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
                                     )}
                                     onClick={handleFollowToggle}
                                 >

@@ -9,6 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import ProfileSkeleton from '../edit/_components/ProfileSkeleton';
 import ProfileTabNav from '../_components/ProfileTabNav';
 import ProfleHeader from '../_components/ProfleHeader';
+import { SetSidebar } from '@/components/layout/SetSideBar';
+import RightSidebar from '../_components/RightSidebar';
 
 const PublicProfileLayout = ({ children }: { children: React.ReactNode }) => {
     const { id } = useParams<{ id: string }>();
@@ -26,25 +28,31 @@ const PublicProfileLayout = ({ children }: { children: React.ReactNode }) => {
     if (!userProfile) return <div>User not found</div>;
 
     return (
-        <div className="flex flex-col">
-            <div>
-                <Card className="mx-auto max-w-5xl">
-                    <ProfleHeader
-                        userProfile={userProfile}
-                        isEditable={false}
-                        isCurrentUser={isCurrentUser}
-                    />
+        <>
+            <SetSidebar position="right">
+                <RightSidebar />
+            </SetSidebar>
 
-                    <CardFooter className="px-2 py-1">
-                        <ProfileTabNav isOwner={false} userId={id} />
-                    </CardFooter>
-                </Card>
-            </div>
+            <div className="flex flex-col">
+                <div>
+                    <Card className="mx-auto max-w-5xl">
+                        <ProfleHeader
+                            userProfile={userProfile}
+                            isEditable={false}
+                            isCurrentUser={isCurrentUser}
+                        />
 
-            <div className="mt-4">
-                <div className="mx-auto max-w-5xl">{children}</div>
+                        <CardFooter className="px-2 py-1">
+                            <ProfileTabNav isOwner={false} userId={id} />
+                        </CardFooter>
+                    </Card>
+                </div>
+
+                <div className="mt-4">
+                    <div className="mx-auto max-w-5xl">{children}</div>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

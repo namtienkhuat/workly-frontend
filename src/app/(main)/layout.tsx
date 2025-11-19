@@ -1,6 +1,7 @@
 'use client';
 import React, { ReactNode } from 'react';
 import { RouteAwareColumns } from '@/components/layout/RouteAwareColumns';
+import { LayoutProvider } from '@/context/LayoutContext';
 
 const MainLayout = ({ children }: { children: ReactNode }) => {
     return (
@@ -12,9 +13,11 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
             </header>
 
             <div className="flex-1">
-                <div className="mx-auto max-w-7xl px-4 py-6">
-                    <RouteAwareColumns>{children}</RouteAwareColumns>
-                </div>
+                <LayoutProvider>
+                    <div className="mx-auto max-w-7xl px-4 py-6">
+                        <RouteAwareColumns>{children}</RouteAwareColumns>
+                    </div>
+                </LayoutProvider>
             </div>
         </div>
     );

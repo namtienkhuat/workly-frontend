@@ -2,10 +2,10 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { cn } from '@/lib/utils';
 
-interface UserInfoProps {
-    userId: string;
+interface CompanyInfoProps {
+    companyId: string;
     name: string;
-    headline?: string;
+    description?: string;
     avatarUrl?: string;
     // Optional props for enhanced functionality
     onClick?: () => void;
@@ -14,15 +14,15 @@ interface UserInfoProps {
     className?: string;
 }
 
-const UserInfo = ({
+const CompanyInfo = ({
     name,
-    headline,
+    description,
     avatarUrl,
     onClick,
     showHover = false,
     actionButton,
     className,
-}: UserInfoProps) => {
+}: CompanyInfoProps) => {
     return (
         <div
             className={cn(
@@ -38,8 +38,8 @@ const UserInfo = ({
             </Avatar>
             <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-sm truncate">{name}</h4>
-                {headline && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{headline}</p>
+                {description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</p>
                 )}
             </div>
             {actionButton && <div className="flex-shrink-0">{actionButton}</div>}
@@ -47,4 +47,4 @@ const UserInfo = ({
     );
 };
 
-export default UserInfo;
+export default CompanyInfo;

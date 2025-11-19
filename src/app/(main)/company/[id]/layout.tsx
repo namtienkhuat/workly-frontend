@@ -8,6 +8,8 @@ import { CompanyProfile } from '@/types/global';
 import CompanyHeader from '@/components/company/CompanyHeader';
 import CompanyTabNav from '@/components/company/CompanyTabNav';
 import CompanySkeletonHeader from '@/components/company/CompanySkeletonHeader';
+import { SetSidebar } from '@/components/layout/SetSideBar';
+import RightSidebar from '../_components/RightSidebar';
 
 const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
     const { id } = useParams<{ id: string }>();
@@ -19,21 +21,27 @@ const CompanyProfileLayout = ({ children }: { children: React.ReactNode }) => {
     if (!companyProfile) return <div>Company not found</div>;
 
     return (
-        <div className="flex flex-col mb-20">
-            <div>
-                <Card className="mx-auto max-w-5xl ">
-                    <CompanyHeader companyProfile={companyProfile} />
+        <>
+            <SetSidebar position="right">
+                <RightSidebar />
+            </SetSidebar>
 
-                    <CardFooter className="px-2 py-1">
-                        <CompanyTabNav companyId={id} />
-                    </CardFooter>
-                </Card>
-            </div>
+            <div className="flex flex-col mb-20">
+                <div>
+                    <Card className="mx-auto max-w-5xl ">
+                        <CompanyHeader companyProfile={companyProfile} />
 
-            <div className="mt-4">
-                <div className="mx-auto max-w-5xl">{children}</div>
+                        <CardFooter className="px-2 py-1">
+                            <CompanyTabNav companyId={id} />
+                        </CardFooter>
+                    </Card>
+                </div>
+
+                <div className="mt-4">
+                    <div className="mx-auto max-w-5xl">{children}</div>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
