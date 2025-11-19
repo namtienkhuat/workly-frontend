@@ -1,13 +1,10 @@
-import { Metadata } from 'next';
-import React from 'react';
+'use client';
 
-export const metadata: Metadata = {
-    title: 'Create a new company',
-    description: 'Create a new company',
-};
+import React from 'react';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 const NewCompanyLayout = ({ children }: { children: React.ReactNode }) => {
-    return <div>{children}</div>;
+    return <AuthGuard errorMessage="Please log in to create a company">{children}</AuthGuard>;
 };
 
 export default NewCompanyLayout;
