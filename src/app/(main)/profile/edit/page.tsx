@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
 import {
     Card,
     CardContent,
@@ -22,6 +21,7 @@ import { UserProfile } from '@/types/global';
 import { patchUserProfile } from '@/services/apiServices';
 import { EditUserProfileFormData, editUserProfileSchema } from '@/lib/validations/user';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 const EditProfilePage = () => {
     const router = useRouter();

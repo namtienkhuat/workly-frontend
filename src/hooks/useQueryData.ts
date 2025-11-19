@@ -107,14 +107,6 @@ export function useGetAllIndustries(queryParams: Record<string, any> = {}) {
     return useData([`/users/industries`, queryParams], getDataWithStatus);
 }
 
-export function useGetCompanyFollowers(
-    id: string,
-    queryParams: Record<string, any> = {},
-    enabled: boolean = true
-) {
-    return useData([`/companies/${id}/followers`, queryParams], getDataWithStatus, enabled);
-}
-
 // Mutation functions
 interface CreateConversationPayload {
     participantId: string;

@@ -24,7 +24,6 @@ export interface CompanyProfile {
     logoUrl?: string;
     bannerUrl?: string;
     followersCount?: number;
-    isFollowing?: boolean;
 }
 
 export interface Industry {
@@ -55,6 +54,7 @@ export interface Education {
 export interface UserProfile {
     userId: string;
     name: string;
+    headline?: string;
     email: string;
     username: string;
     role: UserRole;
@@ -63,6 +63,7 @@ export interface UserProfile {
     industries: Industry[];
     skills: Skill[];
     educations: [];
+    followersCount?: number;
 }
 
 export interface Follower {

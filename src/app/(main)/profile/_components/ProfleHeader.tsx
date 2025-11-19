@@ -1,11 +1,21 @@
-import { Button } from '@/components/ui/Button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardTitle } from '@/components/ui/card';
+import {
+    getFollowUserStatus,
+    useFollowUser,
+    useUnfollowUser,
+} from '@/services/follow/followService';
 import { UserProfile } from '@/types/global';
+import { getInitials } from '@/utils/helpers';
 import clsx from 'clsx';
-import { EditIcon, MessageSquareIcon, PlusIcon, UserCheck } from 'lucide-react';
+import { EditIcon, MessageSquareIcon, PlusIcon, UserCheck, UserRoundPlus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
+import { UserFollowerModal } from './UserFollowerModal';
 
 interface ProfleHeaderProps {
     userProfile: UserProfile;
@@ -24,6 +34,76 @@ const ProfleHeader = ({
 }: ProfleHeaderProps) => {
     const [isBannerError, setIsBannerError] = useState(false);
     const [isLogoError, setIsLogoError] = useState(false);
+    const [isFollowing, setIsFollowing] = useState<boolean>(false);
+    const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
+
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const pendingActionRef = useRef<'follow' | 'unfollow' | null>(null);
+
+    const followMutation = useFollowUser({
+        onSuccess: () => {
+            setIsFollowing(true);
+        },
+        onError: (error) => {
+            setIsFollowing(false);
+            toast.error('Failed to follow user', {
+                description: error.message,
+            });
+        },
+    });
+
+    const unfollowMutation = useUnfollowUser({
+        onSuccess: () => {
+            setIsFollowing(false);
+        },
+        onError: (error) => {
+            setIsFollowing(true);
+            toast.error('Failed to unfollow user', {
+                description: error.message,
+            });
+        },
+    });
+
+    useEffect(() => {
+        if (isEditable || isCurrentUser) return setIsFollowing(false);
+
+        const getIsFollowing = async () => {
+            const { data } = await getFollowUserStatus(userProfile.userId);
+            setIsFollowing(data?.isFollowing ?? false);
+        };
+        getIsFollowing();
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+        };
+    }, []);
+
+    const debouncedFollowAction = useCallback(() => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        debounceTimerRef.current = setTimeout(() => {
+            const action = pendingActionRef.current;
+            if (action === 'follow') {
+                followMutation.mutate(userProfile.userId);
+            } else if (action === 'unfollow') {
+                unfollowMutation.mutate(userProfile.userId);
+            }
+            pendingActionRef.current = null;
+        }, 500);
+    }, [followMutation, unfollowMutation, userProfile.userId]);
+
+    const handleFollowToggle = () => {
+        setIsFollowing((prev) => !prev);
+
+        pendingActionRef.current = isFollowing ? 'unfollow' : 'follow';
+        debouncedFollowAction();
+    };
 
     return (
         <>
@@ -85,7 +165,11 @@ const ProfleHeader = ({
                             onError={() => setIsLogoError(true)}
                         />
                     ) : (
-                        <div className="relative h-36 w-36 rounded-full border-muted bg-white" />
+                        <Avatar className="h-36 w-36 rounded-full border-muted bg-white text-2xl">
+                            <AvatarFallback className="text-2xl bg-white">
+                                {getInitials(userProfile.name)}
+                            </AvatarFallback>
+                        </Avatar>
                     )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                         <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
@@ -94,12 +178,24 @@ const ProfleHeader = ({
                     </div>
                 </div>
 
-                <div className="mt-2 flex items-start justify-between">
-                    <div className="flex flex-col gap-2">
+                <div className="mt-2 flex items-start justify-between gap-16">
+                    <div className="flex flex-col">
                         <CardTitle className="text-3xl">{userProfile.name}</CardTitle>
-                        <CardDescription className="flex gap-2 mt-2">
-                            {' '}
-                            {userProfile.username}
+                        <CardDescription className="text-sm text-muted-foreground mt-1">
+                            {userProfile?.headline}
+                        </CardDescription>
+                        <CardDescription className="text-sm text-muted-foreground mt-1">
+                            {(userProfile.followersCount || 0) > 0 && (
+                                <Badge
+                                    variant="outline"
+                                    className="cursor-pointer hover:bg-primary/10 hover:text-primary"
+                                    onClick={() => {
+                                        setIsFollowerModalOpen(true);
+                                    }}
+                                >
+                                    Followers: {userProfile.followersCount}
+                                </Badge>
+                            )}
                         </CardDescription>
                     </div>
 
@@ -114,32 +210,29 @@ const ProfleHeader = ({
                             </Button>
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    // onClick={}
-                                >
+                                <Button variant="outline">
                                     <MessageSquareIcon className="w-4 h-4" />
                                     Message
                                 </Button>
                                 <Button
-                                //     variant="outline"
-                                //     className={clsx(
-                                //         isFollowing &&
-                                //             'bg-primary text-primary-foreground hover:bg-primary/90'
-                                //     )}
-                                //     onClick={isFollowing ? handleUnfollow : handleFollow}
+                                    variant="outline"
+                                    className={clsx(
+                                        isFollowing &&
+                                            'bg-primary text-primary-foreground hover:bg-primary/90'
+                                    )}
+                                    onClick={handleFollowToggle}
                                 >
-                                    {/* {isFollowing ? ( */}
-                                    <>
-                                        <UserCheck className="w-4 h-4" />
-                                        Following
-                                    </>
-                                    {/* ) : (
+                                    {isFollowing ? (
+                                        <>
+                                            <UserCheck className="w-4 h-4" />
+                                            Following
+                                        </>
+                                    ) : (
                                         <>
                                             <UserRoundPlus className="w-4 h-4" />
                                             Follow
                                         </>
-                                    )} */}
+                                    )}
                                 </Button>
                             </div>
                         )}
@@ -147,12 +240,12 @@ const ProfleHeader = ({
                 </div>
             </CardContent>
 
-            {/* <CompanyFollowerModal
-                companyId={companyProfile.companyId}
+            <UserFollowerModal
+                userId={userProfile.userId}
                 open={isFollowerModalOpen}
                 onOpenChange={setIsFollowerModalOpen}
-                followersCount={companyProfile.followersCount || 0}
-            /> */}
+                followersCount={userProfile.followersCount || 0}
+            />
         </>
     );
 };

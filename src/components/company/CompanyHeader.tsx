@@ -1,16 +1,20 @@
 'use client';
 import { CompanyProfile } from '@/types/global';
 import Image from 'next/image';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { CardContent, CardDescription, CardTitle } from '../ui/card';
-import { Button } from '../ui/Button';
+import { Button } from '../ui/button';
 import Link from 'next/link';
 import { EditIcon, MessageSquareIcon, PlusIcon, UserCheck, UserRoundPlus } from 'lucide-react';
 import clsx from 'clsx';
 import { Badge } from '../ui/badge';
-import { followCompany, getFollowCompanyStatus, unfollowCompany } from '@/services/apiServices';
 import { toast } from 'sonner';
 import { CompanyFollowerModal } from './CompanyFollowerModal';
+import {
+    getFollowCompanyStatus,
+    useFollowCompany,
+    useUnfollowCompany,
+} from '@/services/follow/followService';
 
 interface CompanyHeaderProps {
     isEditable?: boolean;
@@ -27,8 +31,34 @@ const CompanyHeader = ({
 }: CompanyHeaderProps) => {
     const [isBannerError, setIsBannerError] = useState(false);
     const [isLogoError, setIsLogoError] = useState(false);
-    const [isFollowing, setIsFollowing] = useState<boolean>(companyProfile.isFollowing ?? false);
+    const [isFollowing, setIsFollowing] = useState<boolean>(false);
     const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const pendingActionRef = useRef<'follow' | 'unfollow' | null>(null);
+
+    const followMutation = useFollowCompany({
+        onSuccess: () => {
+            setIsFollowing(true);
+        },
+        onError: (error) => {
+            setIsFollowing(false);
+            toast.error('Failed to follow company', {
+                description: error.message,
+            });
+        },
+    });
+
+    const unfollowMutation = useUnfollowCompany({
+        onSuccess: () => {
+            setIsFollowing(false);
+        },
+        onError: (error) => {
+            setIsFollowing(true);
+            toast.error('Failed to unfollow company', {
+                description: error.message,
+            });
+        },
+    });
 
     useEffect(() => {
         if (isEditable) return setIsFollowing(false);
@@ -40,26 +70,36 @@ const CompanyHeader = ({
         getIsFollowing();
     }, []);
 
-    const handleFollow = async () => {
-        const { success, message } = await followCompany(companyProfile.companyId);
-        if (success) {
-            setIsFollowing(true);
-        } else {
-            toast.error('Failed to follow company', {
-                description: message,
-            });
-        }
-    };
+    useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+        };
+    }, []);
 
-    const handleUnfollow = async () => {
-        const { success, message } = await unfollowCompany(companyProfile.companyId);
-        if (success) {
-            setIsFollowing(false);
-        } else {
-            toast.error('Failed to unfollow company', {
-                description: message,
-            });
+    const debouncedFollowAction = useCallback(() => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
         }
+
+        debounceTimerRef.current = setTimeout(() => {
+            const action = pendingActionRef.current;
+            if (action === 'follow') {
+                followMutation.mutate(companyProfile.companyId);
+            } else if (action === 'unfollow') {
+                unfollowMutation.mutate(companyProfile.companyId);
+            }
+            pendingActionRef.current = null;
+        }, 500);
+    }, [followMutation, unfollowMutation, companyProfile.companyId]);
+
+    const handleFollowToggle = () => {
+        setIsFollowing((prev) => !prev);
+
+        pendingActionRef.current = isFollowing ? 'unfollow' : 'follow';
+
+        debouncedFollowAction();
     };
 
     return (
@@ -174,7 +214,7 @@ const CompanyHeader = ({
                                         isFollowing &&
                                             'bg-primary text-primary-foreground hover:bg-primary/90'
                                     )}
-                                    onClick={isFollowing ? handleUnfollow : handleFollow}
+                                    onClick={handleFollowToggle}
                                 >
                                     {isFollowing ? (
                                         <>

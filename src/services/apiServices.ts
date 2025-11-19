@@ -128,57 +128,6 @@ export const patchCompanyMedia = async (id: string, formData: FormData) => {
     }
 };
 
-export const followCompany = async (companyId: string) => {
-    try {
-        const { data } = await api.post(`/companies/${companyId}/follow`);
-        return {
-            status: 'success',
-            success: true,
-            data: data.data,
-        };
-    } catch (error: any) {
-        return {
-            status: 'error',
-            success: false,
-            message: error?.message || 'Unknown error',
-        };
-    }
-};
-
-export const unfollowCompany = async (companyId: string) => {
-    try {
-        const { data } = await api.delete(`/companies/${companyId}/follow`);
-        return {
-            status: 'success',
-            success: true,
-            data: data.data,
-        };
-    } catch (error: any) {
-        return {
-            status: 'error',
-            success: false,
-            message: error?.message || 'Unknown error',
-        };
-    }
-};
-
-export const getFollowCompanyStatus = async (companyId: string) => {
-    try {
-        const { data } = await api.get(`/companies/${companyId}/is-following`);
-        return {
-            status: 'success',
-            success: true,
-            data: data.data,
-        };
-    } catch (error: any) {
-        return {
-            status: 'error',
-            success: false,
-            message: error?.message || 'Unknown error',
-        };
-    }
-};
-
 ///////////////////////////////////////////////////////////////////////
 // USER
 export const patchUserProfile = async (formData: EditUserProfileFormData) => {

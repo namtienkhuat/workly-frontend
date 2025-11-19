@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 interface MessageInputProps {
     onSend: (content: string) => void;
@@ -51,7 +51,11 @@ export function MessageInput({
                 disabled={disabled}
                 className="flex-1"
             />
-            <Button onClick={handleSend} disabled={!messageInput.trim() || disabled} className="px-4">
+            <Button
+                onClick={handleSend}
+                disabled={!messageInput.trim() || disabled}
+                className="px-4"
+            >
                 <Send className="h-4 w-4" />
             </Button>
         </div>

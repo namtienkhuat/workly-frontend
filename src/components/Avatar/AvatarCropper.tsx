@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { Button } from '../ui/Button';
+import { Button } from '../ui/button';
 
 interface AvatarCropperProps {
     onCropComplete?: (croppedImageBlob: Blob) => void;

@@ -11,19 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Eye, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Follower } from '@/types/global';
-import { useGetCompanyFollowers } from '@/services/follow/followService';
-import UserInfoSkeleton from '../user/UserInfoSkeleton';
-import UserInfo from '../user/UserInfo';
+import { useGetUserFollowers } from '@/services/follow/followService';
+import UserInfoSkeleton from '@/components/user/UserInfoSkeleton';
+import UserInfo from '@/components/user/UserInfo';
 
-interface CompanyFollowerModalProps {
-    companyId: string;
+interface UserFollowerModalProps {
+    userId: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     followersCount: number;
 }
 
-export const CompanyFollowerModal: React.FC<CompanyFollowerModalProps> = ({
-    companyId,
+export const UserFollowerModal: React.FC<UserFollowerModalProps> = ({
+    userId,
     open,
     onOpenChange,
     followersCount,
@@ -42,17 +42,7 @@ export const CompanyFollowerModal: React.FC<CompanyFollowerModalProps> = ({
         data: followersData,
         isLoading,
         isFetching,
-    } = useGetCompanyFollowers(companyId, pagination, open);
-
-    // useEffect(() => {
-    //     if (open) {
-    //         setFollowers([]);
-    //         setPagination({ page: 1, limit: 10 });
-    //         setHasNextPage(true);
-    //         // Refetch to ensure fresh data when modal opens
-    //         refetch();
-    //     }
-    // }, [open, refetch]);
+    } = useGetUserFollowers(userId, pagination, open);
 
     useEffect(() => {
         if (followersData?.data?.followers) {
@@ -110,7 +100,7 @@ export const CompanyFollowerModal: React.FC<CompanyFollowerModalProps> = ({
                     <DialogTitle>Followers</DialogTitle>
                     <DialogDescription>
                         {followersCount.toLocaleString()}{' '}
-                        {followersCount === 1 ? 'person' : 'people'} following this company
+                        {followersCount === 1 ? 'person' : 'people'} following this user
                     </DialogDescription>
                 </DialogHeader>
 
