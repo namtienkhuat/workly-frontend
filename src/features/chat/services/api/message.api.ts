@@ -1,5 +1,4 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getSession } from 'next-auth/react';
 import {
     Message,
     SendMessagePayload,
@@ -8,6 +7,7 @@ import {
     PaginatedResponse,
 } from '../../types';
 import { CHAT_CONSTANTS, API_ENDPOINTS } from '../../constants/chat.constants';
+import { TOKEN_KEY } from '@/constants';
 
 // Create axios instance for message API
 const messageApi = axios.create({
@@ -21,9 +21,9 @@ const messageApi = axios.create({
 // Request interceptor to add auth token
 messageApi.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
-        const token = await getSession();
-        if (token?.apiToken) {
-            config.headers.Authorization = `Bearer ${token.apiToken}`;
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
@@ -78,4 +78,3 @@ export const messageApiService = {
         return response.data;
     },
 };
-

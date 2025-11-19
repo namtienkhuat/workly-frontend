@@ -1,5 +1,4 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getSession } from 'next-auth/react';
 import {
     Conversation,
     CreateConversationPayload,
@@ -8,6 +7,7 @@ import {
     PaginatedResponse,
 } from '../../types';
 import { CHAT_CONSTANTS, API_ENDPOINTS } from '../../constants/chat.constants';
+import { TOKEN_KEY } from '@/constants';
 
 // Create axios instance for conversation API
 const conversationApi = axios.create({
@@ -21,9 +21,9 @@ const conversationApi = axios.create({
 // Request interceptor to add auth token
 conversationApi.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
-        const token = await getSession();
-        if (token?.apiToken) {
-            config.headers.Authorization = `Bearer ${token.apiToken}`;
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
@@ -79,4 +79,3 @@ export const conversationApiService = {
         return response.data;
     },
 };
-

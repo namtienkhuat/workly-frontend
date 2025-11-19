@@ -1,7 +1,6 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -10,6 +9,7 @@ import { useChat } from '@/features/chat/hooks/useChat';
 import { ParticipantType } from '@/features/chat/types';
 import { LoadingSpinner } from '@/features/chat/components/ui';
 import { getUserById } from '@/features/chat';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ChatUserPage() {
     const params = useParams();
@@ -17,7 +17,7 @@ export default function ChatUserPage() {
 
     const userId = params.userId as string;
 
-    const { status } = useSession();
+    const { isLoading: isLoadingAuth } = useAuth();
 
     const {
         fullChatId,
@@ -69,7 +69,7 @@ export default function ChatUserPage() {
         router.push('/chat');
     };
 
-    if (status === 'loading') {
+    if (isLoadingAuth) {
         return (
             <div className="flex h-screen items-center justify-center bg-gray-50">
                 <LoadingSpinner size="lg" message="Đang tải..." />

@@ -1,17 +1,17 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 
 import { ConversationList } from '@/features/chat/components';
 import { useChat } from '@/features/chat/hooks/useChat';
 import { LoadingSpinner } from '@/features/chat/components/ui';
 import { ParticipantType } from '@/features/chat/types';
 import { MessageCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ChatPage() {
     const router = useRouter();
-    const { status } = useSession();
+    const { isLoading } = useAuth();
 
     const { conversations, isLoadingConversations, currentUserId } = useChat();
 
@@ -27,7 +27,7 @@ export default function ChatPage() {
         }
     };
 
-    if (status === 'loading') {
+    if (isLoading) {
         return (
             <div className="flex h-screen items-center justify-center bg-gray-50">
                 <LoadingSpinner size="lg" message="Đang tải..." />
