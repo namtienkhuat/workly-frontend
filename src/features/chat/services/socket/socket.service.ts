@@ -15,13 +15,21 @@ class SocketService {
     /**
      * Connect to socket server
      */
-    connect(token: string): Socket {
+    connect(token: string, userId?: string, userType?: string): Socket {
         if (this.socket?.connected) {
             return this.socket;
         }
 
+        const auth: any = { token };
+        
+        // Add identity override if provided (for company chat)
+        if (userId && userType) {
+            auth.userId = userId;
+            auth.userType = userType;
+        }
+
         this.socket = io(CHAT_CONSTANTS.SOCKET_URL, {
-            auth: { token },
+            auth,
             reconnection: true,
             reconnectionDelay: CHAT_CONSTANTS.RECONNECT_DELAY,
             reconnectionDelayMax: CHAT_CONSTANTS.RECONNECT_DELAY_MAX,
