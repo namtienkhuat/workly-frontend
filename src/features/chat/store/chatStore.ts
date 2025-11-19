@@ -128,7 +128,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         }
 
         set({ currentUserId: userId, currentUserType: userType });
-        socketService.connect(token);
+        socketService.connect(token, userId, userType);
 
         // Setup socket event listeners
         socketService.onNewMessage((data: NewMessageData) => {
@@ -193,9 +193,25 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     loadConversations: async () => {
         try {
             set({ isLoadingConversations: true });
+
+            const { currentUserId, currentUserType } = get();
+            console.log('📥 Loading conversations with identity:', {
+                currentUserId,
+                currentUserType,
+                timestamp: new Date().toISOString(),
+            });
+
             const response = await conversationApiService.getConversations({
                 page: CHAT_CONSTANTS.DEFAULT_PAGE,
                 limit: CHAT_CONSTANTS.DEFAULT_PAGE_SIZE,
+            });
+
+            console.log('📨 Received conversations from API:', {
+                count: response.data.length,
+                conversations: response.data.map((c) => ({
+                    id: c._id,
+                    participants: c.participants,
+                })),
             });
 
             const conversationsMap: Record<string, ConversationWithUserInfo> = {};

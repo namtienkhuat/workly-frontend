@@ -4,4 +4,4 @@ export * from './message';
 export * from './conversation';
 export * from './ChatView';
 export * from './ChatInitializer';
-
+export * from './CompanyChatInitializer';
