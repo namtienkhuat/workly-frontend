@@ -5,6 +5,11 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { InsertOneResult } from "mongodb";
 import commentService from "@/services/comment/commentService";
+import StringUtil from "@/utils/StringUtil";
+import Image from "next/image";
+import { Avatar, AvatarFallback } from "../ui/avatar";
+import { getInitials } from "@/utils/helpers";
+import { useAuth } from "@/hooks/useAuth";
 
 const commentSchema = z.object({
     desc: z
@@ -25,12 +30,11 @@ const CommentUpload = ({
     postId,
     onCommentAdded,
     parentId = null,
-    userProfilePicture = "/default-avatar.png",
-    userName = "Me",
 }: CommentUploadProps) => {
     const [commentText, setCommentText] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [loading, setLoading] = useState(false);
+    const { isLoading: isLoadingAuth, user: currentUser } = useAuth();
 
     const handleSend = useCallback(async () => {
         if (loading) return;
@@ -74,13 +78,25 @@ const CommentUpload = ({
     };
 
     return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 ">
             <div className="flex items-center gap-3">
-                <img
-                    src={userProfilePicture}
-                    alt={userName}
-                    className="w-10 h-10 rounded-full object-cover"
-                />
+                {currentUser?.avatarUrl ? (
+                    <Image
+                        src={currentUser!!.avatarUrl}
+                        alt={currentUser!!.name}
+                        loading="lazy"
+                        width={15}
+                        height={15}
+                        className="object-cover"
+                    />
+                ) : (
+                    <Avatar className="h-[50px] w-[50px] rounded-full border-muted text-2xl" style={{ backgroundColor: StringUtil.getRandomColor() }}
+                    >
+                        <AvatarFallback className="text-2xl bg-white">
+                            {getInitials(currentUser!!.name)}
+                        </AvatarFallback>
+                    </Avatar>
+                )}
 
                 <input
                     type="text"

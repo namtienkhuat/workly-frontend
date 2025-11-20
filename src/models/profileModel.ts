@@ -30,6 +30,15 @@ export interface PostResponse {
     content: string;
     media_url: MediaItem[];
     visibility: PostVisibilityType;
+    author: AuthorData;
+    created_at: string;
+    totalComments: number;
+}
+
+export interface AuthorData {
+    userId: string;
+    name: string;
+    avatarUrl?: string;
 }
 
 export interface Follower {

@@ -7,6 +7,13 @@ import { CreatePostDTO, PostVisibilityType } from "@/models/profileModel";
 import { apiPaths } from "@/configs/route";
 import ProfileService from "@/services/profile/profileService";
 import { toast } from "sonner";
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@/hooks/useAuth";
+import Image from "next/image";
+import { Avatar, AvatarFallback } from "../ui/avatar";
+import { getInitials } from "@/utils/helpers";
+import StringUtil from "@/utils/StringUtil";
 
 type PreviewFile = {
     url: string;
@@ -24,14 +31,28 @@ export default function UploadPostModal() {
     const [previews, setPreviews] = useState<PreviewFile[]>([]);
     const [progress, setProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
+    const { isLoading: isLoadingAuth, user: currentUser } = useAuth();
+
     const [mode, setMode] = useState<PostVisibilityType>(PostVisibilityType.PUBLIC); // trạng thái mặc định
+    // Define Zod schema
+    const formSchema = z.object({
+        description: z.string().min(1, "Description is required"),
+        media: z.any()
+    })
+
+
+    type FormData = z.infer<typeof formSchema>;
 
     const {
         register,
         handleSubmit,
         reset,
-        formState: { isSubmitting },
-    } = useForm<FormData>();
+        formState: { errors, isSubmitting },
+    } = useForm<FormData>(
+        {
+            resolver: zodResolver(formSchema),
+        }
+    );
 
     const uploadFiles = async (files: FileList): Promise<any> => {
         try {
@@ -92,6 +113,7 @@ export default function UploadPostModal() {
             setPreviews((prev) => [...prev, ...newPreviews]);
         }
     };
+
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
         if (
@@ -115,16 +137,38 @@ export default function UploadPostModal() {
             return newPreviews;
         });
     };
-
+    if (isLoadingAuth) {
+        return <div>loading....</div>
+    }
     return (
         <div className="text-center py-[50px]">
             {/* Nút mở modal */}
-            <button
-                onClick={() => setIsOpen(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-            >
-                Tạo bài viết
-            </button>
+            <div className="flex">
+                <div className=" mr-5">
+                    {currentUser!!.avatarUrl ? (
+                        <Image
+                            src={currentUser!!.avatarUrl}
+                            alt={currentUser!!.name}
+                            loading="lazy"
+                            width={15}
+                            height={15}
+                            className="object-cover"
+                        />
+                    ) : (
+                        <Avatar className="h-[50px] w-[50px] rounded-full border-muted text-2xl" style={{ backgroundColor: StringUtil.getRandomColor() }}
+                        >
+                            <AvatarFallback className="text-2xl bg-white">
+                                {getInitials(currentUser!!.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                    )}</div>
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="bg-[#DCDCDC] font-bold text-white text-left px-4 py-2 w-full border border-[#D3D3D3] rounded-lg hover:bg-[#D3D3D3] transition"
+                >
+                    What are you thinking?
+                </button>
+            </div>
 
             {/* Overlay + Modal */}
             {isOpen && (
@@ -155,6 +199,9 @@ export default function UploadPostModal() {
                                 className="w-full p-3 border rounded-md dark:bg-gray-800 dark:text-white"
                                 rows={6}
                             />
+                            {errors.description && (
+                                <p className="text-red-500 text-sm">{errors.description.message}</p>
+                            )}
                             <div className="max-w-sm mx-auto mt-6">
                                 <label htmlFor="mode" className="block mb-2 text-sm font-medium text-gray-700">
                                     Chọn chế độ

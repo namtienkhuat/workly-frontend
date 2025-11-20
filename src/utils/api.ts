@@ -11,6 +11,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:80
 
 const api = axios.create({
     baseURL: BACKEND_URL,
+    withCredentials: true,
     timeout: 15000,
 });
 
