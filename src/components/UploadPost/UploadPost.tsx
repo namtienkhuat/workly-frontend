@@ -26,7 +26,7 @@ type FormData = {
     media: FileList;
 };
 
-export default function UploadPostModal() {
+export default function UploadPostModal({ reload }: { reload: any }) {
     const [isOpen, setIsOpen] = useState(false);
     const [previews, setPreviews] = useState<PreviewFile[]>([]);
     const [progress, setProgress] = useState(0);
@@ -88,7 +88,7 @@ export default function UploadPostModal() {
             };
 
             await ProfileService.addPost(postData);
-
+            reload()
             reset();
             setPreviews([]);
             setProgress(0);

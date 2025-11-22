@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
     FavoriteBorderOutlined as FavoriteBorderOutlinedIcon,
@@ -18,19 +18,32 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { getInitials } from '@/utils/helpers';
 import ShowMore from './ShowMore';
+import { useAuth } from '@/hooks/useAuth';
+import likeService from '@/services/like/likeService';
+import { toast } from 'sonner';
+import ReactPlayer from 'react-player';
+
 
 interface PostProps {
     post: PostResponse;
+    reload: any;
 }
 
-const Post = ({ post }: PostProps) => {
+const Post = ({ post, reload }: PostProps) => {
     const [liked, setLiked] = useState(false);
     const [commentOpen, setCommentOpen] = useState(false);
-    const [videoUrl, setVideoUrl] = useState<string | null>(null);
-    const [loadingVideo, setLoadingVideo] = useState(false);
+    const [open, setOpen] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [totalComment, setTotalComment] = useState(0);
-    useEffect(() => { setTotalComment(post.totalComments) }, [post])
+    const [totalLikes, setTotalLikes] = useState<string[]>(post.totalLikes.map(l => l.authorId));
+    const { isLoading: isLoadingAuth, user: currentUser } = useAuth();
+
+
+    useEffect(() => {
+        setLiked(totalLikes?.includes(currentUser?.userId ?? "") || false)
+        setTotalComment(post.totalComments);
+    }, [post, currentUser, totalLikes])
+
     const mediaList = post.media_url || [];
     const currentMedia = mediaList[currentIndex];
     function formatToDate(dateTimeString: string) {
@@ -45,52 +58,69 @@ const Post = ({ post }: PostProps) => {
     }
     const handlePrev = () => {
         setCurrentIndex((prev) => (prev === 0 ? mediaList.length - 1 : prev - 1));
-        setVideoUrl(null);
     };
 
     const handleNext = () => {
         setCurrentIndex((prev) => (prev === mediaList.length - 1 ? 0 : prev + 1));
-        setVideoUrl(null);
     };
 
-    const handlePlayVideo = async (video: string) => {
+
+    const onDeletePost = async () => {
         try {
-            setLoadingVideo(true);
-            const res = await ProfileService.getApiStream(video);
-            const data = await res.json();
-            setVideoUrl(data.streamUrl);
+            await ProfileService.deletePost(post._id);
+            toast.success("delete post success");
+
+            reload();
         } catch (err) {
-            console.error('Error streaming video:', err);
-        } finally {
-            setLoadingVideo(false);
+            toast.error("delete post fail");
+        }
+    };
+    const handleLike = async () => {
+        if (!currentUser?.userId) return alert("Bạn cần đăng nhập");
+
+        if (liked) {
+            await likeService.unlikePost(post._id).then(() => {
+                setLiked(false);
+                setTotalLikes(prev => prev.filter(id => id !== currentUser.userId));
+            }).catch(() => {
+                toast("unlike error")
+            })
+        } else {
+            await likeService.likePost(post._id).then(() => {
+                setLiked(true);
+                setTotalLikes(prev => [...prev, currentUser.userId]);
+            }).catch(() => {
+                toast("unlike error")
+            })
         }
     };
 
     return (
         <div className="shadow-[0_0_25px_-10px_rgba(0,0,0,0.38)] py-8 px-8 rounded-[20px] bg-white text-black dark:bg-gray-900 dark:text-white">
-            <div className=" flex justify-between">
+            <div className="flex justify-between relative">
+
                 {/* User Info */}
                 <div className="flex items-center">
-                    <div className='mr-4'>
-                        <div >
-                            {post.author.avatarUrl ? (
-                                <Image
-                                    src={post.author!!.avatarUrl}
-                                    alt={post.author!!.name}
-                                    loading="lazy"
-                                    width={15}
-                                    height={15}
-                                    className="object-cover"
-                                />
-                            ) : (
-                                <Avatar className="h-[50px] w-[50px] rounded-full border-muted text-2xl" style={{ backgroundColor: StringUtil.getRandomColor() }}
-                                >
-                                    <AvatarFallback className="text-2xl bg-white">
-                                        {getInitials(post.author.name)}
-                                    </AvatarFallback>
-                                </Avatar>
-                            )}</div>
-
+                    <div className="mr-4">
+                        {post.author?.avatarUrl ? (
+                            <Image
+                                src={post.author!!.avatarUrl}
+                                alt={post.author!!.name}
+                                loading="lazy"
+                                width={15}
+                                height={15}
+                                className="object-cover"
+                            />
+                        ) : (
+                            <Avatar
+                                className="h-[50px] w-[50px] rounded-full border-muted text-2xl"
+                                style={{ backgroundColor: StringUtil.getRandomColor() }}
+                            >
+                                <AvatarFallback className="text-2xl bg-white">
+                                    {getInitials(post.author?.name)}
+                                </AvatarFallback>
+                            </Avatar>
+                        )}
                     </div>
 
                     <div className="flex flex-col">
@@ -98,12 +128,40 @@ const Post = ({ post }: PostProps) => {
                             href={`/profile/${post._id}`}
                             className="no-underline text-inherit"
                         >
-                            <span className="font-medium">{post._id}</span>
+                            <span className="font-medium">{post.author?.name}</span>
                         </Link>
                         <span className="text-xs text-gray-500">{formatToDate(post.created_at)}</span>
                     </div>
                 </div>
-                <MoreHorizIcon className="cursor-pointer" />
+
+                {/* More options */}
+                <MoreHorizIcon
+                    className="cursor-pointer"
+                    onClick={() => setOpen(!open)}
+                />
+
+                {open && (
+                    <div className="absolute right-0 top-8 w-24 bg-white border rounded shadow-lg z-10">
+                        <button
+                            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                            onClick={() => {
+                                setOpen(false);
+                                // onEdit();
+                            }}
+                        >
+                            Edit
+                        </button>
+                        <button
+                            className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500"
+                            onClick={() => {
+                                setOpen(false);
+                                onDeletePost();
+                            }}
+                        >
+                            Delete
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Content */}
@@ -111,8 +169,9 @@ const Post = ({ post }: PostProps) => {
                 <ShowMore text={post.content} />
 
                 {currentMedia && (
-                    <div className="relative w-full max-h-[500px] rounded-lg overflow-hidden mt-5 bg-black">
-                        {/* Điều hướng media */}
+                    <div className="relative w-full max-h-[500px] rounded-lg overflow-hidden mt-5 bg-black flex justify-center">
+
+                        {/* Image controls */}
                         {mediaList.length > 1 && (
                             <>
                                 <button
@@ -140,47 +199,28 @@ const Post = ({ post }: PostProps) => {
                         )}
 
                         {/* VIDEO */}
-                        {currentMedia.type === MediaType.VIDEO && (
-                            <>
-                                {!videoUrl ? (
-                                    <div className="relative">
-                                        <img
-                                            src={`${StringUtil.generatePath(currentMedia.url)}?thumbnail=true`}
-                                            alt="video thumbnail"
-                                            className="w-full max-h-[500px] object-cover opacity-80"
-                                        />
-                                        <button
-                                            disabled={loadingVideo}
-                                            onClick={() =>
-                                                handlePlayVideo(
-                                                    StringUtil.generatePath(currentMedia.url)
-                                                )
-                                            }
-                                            className="absolute inset-0 flex items-center justify-center text-white bg-black/40 hover:bg-black/60 transition"
-                                        >
-                                            {loadingVideo ? 'Loading...' : '▶️'}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <video
-                                        src={videoUrl}
-                                        controls
-                                        autoPlay
-                                        className="w-full max-h-[500px] object-contain"
-                                    />
-                                )}
-                            </>
-                        )}
+                        <div className='max-w-[95%]'>
+                            {currentMedia.type === MediaType.VIDEO && (
+                                <ReactPlayer
+                                    src={StringUtil.generatePathVideo(currentMedia.url)}
+                                    playing={false}
+                                    controls
+                                    width="100%"
+                                    height="500px"
+                                    className="object-contain"
+                                />
+                            )}
+                        </div>
                     </div>
                 )}
 
-                {/* Dots indicator */}
+                {/* Slider dots */}
                 {mediaList.length > 1 && (
                     <div className="flex justify-center gap-2 mt-2">
                         {mediaList.map((_, i) => (
                             <div
                                 key={i}
-                                className={`w-2 h-2 rounded-full ${i === currentIndex ? 'bg-blue-500' : 'bg-gray-400'
+                                className={`w-2 h-2 rounded-full ${i === currentIndex ? "bg-blue-500" : "bg-gray-400"
                                     }`}
                             />
                         ))}
@@ -188,18 +228,11 @@ const Post = ({ post }: PostProps) => {
                 )}
             </div>
 
-            {/* Info */}
+            {/* Likes - Comments - Share */}
             <div className="flex items-center gap-5 text-sm">
-                <div
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => setLiked(!liked)}
-                >
-                    {liked ? (
-                        <FavoriteOutlinedIcon className="text-red-500" />
-                    ) : (
-                        <FavoriteBorderOutlinedIcon />
-                    )}
-                    <span>12 Likes</span>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={handleLike}>
+                    {liked ? <FavoriteOutlinedIcon className="text-red-500" /> : <FavoriteBorderOutlinedIcon />}
+                    <span>{totalLikes.length}</span>
                 </div>
 
                 <div
@@ -216,8 +249,13 @@ const Post = ({ post }: PostProps) => {
                 </div>
             </div>
 
-            {/* Comments */}
-            {commentOpen && <Comments postId={post._id} onAddComment={() => setTotalComment((prev) => { return prev + 1 })} />}
+            {/* Comments section */}
+            {commentOpen && (
+                <Comments
+                    postId={post._id}
+                    onAddComment={() => setTotalComment((prev) => prev + 1)}
+                />
+            )}
         </div>
     );
 };

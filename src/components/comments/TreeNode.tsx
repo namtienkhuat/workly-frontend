@@ -39,72 +39,75 @@ export const convertToTreeNode = (
 ): DataNode => ({
     key: comment.id,
     title: (
-        <div className="flex flex-col gap-3">
-            <div className="flex items-center">
-                {comment.author.avatarUrl ? (
-                    <Image
-                        src={comment.author.avatarUrl}
-                        alt={comment.author.name}
-                        loading="lazy"
-                        width={40}
-                        height={40}
-                        className="object-cover rounded-full"
-                    />
-                ) : (
-                    <Avatar
-                        className="h-[40px] w-[40px] rounded-full border-muted"
-                        style={{ backgroundColor: StringUtil.getRandomColor() }}
-                    >
-                        <AvatarFallback className="text-xl bg-white">
-                            {getInitials(comment.author.name)}
-                        </AvatarFallback>
-                    </Avatar>
-                )}
-                <div className="ml-4">
-                    <strong>{comment.author.name}</strong>
-                    <span className="text-gray-400 text-xs ml-2">
-                        {/* Thêm thời gian nếu có */}
-                    </span>
-                </div>
-            </div>
-
-            <p className="text-gray-600">{comment.content}</p>
-
-            <div className="flex gap-2 text-gray-500 text-sm">
-                <span>👍 {0}</span>
-                <span>💬 {comment.children?.length || 0}</span>
-                <button
-                    className="text-blue-500 hover:underline"
-                    onClick={() => onReply(comment.id)}
+        <div className="flex">
+            {comment.author.avatarUrl ? (
+                <Image
+                    src={comment.author.avatarUrl}
+                    alt={comment.author.name}
+                    loading="lazy"
+                    width={40}
+                    height={40}
+                    className="object-cover rounded-full"
+                />
+            ) : (
+                <Avatar
+                    className="h-[40px] w-[40px] rounded-full border-muted"
+                    style={{ backgroundColor: StringUtil.getRandomColor() }}
                 >
-                    Reply
-                </button>
-            </div>
-
-            {/* Hiển thị form reply khi click Reply */}
-            {replyToCommentId === comment.id && (
-                <div className="mt-2 pl-4 border-l-2 border-gray-200">
-                    <CommentUpload
-                        postId={postId}
-                        parentId={comment.id}  // ✅ Truyền parentId vào đây
-                        onCommentAdded={handleCommentAdded}
-                    />
-                </div>
+                    <AvatarFallback className="text-xl bg-white">
+                        {getInitials(comment.author.name)}
+                    </AvatarFallback>
+                </Avatar>
             )}
+            <div className="flex flex-col gap-3 w-full">
+
+                <div>
+                    <div className="flex items-center">
+                        <div className="ml-4">
+                            <strong>{comment.author.name}</strong>
+                            <span className="text-gray-400 text-xs ml-2">
+                                {comment.createdAt ? formatToDate(comment.createdAt) : ''}
+                            </span>
+                            <p className="text-gray-600">{comment.content}</p>
+
+                        </div>
+                    </div>
+
+                </div>
+                <div className="flex gap-2 text-gray-500 text-sm justify-end">
+                    <span>💬 {comment.children?.length || 0}</span>
+                    <button
+                        className="text-blue-500 hover:underline"
+                        onClick={() => onReply(comment.id)}
+                    >
+                        Reply
+                    </button>
+                </div>
+
+                {/* Hiển thị form reply khi click Reply */}
+                {replyToCommentId === comment.id && (
+                    <div className="mt-2 pl-4 border-l-2 border-gray-200 w-full">
+                        <CommentUpload
+                            postId={postId}
+                            parentId={comment.id}  // ✅ Truyền parentId vào đây
+                            onCommentAdded={handleCommentAdded}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     ),
     children: comment.children?.map((child) =>
         convertToTreeNode(child, onReply, replyToCommentId, postId, handleCommentAdded)
     ),
 });
+export function formatToDate(dateTimeString: string) {
+    const date = new Date(dateTimeString);
 
-// Helper function format ngày
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
     const day = date.getDate();
     const month = date.getMonth() + 1;
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
 
-    return `${day} tháng ${month} lúc ${hours}:${minutes}`;
+    return `${day} month ${month} at ${hours}:${minutes}`;
 }

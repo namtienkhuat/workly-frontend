@@ -1,7 +1,10 @@
+import Posts from '@/components/posts/Posts';
 import React from 'react';
 
 const CompanyPost = () => {
-    return <div>CompanyPost</div>;
+    return <div>
+        <Posts company='READ' />
+    </div>;
 };
 
 export default CompanyPost;

@@ -1,3 +1,5 @@
+import { FeelingResponse } from "./likeModel";
+
 export enum AuthorType {
     USER = 'USER',
     COMPANY = 'COMPANY'
@@ -33,6 +35,7 @@ export interface PostResponse {
     author: AuthorData;
     created_at: string;
     totalComments: number;
+    totalLikes: FeelingResponse[];
 }
 
 export interface AuthorData {

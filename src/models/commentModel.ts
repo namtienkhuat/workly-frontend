@@ -1,3 +1,4 @@
+import { FeelingResponse } from "./likeModel";
 import { AuthorData } from "./profileModel";
 
 export interface Comment {
@@ -15,6 +16,7 @@ export interface CommentResponse {
     replyCount: number;
     parentId: string | null;
     author: AuthorData;
+    createdAt: string;
 }
 export interface CreateCommentDTO {
     postId: string;

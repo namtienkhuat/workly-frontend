@@ -4,6 +4,9 @@ export default {
     generatePath(path: string): string {
         return BACKEND_URL + "/posts/uploads/images/" + path
     },
+    generatePathVideo(path: string): string {
+        return BACKEND_URL + "/posts/video/" + path
+    },
 
     getRandomColor(): string {
         const letters = "0123456789ABCDEF";

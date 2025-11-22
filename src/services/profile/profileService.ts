@@ -8,7 +8,12 @@ export default {
 	async getApiStream(params: any): Promise<any> {
 		return getData({ url: apiPaths.getVideo, params: params })
 	},
-
+	async deletePost(postId: string): Promise<any> {
+		return postData({
+			url: apiPaths.deletePost,
+			data: { postId }
+		});
+	},
 	async addPost(add: CreatePostDTO): Promise<ResponseData<InsertOneResult>> {
 		return postData({
 			url: apiPaths.createPost,
