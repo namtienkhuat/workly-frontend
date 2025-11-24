@@ -29,6 +29,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { patchChangePassword, deleteMyAccount } from '@/services/apiServices';
 import { ChangePasswordFormData, changePasswordSchema } from '@/lib/validations/user';
+import { useAuth } from '@/hooks/useAuth';
+import { LogOut } from 'lucide-react';
 
 const ChangePasswordForm = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -59,8 +61,8 @@ const ChangePasswordForm = () => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-2xl">Change Password</CardTitle>
-                <CardDescription>Update your account password.</CardDescription>
+                <CardTitle>Change Password</CardTitle>
+                <CardDescription>Update your account password to keep it secure.</CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <CardContent className="space-y-4">
@@ -98,6 +100,58 @@ const ChangePasswordForm = () => {
     );
 };
 
+const SignOutSection = () => {
+    const router = useRouter();
+    const { logout } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSignOut = async () => {
+        setIsLoading(true);
+        try {
+            await logout();
+            toast.success('Signed out successfully');
+            router.push('/');
+        } catch (error) {
+            toast.error('Failed to sign out');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Sign Out</CardTitle>
+                <CardDescription>Sign out from your account on this device.</CardDescription>
+            </CardHeader>
+            <CardFooter className="flex justify-end">
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline" disabled={isLoading}>
+                            <LogOut className="w-4 h-4 mr-2" />
+                            Sign Out
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Sign out from your account?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                You will be redirected to the login page.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleSignOut}>
+                                Yes, sign me out
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardFooter>
+        </Card>
+    );
+};
+
 const DeleteAccountSection = () => {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -120,7 +174,7 @@ const DeleteAccountSection = () => {
     return (
         <Card className="border-red-500">
             <CardHeader>
-                <CardTitle className="text-2xl text-red-600">Danger Zone</CardTitle>
+                <CardTitle className="text-red-600">Delete Account</CardTitle>
                 <CardDescription>
                     Permanently delete your account and all associated data. This action cannot be
                     undone.
@@ -137,8 +191,8 @@ const DeleteAccountSection = () => {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                This action is permanent. All your data, posts, and connections will
-                                be deleted forever.
+                                This action is permanent and cannot be undone. All your data,
+                                posts, connections, and profile information will be deleted forever.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -157,13 +211,22 @@ const DeleteAccountSection = () => {
     );
 };
 
-const AccountPage = () => {
+const AccountSettingsPage = () => {
     return (
         <div className="space-y-6">
+            <div>
+                <h2 className="text-3xl font-bold tracking-tight">Account Settings</h2>
+                <p className="text-muted-foreground mt-1">
+                    Manage your account security and preferences.
+                </p>
+            </div>
+
             <ChangePasswordForm />
+            <SignOutSection />
             <DeleteAccountSection />
         </div>
     );
 };
 
-export default AccountPage;
+export default AccountSettingsPage;
+

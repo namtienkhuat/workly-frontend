@@ -4,6 +4,8 @@ import { z } from 'zod';
 export const editUserProfileSchema = z.object({
     name: z.string().min(1, 'Name is required.'),
     email: z.string().email('Invalid email address.'),
+    headline: z.string().optional(),
+    bio: z.string().optional(),
     // username: z.string().min(3, 'Username must be at least 3 characters.'),
 });
 

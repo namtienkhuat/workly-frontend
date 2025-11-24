@@ -2,10 +2,20 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Home, Users, Briefcase, MessageCircle, Building2, User } from 'lucide-react';
+import {
+    Search,
+    Home,
+    Users,
+    Briefcase,
+    MessageCircle,
+    Building2,
+    User,
+    Settings,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { UnreadBadge } from '@/features/chat/components/ui/UnreadBadge';
 
 interface NavItem {
     name: string;
@@ -56,6 +66,12 @@ export const Header = () => {
                 href: user?.userId ? `/profile/${user.userId}` : '/profile',
                 icon: User,
                 label: 'Me',
+            },
+            {
+                name: 'settings',
+                href: '/settings',
+                icon: Settings,
+                label: 'Settings',
             },
         ],
         [user?.userId]
@@ -139,6 +155,9 @@ export const Header = () => {
                                         )}
                                         strokeWidth={active ? 2.5 : 2}
                                     />
+                                    {item.name === 'messaging' && (
+                                        <UnreadBadge className="absolute top-1.5 right-2 bg-red-500 px-1.5" />
+                                    )}
                                     <span className="text-[10px] md:text-xs font-medium leading-tight">
                                         {item.label}
                                     </span>

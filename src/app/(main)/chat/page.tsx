@@ -1,46 +1,24 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-
 import { ConversationList } from '@/features/chat/components';
 import { useChat } from '@/features/chat/hooks/useChat';
 import { LoadingSpinner } from '@/features/chat/components/ui';
 import { ParticipantType } from '@/features/chat/types';
 import { MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { TOKEN_KEY } from '@/constants';
 
 export default function ChatPage() {
     const router = useRouter();
-    const { isLoading, user } = useAuth();
+    const { isLoading } = useAuth();
 
     const { 
         conversations, 
         isLoadingConversations, 
         currentUserId, 
-        initialize, 
-        loadConversations,
         deleteConversation 
     } = useChat();
     console.log('Conversations:', conversations);
-
-    // Initialize socket and load conversations
-    useEffect(() => {
-        if (!user?.userId) return;
-
-        const token = localStorage.getItem(TOKEN_KEY);
-        if (!token) {
-            console.error('No token found');
-            return;
-        }
-
-        // Initialize socket connection
-        initialize(user.userId, ParticipantType.USER, token);
-
-        // Load conversations
-        loadConversations();
-    }, [user?.userId, initialize, loadConversations]);
 
     const handleSelectConversation = (conversationId: string) => {
         const conversation = conversations.find((c) => c._id === conversationId);

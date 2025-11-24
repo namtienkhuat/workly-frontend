@@ -10,7 +10,15 @@ import {
 import { UserProfile } from '@/types/global';
 import { getInitials } from '@/utils/helpers';
 import clsx from 'clsx';
-import { EditIcon, MessageSquareIcon, PlusIcon, UserCheck, UserRoundPlus } from 'lucide-react';
+import {
+    Briefcase,
+    EditIcon,
+    MapPin,
+    MessageSquareIcon,
+    PlusIcon,
+    UserCheck,
+    UserRoundPlus,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
@@ -181,9 +189,22 @@ const ProfleHeader = ({
                 <div className="mt-2 flex items-start justify-between gap-16">
                     <div className="flex flex-col">
                         <CardTitle className="text-3xl">{userProfile.name}</CardTitle>
-                        <CardDescription className="text-sm text-muted-foreground mt-1">
-                            {userProfile?.headline}
-                        </CardDescription>
+                        {userProfile?.headline && (
+                            <div className="flex items-center gap-2 mt-2">
+                                <Briefcase className="w-4 h-4 text-muted-foreground" />
+                                <CardDescription className="text-sm font-medium">
+                                    {userProfile.headline}
+                                </CardDescription>
+                            </div>
+                        )}
+                        {userProfile?.bio && (
+                            <div className="flex items-center gap-2 mt-1.5">
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                <CardDescription className="text-sm text-muted-foreground/80">
+                                    {userProfile.bio}
+                                </CardDescription>
+                            </div>
+                        )}
                         <CardDescription className="text-sm text-muted-foreground mt-1">
                             {(userProfile.followersCount || 0) > 0 && (
                                 <Badge
@@ -206,7 +227,9 @@ const ProfleHeader = ({
                             </Button>
                         ) : isEditable ? (
                             <Button variant="outline" asChild>
-                                <Link href={`/profile/${userProfile.userId}`}>View Profile</Link>
+                                <Link href={`/profile/${userProfile.userId}`}>
+                                    View Profile
+                                </Link>
                             </Button>
                         ) : (
                             <div className="flex items-center gap-2">
