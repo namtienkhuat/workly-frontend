@@ -27,9 +27,11 @@ import ReactPlayer from 'react-player';
 interface PostProps {
     post: PostResponse;
     reload: any;
+    type: string;
+    authorId: string;
 }
 
-const Post = ({ post, reload }: PostProps) => {
+const Post = ({ post, reload, type, authorId }: PostProps) => {
     const [liked, setLiked] = useState(false);
     const [commentOpen, setCommentOpen] = useState(false);
     const [open, setOpen] = useState(false);
@@ -37,6 +39,7 @@ const Post = ({ post, reload }: PostProps) => {
     const [totalComment, setTotalComment] = useState(0);
     const [totalLikes, setTotalLikes] = useState<string[]>(post.totalLikes.map(l => l.authorId));
     const { isLoading: isLoadingAuth, user: currentUser } = useAuth();
+    console.log("post", post);
 
 
     useEffect(() => {
@@ -67,7 +70,7 @@ const Post = ({ post, reload }: PostProps) => {
 
     const onDeletePost = async () => {
         try {
-            await ProfileService.deletePost(post._id);
+            await ProfileService.deletePost(post._id, type, authorId);
             toast.success("delete post success");
 
             reload();

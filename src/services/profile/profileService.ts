@@ -8,10 +8,10 @@ export default {
 	async getApiStream(params: any): Promise<any> {
 		return getData({ url: apiPaths.getVideo, params: params })
 	},
-	async deletePost(postId: string): Promise<any> {
+	async deletePost(postId: string, type: string, authorId: string): Promise<any> {
 		return postData({
 			url: apiPaths.deletePost,
-			data: { postId }
+			data: { postId, author_type: type, author_id: authorId }
 		});
 	},
 	async addPost(add: CreatePostDTO): Promise<ResponseData<InsertOneResult>> {
@@ -27,5 +27,9 @@ export default {
 
 	async getTest(params: any): Promise<any> {
 		return getData({ url: apiPaths.getTest, params: params })
+	},
+
+	async checkAccessCompany(companyId: string): Promise<any> {
+		return getData({ url: `${apiPaths.checkAccessCompany}${companyId}/check-access` })
 	}
 }

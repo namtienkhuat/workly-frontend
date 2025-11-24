@@ -3,7 +3,7 @@ import React from 'react';
 
 const CompanyPost = () => {
     return <div>
-        <Posts company='READ' />
+        <Posts type='COMPANY' />
     </div>;
 };
 

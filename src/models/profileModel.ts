@@ -22,6 +22,8 @@ export interface MediaItem {
 }
 
 export interface CreatePostDTO {
+    author_id: string;
+    author_type: string;
     content: string;
     media_url: MediaItem[];
     visibility: PostVisibilityType;

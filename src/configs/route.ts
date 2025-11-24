@@ -17,6 +17,7 @@ export const apiPaths = {
     getProfilePost: "/posts/myPost",
     uploadFile: "/posts/uploads",
     getTest: "/posts/test",
+    checkAccessCompany: "/companies/",
     createPost: "/posts/create",
     deletePost: "/posts/delete",
     likePost: "/posts/like",

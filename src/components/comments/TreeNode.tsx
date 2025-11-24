@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "../ui/avatar";
 import StringUtil from "@/utils/StringUtil";
 import { getInitials } from "@/utils/helpers";
 import CommentUpload from "./AddComment";
+import { MoreHorizontalIcon } from "lucide-react";
 
 export type CommentTree = CommentResponse & {
     children?: CommentTree[];
@@ -35,7 +36,9 @@ export const convertToTreeNode = (
     onReply: (id: string) => void,
     replyToCommentId: string | null,
     postId: string,
-    handleCommentAdded: any
+    handleCommentAdded: any,
+    openMenuId: string | null,
+    setOpenMenuId: (id: string) => void
 ): DataNode => ({
     key: comment.id,
     title: (
@@ -61,7 +64,7 @@ export const convertToTreeNode = (
             )}
             <div className="flex flex-col gap-3 w-full">
 
-                <div>
+                <div className="flex">
                     <div className="flex items-center">
                         <div className="ml-4">
                             <strong>{comment.author.name}</strong>
@@ -69,10 +72,34 @@ export const convertToTreeNode = (
                                 {comment.createdAt ? formatToDate(comment.createdAt) : ''}
                             </span>
                             <p className="text-gray-600">{comment.content}</p>
-
                         </div>
                     </div>
+                    {/* Menu ... */}
+                    <MoreHorizontalIcon
+                        className="cursor-pointer ml-2"
+                        onClick={() => {
+                            console.log(comment.id);
+                            setOpenMenuId(comment.id)
+                        }
+                        }
+                    />
 
+                    {openMenuId === comment.id && (
+                        <div className="absolute right-0 top-8 w-24 bg-white border rounded shadow-lg z-10">
+                            <button
+                                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                                onClick={() => setOpenMenuId('')}
+                            >
+                                Edit
+                            </button>
+                            <button
+                                className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500"
+                                onClick={() => setOpenMenuId('')}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-2 text-gray-500 text-sm justify-end">
                     <span>💬 {comment.children?.length || 0}</span>
@@ -98,12 +125,11 @@ export const convertToTreeNode = (
         </div>
     ),
     children: comment.children?.map((child) =>
-        convertToTreeNode(child, onReply, replyToCommentId, postId, handleCommentAdded)
+        convertToTreeNode(child, onReply, replyToCommentId, postId, handleCommentAdded, openMenuId, setOpenMenuId)
     ),
 });
 export function formatToDate(dateTimeString: string) {
     const date = new Date(dateTimeString);
-
     const day = date.getDate();
     const month = date.getMonth() + 1;
     const hours = String(date.getHours()).padStart(2, '0');

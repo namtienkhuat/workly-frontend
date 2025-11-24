@@ -108,6 +108,7 @@ const CompanyJobs = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Select
                     isMulti
+                    isSearchable={true}
                     options={skillOptions}
                     value={selectedSkills}
                     onChange={(options) => setSelectedSkills(options as OptionType[])}
@@ -115,6 +116,7 @@ const CompanyJobs = () => {
                 />
                 <Select
                     isMulti
+                    isSearchable={true}
                     options={industryOptions}
                     value={selectedIndustries}
                     onChange={(options) => setSelectedIndustries(options as OptionType[])}

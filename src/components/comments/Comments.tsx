@@ -19,6 +19,7 @@ type CommentsProps = {
 
 const Comments = ({ postId, onAddComment }: CommentsProps) => {
   const [comments, setComments] = useState<DataNode[]>([]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [replyToCommentId, setReplyToCommentId] = useState<string | null>(null);
   const handleCommentAdded = async (result: InsertOneResult) => {
@@ -108,7 +109,11 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
           (id: string) => setReplyToCommentId(id),
           replyToCommentId || '',
           postId,
-          handleCommentAdded
+          handleCommentAdded,
+          openMenuId || '',
+          (id: string) => {
+            setOpenMenuId(id)
+          }
         )
       );
 

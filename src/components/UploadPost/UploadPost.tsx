@@ -26,15 +26,14 @@ type FormData = {
     media: FileList;
 };
 
-export default function UploadPostModal({ reload }: { reload: any }) {
+export default function UploadPostModal({ reload, type, authorId }: { reload: any, type: string, authorId: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const [previews, setPreviews] = useState<PreviewFile[]>([]);
     const [progress, setProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
     const { isLoading: isLoadingAuth, user: currentUser } = useAuth();
 
-    const [mode, setMode] = useState<PostVisibilityType>(PostVisibilityType.PUBLIC); // trạng thái mặc định
-    // Define Zod schema
+    const [mode, setMode] = useState<PostVisibilityType>(PostVisibilityType.PUBLIC);
     const formSchema = z.object({
         description: z.string().min(1, "Description is required"),
         media: z.any()
@@ -85,6 +84,8 @@ export default function UploadPostModal({ reload }: { reload: any }) {
                 content: data.description,
                 media_url: mediaUrls.length > 0 ? mediaUrls : [],
                 visibility: mode ? mode : PostVisibilityType.PUBLIC,
+                author_type: type,
+                author_id: authorId
             };
 
             await ProfileService.addPost(postData);
