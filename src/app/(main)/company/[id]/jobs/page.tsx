@@ -1,10 +1,13 @@
-
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import JobCard from "../../_components/JopCard";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import InfiniteScroll from "react-infinite-scroll-component";
+import { Job } from "@/models/jobModel";
+import JobService from "@/services/job/jobService";
+import { useParams } from "next/navigation";
 
 interface OptionType {
     value: string;
@@ -28,11 +31,9 @@ const timeOptions: OptionType[] = [
     { value: "FullTime", label: "Full-time" },
 ];
 
-
 const searchTypeOptions: OptionType[] = [
     { value: "title", label: "Job Title" },
     { value: "location", label: "Location" },
-    { value: "keyword", label: "Keyword" },
 ];
 
 const CompanyJobs = () => {
@@ -43,48 +44,129 @@ const CompanyJobs = () => {
     const [selectedSkills, setSelectedSkills] = useState<OptionType[]>([]);
     const [selectedIndustries, setSelectedIndustries] = useState<OptionType[]>([]);
     const [selectedTimesOption, setSelectedTimesOption] = useState<OptionType[]>([]);
+    const params = useParams();
 
-    const fakeJobs = [
-        {
-            title: "Frontend Developer",
-            company: "TechCorp",
-            location: "Hanoi, Vietnam",
-            type: "Full-time",
-            salary: "$1200 - $1500",
-            description:
-                "We are looking for a skilled Frontend Developer to join our dynamic team. You will work with React, TailwindCSS and contribute to building responsive web applications.",
-            postedAt: "2 days ago",
-        },
-        {
-            title: "Backend Engineer",
-            company: "InnovateX",
-            location: "Ho Chi Minh City, Vietnam",
-            type: "Full-time",
-            salary: "$1500 - $2000",
-            description:
-                "Join our backend team to design and implement scalable APIs, work with Node.js, MongoDB, and ensure high performance of our applications.",
-            postedAt: "5 days ago",
-        },
-        {
-            title: "UI/UX Designer",
-            company: "CreativeStudio",
-            location: "Remote",
-            type: "Part-time",
-            salary: "$800 - $1000",
-            description:
-                "We are looking for a creative UI/UX designer to design user-friendly interfaces for web and mobile apps. Must have experience with Figma or Adobe XD.",
-            postedAt: "1 week ago",
-        },
-    ];
-    const handleSearch = () => {
-        console.log({
-            searchText,
-            searchType: searchType?.value,
-            skills: selectedSkills.map(s => s.value),
-            industries: selectedIndustries.map(i => i.value),
-        });
-        // Gọi API tìm kiếm job ở đây
+
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [pageSize] = useState(10);
+    const [searchParams, setSearchParams] = useState<any>({});
+
+    // Load jobs on component mount
+    useEffect(() => {
+        fetchInitialJobs();
+    }, []);
+
+    const buildSearchParams = () => {
+        return {
+            companyId: params.id,
+            search: searchText || "",
+            searchType: searchType?.value || "",
+            skills: selectedSkills.map(s => s.value).join(","),
+            industries: selectedIndustries.map(i => i.value).join(","),
+            jobType: selectedTimesOption.map(t => t.value).join(","),
+            startAt: startTime ? startTime.toISOString() : "",
+            endAt: endTime ? endTime.toISOString() : "",
+        };
     };
+
+    const fetchInitialJobs = async () => {
+        try {
+            setLoading(true);
+            const params = {
+                page: 1,
+                pageSize: pageSize,
+                ...buildSearchParams(),
+            };
+
+            const response = await JobService.getCompanyJobPaging(params);
+
+            if (response) {
+                setJobs(response.data || []);
+                setCurrentPage(1);
+                setHasMore(response.totalPage ? response.totalPage > 1 : false);
+                setSearchParams(buildSearchParams());
+            }
+        } catch (error) {
+            console.error("Error fetching jobs:", error);
+            setJobs([]);
+            setHasMore(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchMoreJobs = async () => {
+        if (loading) return;
+
+        try {
+            const nextPage = currentPage + 1;
+            const params = {
+                page: nextPage,
+                pageSize: pageSize,
+                ...searchParams,
+            };
+
+            const response = await JobService.getCompanyJobPaging(params);
+
+            if (response && response.data) {
+                setJobs(prevJobs => [...prevJobs, ...response.data]);
+                setCurrentPage(nextPage);
+                setHasMore(response.totalPage ? nextPage < response.totalPage : false);
+            } else {
+                setHasMore(false);
+            }
+        } catch (error) {
+            console.error("Error fetching more jobs:", error);
+            setHasMore(false);
+        }
+    };
+
+    const handleSearch = () => {
+        setCurrentPage(1);
+        setHasMore(true);
+        fetchInitialJobs();
+    };
+
+    const handleReset = () => {
+        setSearchText("");
+        setSearchType(searchTypeOptions[0] ?? null);
+        setStartTime(null);
+        setEndTime(null);
+        setSelectedSkills([]);
+        setSelectedIndustries([]);
+        setSelectedTimesOption([]);
+        setCurrentPage(1);
+        setHasMore(true);
+    };
+    useEffect(() => {
+        // Chỉ chạy khi tất cả các state reset về giá trị ban đầu
+        if (
+            searchText === "" &&
+            searchType === (searchTypeOptions[0] ?? null) &&
+            startTime === null &&
+            endTime === null &&
+            selectedSkills.length === 0 &&
+            selectedIndustries.length === 0 &&
+            selectedTimesOption.length === 0 &&
+            currentPage === 1 &&
+            hasMore === true
+        ) {
+            fetchInitialJobs();
+        }
+    }, [
+        searchText,
+        searchType,
+        startTime,
+        endTime,
+        selectedSkills,
+        selectedIndustries,
+        selectedTimesOption,
+        currentPage,
+        hasMore
+    ]);
     return (
         <div className="p-4 max-w-4xl mx-auto space-y-6">
             {/* Input text + search type */}
@@ -95,6 +177,7 @@ const CompanyJobs = () => {
                     placeholder="Enter search..."
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                 />
                 <Select
                     options={searchTypeOptions}
@@ -130,6 +213,8 @@ const CompanyJobs = () => {
                     placeholder="Select Job type..."
                 />
             </div>
+
+            {/* Date filters and buttons */}
             <div className="flex items-center justify-between">
                 <div className="flex">
                     <div className="mr-10">
@@ -138,7 +223,7 @@ const CompanyJobs = () => {
                             selected={startTime}
                             onChange={(date) => setStartTime(date)}
                             showTimeSelect
-                            dateFormat="yyyy-MM-dd HH:mm"
+                            dateFormat="yyyy-MM-dd"
                             placeholderText="Select start time"
                             className="border px-2 py-1 rounded w-full"
                         />
@@ -150,29 +235,65 @@ const CompanyJobs = () => {
                             selected={endTime}
                             onChange={(date) => setEndTime(date)}
                             showTimeSelect
-                            dateFormat="yyyy-MM-dd HH:mm"
+                            dateFormat="yyyy-MM-dd"
                             placeholderText="Select end time"
                             className="border px-2 py-1 rounded w-full"
                         />
                     </div>
                 </div>
-                <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
-                    onClick={handleSearch}
-                >
-                    Search
-                </button>
-            </div>
-            <div className="mt-6">
-                <div className="flex flex-col gap-6 p-4">
-                    {fakeJobs.map((job, idx) => (
-                        <JobCard key={idx} {...job} />
-                    ))}
+                <div className="flex gap-2">
+                    <button
+                        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                        onClick={handleReset}
+                    >
+                        Reset
+                    </button>
+                    <button
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        onClick={handleSearch}
+                        disabled={loading}
+                    >
+                        {loading ? "Searching..." : "Search"}
+                    </button>
                 </div>
+            </div>
+
+            {/* Results with Infinite Scroll */}
+            <div className="mt-6">
+                {loading && jobs.length === 0 ? (
+                    <div className="text-center py-8">
+                        <p className="text-gray-600">Loading jobs...</p>
+                    </div>
+                ) : jobs.length > 0 ? (
+                    <InfiniteScroll
+                        dataLength={jobs.length}
+                        next={fetchMoreJobs}
+                        hasMore={hasMore}
+                        loader={
+                            <div className="text-center py-4">
+                                <p className="text-gray-600">Loading more jobs...</p>
+                            </div>
+                        }
+                        endMessage={
+                            <div className="text-center py-4">
+                                <p className="text-gray-500">No more jobs to load</p>
+                            </div>
+                        }
+                    >
+                        <div className="flex flex-col gap-6 p-4">
+                            {jobs.map((job, idx) => (
+                                <JobCard key={job.id || idx} {...job} />
+                            ))}
+                        </div>
+                    </InfiniteScroll>
+                ) : (
+                    <div className="text-center py-8">
+                        <p className="text-gray-600">No jobs found. Try adjusting your search filters.</p>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
-
 
 export default CompanyJobs;

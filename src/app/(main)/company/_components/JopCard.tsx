@@ -1,63 +1,70 @@
 import React from "react";
-import { FaMapMarkerAlt, FaBriefcase, FaDollarSign } from "react-icons/fa";
+import { Job } from "@/models/jobModel";
 
-interface JobCardProps {
-    title: string;
-    company: string;
-    location: string;
-    type: string;
-    salary?: string;
-    description: string;
-    postedAt: string;
-}
-
-const JobCard: React.FC<JobCardProps> = ({
+const JobCard: React.FC<Job> = ({
+    id,
     title,
-    location,
-    company,
-    type,
+    content,
+    industry,
     salary,
-    description,
-    postedAt,
+    location,
+    jobType,
+    skills,
 }) => {
     return (
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 hover:shadow-2xl transition-shadow duration-300">
+        <div className="border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow bg-white">
+            {/* Header */}
             <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
-                    <p className="text-gray-500 dark:text-gray-400">{company}</p>
+                <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        {title}
+                    </h3>
+                    <p className="text-gray-700 font-medium">{industry}</p>
                 </div>
-                <span className="text-sm text-gray-400">{postedAt}</span>
             </div>
 
-            {/* Job Info */}
-            <div className="flex flex-wrap gap-4 mb-4 text-gray-600 dark:text-gray-300 text-sm">
+            {/* Details */}
+            <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-600">
                 <div className="flex items-center gap-1">
-                    <FaMapMarkerAlt className="text-gray-400" />
-                    {location}
+                    <span>📍</span>
+                    <span>{location}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <FaBriefcase className="text-gray-400" />
-                    {type}
+                    <span>💼</span>
+                    <span>{jobType}</span>
                 </div>
-                {salary && (
-                    <div className="flex items-center gap-1">
-                        <FaDollarSign className="text-gray-400" />
-                        {salary}
-                    </div>
-                )}
+                <div className="flex items-center gap-1">
+                    <span>💰</span>
+                    <span>{salary}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <span>🏢</span>
+                    <span>{industry}</span>
+                </div>
             </div>
 
             {/* Description */}
-            <p className="text-gray-700 dark:text-gray-200 line-clamp-3">{description}</p>
+            <p className="text-gray-600 mb-4 line-clamp-3">{content}</p>
 
-            {/* Action Buttons */}
-            <div className="mt-4 flex gap-3">
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            {/* Skills */}
+            <div className="flex flex-wrap gap-2 mb-4">
+                {skills.map((skill, index) => (
+                    <span
+                        key={index}
+                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
+                    >
+                        {skill}
+                    </span>
+                ))}
+            </div>
+
+            {/* Action Button */}
+            <div className="flex gap-3">
+                <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
                     Apply
                 </button>
-                <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                    Save
+                <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors">
+                    Save Job
                 </button>
             </div>
         </div>

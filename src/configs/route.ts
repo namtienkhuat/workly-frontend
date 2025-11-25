@@ -20,6 +20,7 @@ export const apiPaths = {
     checkAccessCompany: "/companies/",
     createPost: "/posts/create",
     deletePost: "/posts/delete",
+    getJobByCompanyId: "/jobs/myJob",
     likePost: "/posts/like",
     unLikePost: "/posts/unlike",
     listLikePost: "/posts/like/list",
