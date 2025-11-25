@@ -7,7 +7,8 @@ export interface UserProfile {
     name?: string;
     firstName?: string;
     lastName?: string;
-    avatar?: string;
+    avatar?: string; // Legacy field name
+    avatarUrl?: string; // Backend field name
     phoneNumber?: string;
     dateOfBirth?: string;
     address?: string;
@@ -19,7 +20,8 @@ export interface CompanyProfile {
     id: string;
     name: string;
     email?: string;
-    logo?: string;
+    logo?: string; // Legacy field name
+    logoUrl?: string; // Backend field name
     description?: string;
     website?: string;
     address?: string;

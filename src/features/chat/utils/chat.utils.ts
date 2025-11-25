@@ -11,6 +11,20 @@ export function convertParticipantProfileToUserInfo(
 ): UserInfo {
     if (participantType === ParticipantType.USER) {
         const userProfile = profile as UserProfile;
+        // Backend uses avatarUrl, frontend expects avatar
+        const avatar = userProfile.avatarUrl || userProfile.avatar;
+
+        if (avatar) {
+            console.log('✅ Avatar found for user:', userProfile.userId, avatar);
+        } else {
+            console.warn(
+                '⚠️ No avatar found for user:',
+                userProfile.userId,
+                'Profile:',
+                userProfile
+            );
+        }
+
         return {
             id: userProfile.userId,
             type: ParticipantType.USER,
@@ -19,17 +33,31 @@ export function convertParticipantProfileToUserInfo(
                 `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim() ||
                 'Người dùng',
             email: userProfile.email,
-            avatar: userProfile.avatar,
+            avatar, // Map avatarUrl to avatar
             isOnline,
         };
     } else {
         const companyProfile = profile as CompanyProfile;
+        // Backend uses logoUrl, frontend expects logo/avatar
+        const logo = companyProfile.logoUrl || companyProfile.logo;
+
+        if (logo) {
+            console.log('✅ Logo found for company:', companyProfile.companyId, logo);
+        } else {
+            console.warn(
+                '⚠️ No logo found for company:',
+                companyProfile.companyId,
+                'Profile:',
+                companyProfile
+            );
+        }
+
         return {
             id: companyProfile.companyId,
             type: ParticipantType.COMPANY,
             name: companyProfile.name || 'Công ty',
             email: companyProfile.email || '',
-            avatar: companyProfile.logo,
+            avatar: logo, // Map logoUrl to avatar
             isOnline,
         };
     }

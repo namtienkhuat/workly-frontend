@@ -1,14 +1,14 @@
 // Chat feature constants
 
 export const CHAT_CONSTANTS = {
-    // Socket
-    SOCKET_URL: process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:3003',
+    // Socket - Connect directly to service for real-time performance (bypass Kong)
+    SOCKET_URL: process.env.NEXT_PUBLIC_CHAT_SOCKET_URL || 'http://localhost:8005',
     MAX_RECONNECT_ATTEMPTS: 5,
     RECONNECT_DELAY: 1000,
     RECONNECT_DELAY_MAX: 5000,
 
-    // API
-    CHAT_API_URL: process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:3003/api',
+    // API - Use Kong Gateway for REST APIs
+    CHAT_API_URL: process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:8000/api/v1',
 
     // Pagination
     DEFAULT_PAGE_SIZE: 50,
@@ -76,4 +76,3 @@ export const API_ENDPOINTS = {
     MARK_MESSAGE_READ: (messageId: string) => `/messages/${messageId}/read`,
     MARK_ALL_READ: (conversationId: string) => `/messages/conversations/${conversationId}/read-all`,
 } as const;
-

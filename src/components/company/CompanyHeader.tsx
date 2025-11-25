@@ -201,12 +201,11 @@ const CompanyHeader = ({
                             </Button>
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    // onClick={}
-                                >
-                                    <MessageSquareIcon className="w-4 h-4" />
-                                    Message
+                                <Button variant="outline" asChild>
+                                    <Link href={`/chat/company/${companyProfile.companyId}`}>
+                                        <MessageSquareIcon className="w-4 h-4" />
+                                        Message
+                                    </Link>
                                 </Button>
                                 <Button
                                     variant="outline"

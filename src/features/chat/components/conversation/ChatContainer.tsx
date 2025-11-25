@@ -33,7 +33,7 @@ export function ChatContainer({
 
     if (!otherParticipant) {
         return (
-            <div className={`flex flex-col bg-white ${className}`}>
+            <div className={`flex flex-col ${className}`}>
                 <ConversationHeader onClose={onClose} onMinimize={onMinimize} showMinimize={showMinimize} />
                 <div className="flex-1">
                     <EmptyState message="Không tìm thấy cuộc trò chuyện" />
@@ -43,7 +43,7 @@ export function ChatContainer({
     }
 
     return (
-        <div className={`flex flex-col bg-white ${className}`}>
+        <div className={`flex flex-col ${className}`}>
             {/* Header */}
             <ConversationHeader
                 user={otherParticipant}
@@ -53,7 +53,7 @@ export function ChatContainer({
             />
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 bg-muted/20">
                 <MessageList
                     messages={messages}
                     currentUserId={currentUserId}

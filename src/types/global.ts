@@ -55,6 +55,7 @@ export interface UserProfile {
     userId: string;
     name: string;
     headline?: string;
+    bio?: string;
     email: string;
     username: string;
     role: UserRole;

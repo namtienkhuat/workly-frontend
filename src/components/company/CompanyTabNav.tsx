@@ -1,7 +1,10 @@
+'use client';
+
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useChatStore } from '@/features/chat/store';
 
 interface TabConfig {
     id: string;
@@ -14,6 +17,7 @@ const adminTabs: TabConfig[] = [
     { id: 'admins', label: 'Admins' },
     { id: 'posts', label: 'Posts' },
     { id: 'hiring', label: 'Hiring' },
+    { id: 'messages', label: 'Messages' },
     { id: 'candidates', label: 'Candidates' },
 ];
 
@@ -32,6 +36,19 @@ const CompanyTabNav = ({
 }) => {
     const tabs = isAdmin ? adminTabs : viewTabs;
     const pathname = usePathname();
+    const conversationsMap = useChatStore((state) => state.conversations);
+
+    // Calculate total unread messages for this company
+    const unreadMessagesCount = useMemo(() => {
+        if (!isAdmin) return 0;
+
+        const conversations = Object.values(conversationsMap);
+        return conversations.reduce((total, conversation) => {
+            // Check if this company is a participant in the conversation
+            const companyUnread = conversation.unreadCount[companyId] || 0;
+            return total + companyUnread;
+        }, 0);
+    }, [conversationsMap, companyId, isAdmin]);
 
     return (
         <div className="w-full border-t">
@@ -42,18 +59,25 @@ const CompanyTabNav = ({
                         const tabPath = tab.id ? `/${tab.id}` : '';
                         const href = `/${baseRoute}/${companyId}${tabPath}`;
                         const isActive = pathname === href;
+                        const showBadge = tab.id === 'messages' && unreadMessagesCount > 0;
+
                         return (
                             <li key={tab.id}>
                                 <Link
                                     href={href}
                                     className={clsx(
-                                        'block px-2 py-1 font-semibold border-b-2 transition',
+                                        'relative block px-2 py-1 font-semibold border-b-2 transition',
                                         isActive
                                             ? 'border-primary text-primary'
                                             : 'border-transparent text-muted-foreground hover:text-primary hover:border-primary'
                                     )}
                                 >
                                     {tab.label}
+                                    {showBadge && (
+                                        <span className="absolute -top-1 -right-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                                            {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                                        </span>
+                                    )}
                                 </Link>
                             </li>
                         );

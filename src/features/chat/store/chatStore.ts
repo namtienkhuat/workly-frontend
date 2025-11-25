@@ -36,6 +36,8 @@ interface ChatStore {
     // Conversations
     conversations: Record<string, ConversationWithUserInfo>;
     isLoadingConversations: boolean;
+    hiddenConversations: Set<string>; // conversationIds hidden by current user
+    clearedConversations: Set<string>; // conversationIds with cleared history
 
     // Messages
     messages: Record<string, Message[]>; // conversationId -> messages[]
@@ -64,6 +66,7 @@ interface ChatStore {
         participantType: ParticipantType
     ) => Promise<Conversation>;
     deleteConversation: (conversationId: string) => Promise<void>;
+    unhideConversation: (conversationId: string, keepUnreadCount?: boolean) => void;
     updateConversation: (conversation: Conversation) => void;
     updateConversationUserInfo: (conversationId: string, userInfo: Partial<any>) => void;
 
@@ -97,6 +100,27 @@ interface ChatStore {
     isTyping: (conversationId: string) => boolean;
 }
 
+// Helper to load hidden conversations from localStorage
+function loadHiddenConversations(): Set<string> {
+    if (typeof window === 'undefined') return new Set();
+    try {
+        const stored = localStorage.getItem('hiddenConversations');
+        return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+        return new Set();
+    }
+}
+
+// Helper to save hidden conversations to localStorage
+function saveHiddenConversations(hidden: Set<string>) {
+    if (typeof window === 'undefined') return;
+    try {
+        localStorage.setItem('hiddenConversations', JSON.stringify([...hidden]));
+    } catch (error) {
+        console.error('Failed to save hidden conversations:', error);
+    }
+}
+
 export const useChatStore = create<ChatStore>((set, get) => ({
     // ==================== INITIAL STATE ====================
     currentUserId: null,
@@ -104,6 +128,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     isSocketConnected: false,
     conversations: {},
     isLoadingConversations: false,
+    hiddenConversations: loadHiddenConversations(),
+    clearedConversations: new Set<string>(),
     messages: {},
     isLoadingMessages: {},
     userInfoCache: {},
@@ -124,24 +150,131 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     initializeSocket: (userId: string, userType: ParticipantType, token: string) => {
         const { currentUserId } = get();
         if (currentUserId === userId && socketService.isConnected()) {
+            set({ isSocketConnected: true });
             return;
         }
 
         set({ currentUserId: userId, currentUserType: userType });
-        socketService.connect(token);
+        const socket = socketService.connect(token, userId, userType);
+
+        // Setup connection handler
+        socket.on('connect', () => {
+            console.log('✅ Socket connected successfully');
+            set({ isSocketConnected: true });
+        });
+
+        socket.on('disconnect', () => {
+            console.log('❌ Socket disconnected');
+            set({ isSocketConnected: false });
+        });
 
         // Setup socket event listeners
         socketService.onNewMessage((data: NewMessageData) => {
+            const { hiddenConversations, currentUserId, openChatWindows } = get();
+            const isFromOther = data.message.sender.id !== currentUserId;
+            const isConversationOpen = openChatWindows.includes(data.conversationId);
+
+            console.log('📨 New message received:', {
+                conversationId: data.conversationId,
+                senderId: data.message.sender.id,
+                currentUserId,
+                isFromOther,
+                isConversationOpen,
+            });
+
+            // If message is from another user and conversation is hidden, unhide it
+            if (hiddenConversations.has(data.conversationId) && isFromOther) {
+                console.log(
+                    '📬 New message from hidden conversation, unhiding:',
+                    data.conversationId
+                );
+                get().unhideConversation(data.conversationId);
+            }
+
             get().addMessage(data.message);
 
             // Update conversation's lastMessage
             const conversation = get().conversations[data.conversationId];
             if (conversation) {
+                // Only increment unread count if message is from another user
+                // AND currentUserId is set (to avoid incrementing for own messages)
+                let updatedUnreadCount = conversation.unreadCount;
+
+                if (isFromOther && currentUserId) {
+                    // If conversation is open (user is viewing it), auto-mark as read
+                    if (isConversationOpen) {
+                        // User is actively viewing this conversation - mark all messages as read immediately
+                        updatedUnreadCount = {
+                            ...conversation.unreadCount,
+                            [currentUserId]: 0,
+                        };
+
+                        // Auto-mark all messages as read via API (async, don't wait)
+                        messageApiService
+                            .markAllMessagesAsRead(data.conversationId)
+                            .catch((err) => {
+                                console.error('Failed to auto-mark messages as read:', err);
+                            });
+
+                        // Also update all messages status in local state
+                        const currentMessages = get().messages[data.conversationId] || [];
+                        const updatedMessages = currentMessages.map((msg) => {
+                            // Only update messages that are not from current user and not already read
+                            if (
+                                msg.sender.id !== currentUserId &&
+                                msg.status !== MessageStatus.READ
+                            ) {
+                                const readByEntry = {
+                                    participantId: currentUserId,
+                                    readAt: new Date(),
+                                };
+                                return {
+                                    ...msg,
+                                    readBy: [...msg.readBy, readByEntry],
+                                    status: MessageStatus.READ,
+                                };
+                            }
+                            return msg;
+                        });
+
+                        set({
+                            messages: {
+                                ...get().messages,
+                                [data.conversationId]: updatedMessages,
+                            },
+                        });
+
+                        console.log(`👁️ Auto-marked all messages as read (conversation is open)`);
+                    } else {
+                        // Conversation is not open - increment unread count
+                        updatedUnreadCount = {
+                            ...conversation.unreadCount,
+                            [currentUserId]: (conversation.unreadCount[currentUserId] || 0) + 1,
+                        };
+                        console.log(
+                            `📈 Incremented unread count for user ${currentUserId}:`,
+                            updatedUnreadCount[currentUserId]
+                        );
+                    }
+                } else if (!isFromOther && currentUserId) {
+                    // Message from current user - ensure unread count is 0 for sender
+                    updatedUnreadCount = {
+                        ...conversation.unreadCount,
+                        [currentUserId]: 0,
+                    };
+                    console.log(`✅ Reset unread count for sender ${currentUserId} (own message)`);
+                }
+
                 get().updateConversation({
                     ...conversation,
                     lastMessage: data.message,
                     lastMessageAt: data.message.createdAt,
+                    unreadCount: updatedUnreadCount,
                 });
+            } else {
+                // Conversation not in store yet, reload conversations to get it
+                console.log('New conversation detected, reloading conversations...');
+                get().loadConversations();
             }
         });
 
@@ -180,8 +313,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         socketService.onUserOffline((data) => {
             get().updateConversationUserInfo(data.userId, { isOnline: false });
         });
-
-        set({ isSocketConnected: true });
     },
 
     disconnectSocket: () => {
@@ -193,9 +324,25 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     loadConversations: async () => {
         try {
             set({ isLoadingConversations: true });
+
+            const { currentUserId, currentUserType } = get();
+            console.log('📥 Loading conversations with identity:', {
+                currentUserId,
+                currentUserType,
+                timestamp: new Date().toISOString(),
+            });
+
             const response = await conversationApiService.getConversations({
                 page: CHAT_CONSTANTS.DEFAULT_PAGE,
                 limit: CHAT_CONSTANTS.DEFAULT_PAGE_SIZE,
+            });
+
+            console.log('📨 Received conversations from API:', {
+                count: response.data.length,
+                conversations: response.data.map((c) => ({
+                    id: c._id,
+                    participants: c.participants,
+                })),
             });
 
             const conversationsMap: Record<string, ConversationWithUserInfo> = {};
@@ -227,6 +374,41 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             );
 
             set({ conversations: conversationsMap });
+
+            // Auto-unhide conversations with new unread messages
+            const { hiddenConversations } = get();
+            const conversationsToUnhide: string[] = [];
+
+            Object.entries(conversationsMap).forEach(([convId, conv]) => {
+                if (hiddenConversations.has(convId)) {
+                    // Check if there are unread messages for current user
+                    const unreadCount = currentUserId ? conv.unreadCount[currentUserId] || 0 : 0;
+                    if (unreadCount > 0) {
+                        console.log(
+                            `📬 Auto-unhiding conversation ${convId} with ${unreadCount} unread messages`
+                        );
+                        conversationsToUnhide.push(convId);
+                    }
+                }
+            });
+
+            // Unhide conversations with new messages (keep unread count from server)
+            conversationsToUnhide.forEach((convId) => {
+                get().unhideConversation(convId, true); // Keep unread count
+            });
+
+            // Join all conversation rooms to receive real-time messages
+            Object.keys(conversationsMap).forEach((conversationId) => {
+                // Skip joining hidden conversations (without new messages)
+                if (
+                    !hiddenConversations.has(conversationId) ||
+                    conversationsToUnhide.includes(conversationId)
+                ) {
+                    socketService.joinConversation(conversationId);
+                }
+            });
+
+            console.log('✅ Joined all conversation rooms');
         } catch (error) {
             console.error('Failed to load conversations:', error);
         } finally {
@@ -280,22 +462,85 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     deleteConversation: async (conversationId: string) => {
         try {
-            await conversationApiService.deleteConversation(conversationId);
+            // Instead of deleting from server, just hide it locally
+            // This way the conversation remains for the other participant
+            const { hiddenConversations, clearedConversations, openChatWindows, messages } = get();
+
+            // Add to hidden conversations
+            const newHidden = new Set(hiddenConversations);
+            newHidden.add(conversationId);
+
+            // Mark as cleared to prevent loading old messages
+            const newCleared = new Set(clearedConversations);
+            newCleared.add(conversationId);
+
+            // Save to localStorage for persistence
+            saveHiddenConversations(newHidden);
+
+            // Clear messages for this conversation locally
+            // When unhidden, user will only see new messages
+            const { [conversationId]: _, ...remainingMessages } = messages;
+
+            // Leave the conversation room
             socketService.leaveConversation(conversationId);
 
-            const { conversations, messages, openChatWindows } = get();
-            const { [conversationId]: _, ...remainingConversations } = conversations;
-            const { [conversationId]: __, ...remainingMessages } = messages;
-
+            // Update state
             set({
-                conversations: remainingConversations,
+                hiddenConversations: newHidden,
+                clearedConversations: newCleared,
                 messages: remainingMessages,
                 openChatWindows: openChatWindows.filter((id) => id !== conversationId),
             });
+
+            console.log('✅ Conversation hidden and messages cleared:', conversationId);
         } catch (error) {
-            console.error('Failed to delete conversation:', error);
+            console.error('Failed to hide conversation:', error);
             throw error;
         }
+    },
+
+    unhideConversation: (conversationId: string, keepUnreadCount: boolean = false) => {
+        const { hiddenConversations, conversations, currentUserId } = get();
+
+        // Remove from hidden conversations
+        const newHidden = new Set(hiddenConversations);
+        newHidden.delete(conversationId);
+
+        // Save to localStorage
+        saveHiddenConversations(newHidden);
+
+        // Rejoin the conversation room
+        socketService.joinConversation(conversationId);
+
+        // Optionally reset unread count for current user
+        const conversation = conversations[conversationId];
+        if (conversation && currentUserId && !keepUnreadCount) {
+            // Reset unread count to 0 (for manual unhide via new message)
+            const updatedConversation = {
+                ...conversation,
+                unreadCount: {
+                    ...conversation.unreadCount,
+                    [currentUserId]: 0,
+                },
+            };
+
+            set({
+                hiddenConversations: newHidden,
+                conversations: {
+                    ...conversations,
+                    [conversationId]: updatedConversation,
+                },
+            });
+        } else {
+            // Keep unread count as is (for auto-unhide on reload)
+            set({ hiddenConversations: newHidden });
+        }
+
+        console.log(
+            '✅ Conversation unhidden:',
+            conversationId,
+            keepUnreadCount ? '(keeping unread count)' : '(fresh start)'
+        );
     },
 
     updateConversation: (conversation: Conversation) => {
@@ -337,12 +582,28 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     // ==================== MESSAGES ====================
     loadMessages: async (conversationId: string, page = 1) => {
         try {
+            const { clearedConversations } = get();
+
             set({
                 isLoadingMessages: {
                     ...get().isLoadingMessages,
                     [conversationId]: true,
                 },
             });
+
+            // Don't load old messages for cleared conversations
+            // Only new real-time messages will appear
+            if (clearedConversations.has(conversationId)) {
+                console.log('⚠️ Skipping message load for cleared conversation:', conversationId);
+                set({
+                    messages: {
+                        ...get().messages,
+                        [conversationId]: [],
+                    },
+                });
+                socketService.joinConversation(conversationId);
+                return;
+            }
 
             const response = await messageApiService.getMessages(conversationId, {
                 page,
@@ -445,19 +706,54 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             await messageApiService.markAllMessagesAsRead(conversationId);
 
             const conversation = get().conversations[conversationId];
-            if (conversation && get().currentUserId) {
+            const currentUserId = get().currentUserId;
+            const currentMessages = get().messages[conversationId] || [];
+
+            if (conversation && currentUserId) {
+                // Update unreadCount
+                const updatedConversation = {
+                    ...conversation,
+                    unreadCount: {
+                        ...conversation.unreadCount,
+                        [currentUserId]: 0,
+                    },
+                };
+
+                // Update all messages status to READ and add readBy
+                const updatedMessages = currentMessages.map((msg) => {
+                    // Only update messages that are not from current user and not already read
+                    if (msg.sender.id !== currentUserId && msg.status !== MessageStatus.READ) {
+                        const readByEntry = {
+                            participantId: currentUserId,
+                            readAt: new Date(),
+                        };
+
+                        // Check if already in readBy to avoid duplicates
+                        const alreadyRead = msg.readBy.some(
+                            (r) => r.participantId === currentUserId
+                        );
+
+                        return {
+                            ...msg,
+                            status: MessageStatus.READ,
+                            readBy: alreadyRead ? msg.readBy : [...msg.readBy, readByEntry],
+                        };
+                    }
+                    return msg;
+                });
+
                 set({
                     conversations: {
                         ...get().conversations,
-                        [conversationId]: {
-                            ...conversation,
-                            unreadCount: {
-                                ...conversation.unreadCount,
-                                [get().currentUserId!]: 0,
-                            },
-                        },
+                        [conversationId]: updatedConversation,
+                    },
+                    messages: {
+                        ...get().messages,
+                        [conversationId]: updatedMessages,
                     },
                 });
+
+                console.log(`✅ Marked all messages as read for conversation ${conversationId}`);
             }
         } catch (error) {
             console.error('Failed to mark messages as read:', error);

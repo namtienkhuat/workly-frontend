@@ -19,15 +19,15 @@ export function ConversationHeader({
 }: ConversationHeaderProps) {
     if (!user) {
         return (
-            <div className="flex items-center justify-between border-b bg-gray-50 p-4">
-                <div className="text-gray-500">Đang tải...</div>
+            <div className="flex items-center justify-between border-b p-4">
+                <div className="text-muted-foreground">Đang tải...</div>
                 {onClose && (
                     <button
                         onClick={onClose}
-                        className="rounded p-2 transition-colors hover:bg-gray-200"
+                        className="rounded-md p-2 transition-colors hover:bg-accent"
                         title="Đóng"
                     >
-                        <X className="h-5 w-5 text-gray-600" />
+                        <X className="h-5 w-5" />
                     </button>
                 )}
             </div>
@@ -35,7 +35,7 @@ export function ConversationHeader({
     }
 
     return (
-        <div className="flex items-center justify-between border-b bg-gray-50 p-4">
+        <div className="flex items-center justify-between border-b p-4">
             <div className="flex items-center gap-3">
                 <UserAvatar
                     avatar={user.avatar}
@@ -45,8 +45,8 @@ export function ConversationHeader({
                     isOnline={user.isOnline}
                 />
                 <div>
-                    <h3 className="font-semibold text-gray-900">{user.name}</h3>
-                    <p className="text-xs text-gray-500">
+                    <h3 className="font-semibold">{user.name}</h3>
+                    <p className="text-xs text-muted-foreground">
                         {user.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
                     </p>
                 </div>
@@ -56,19 +56,19 @@ export function ConversationHeader({
                 {showMinimize && onMinimize && (
                     <button
                         onClick={onMinimize}
-                        className="rounded p-2 transition-colors hover:bg-gray-200"
+                        className="rounded-md p-2 transition-colors hover:bg-accent"
                         title="Thu nhỏ"
                     >
-                        <Minimize2 className="h-5 w-5 text-gray-600" />
+                        <Minimize2 className="h-5 w-5" />
                     </button>
                 )}
                 {onClose && (
                     <button
                         onClick={onClose}
-                        className="rounded p-2 transition-colors hover:bg-gray-200"
+                        className="rounded-md p-2 transition-colors hover:bg-accent"
                         title="Đóng"
                     >
-                        <X className="h-5 w-5 text-gray-600" />
+                        <X className="h-5 w-5" />
                     </button>
                 )}
             </div>

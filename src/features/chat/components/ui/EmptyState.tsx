@@ -7,10 +7,10 @@ interface EmptyStateProps {
 
 export function EmptyState({ message, icon }: EmptyStateProps) {
     return (
-        <div className="flex h-full items-center justify-center text-gray-500">
-            <div className="text-center">
-                {icon && <div className="mb-2 flex justify-center">{icon}</div>}
-                <p>{message}</p>
+        <div className="flex h-full items-center justify-center text-muted-foreground">
+            <div className="text-center p-8">
+                {icon && <div className="mb-3 flex justify-center">{icon}</div>}
+                <p className="text-sm">{message}</p>
             </div>
         </div>
     );

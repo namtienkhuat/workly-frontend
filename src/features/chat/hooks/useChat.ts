@@ -47,12 +47,19 @@ export function useChat() {
         [] // stable vì action từ Zustand luôn stable
     );
 
+    const hiddenConversations = store.hiddenConversations;
+
+    // Filter out hidden conversations
+    const visibleConversations = Object.values(conversations).filter(
+        (conv) => !hiddenConversations.has(conv._id)
+    );
+
     return {
         // State
         currentUserId,
         currentUserType,
         isSocketConnected,
-        conversations: Object.values(conversations),
+        conversations: visibleConversations,
         isLoadingConversations,
         fullChatId,
         openChatWindows,

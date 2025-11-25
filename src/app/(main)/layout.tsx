@@ -1,22 +1,33 @@
 'use client';
 import React, { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { RouteAwareColumns } from '@/components/layout/RouteAwareColumns';
 import { LayoutProvider } from '@/context/LayoutContext';
+import { Header } from '@/components/layout/Header';
+import { ChatInitializer } from '@/features/chat/components';
 
 const MainLayout = ({ children }: { children: ReactNode }) => {
-    return (
-        <div className="min-h-screen flex flex-col">
-            <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
-                <div className="mx-auto max-w-7xl px-4 py-3">
-                    <div className="text-sm font-medium">Header</div>
-                </div>
-            </header>
+    const pathname = usePathname();
+    const isChatPage = pathname?.startsWith('/chat');
 
-            <div className="flex-1">
+    return (
+        <div className={`flex flex-col bg-background ${isChatPage ? 'h-screen' : 'min-h-screen'}`}>
+            <ChatInitializer />
+            <Header />
+
+            <div className={`flex-1 ${isChatPage ? 'overflow-hidden' : ''}`}>
                 <LayoutProvider>
-                    <div className="mx-auto max-w-7xl px-4 py-6">
-                        <RouteAwareColumns>{children}</RouteAwareColumns>
-                    </div>
+                    {isChatPage ? (
+                        <div className="h-full mx-auto max-w-7xl p-6 flex flex-col">
+                            <div className="flex-1 rounded-lg border bg-background shadow-sm overflow-hidden">
+                                {children}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="mx-auto max-w-7xl px-4 py-6">
+                            <RouteAwareColumns>{children}</RouteAwareColumns>
+                        </div>
+                    )}
                 </LayoutProvider>
             </div>
         </div>

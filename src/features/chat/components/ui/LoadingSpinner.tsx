@@ -16,9 +16,9 @@ export function LoadingSpinner({ size = 'md', message }: LoadingSpinnerProps) {
         <div className="flex h-full items-center justify-center">
             <div className="text-center">
                 <div
-                    className={`${sizeClasses[size]} mx-auto animate-spin rounded-full border-blue-500 border-t-transparent`}
+                    className={`${sizeClasses[size]} mx-auto animate-spin rounded-full border-primary border-t-transparent`}
                 ></div>
-                {message && <p className="mt-2 text-gray-600">{message}</p>}
+                {message && <p className="mt-3 text-sm text-muted-foreground">{message}</p>}
             </div>
         </div>
     );

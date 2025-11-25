@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import {
     Card,
     CardContent,
@@ -14,7 +13,6 @@ import {
 } from '@/components/ui/card';
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useGetMe } from '@/hooks/useQueryData';
 import { UserProfile } from '@/types/global';
@@ -24,7 +22,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
 const EditProfilePage = () => {
-    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     const {
@@ -37,7 +34,6 @@ const EditProfilePage = () => {
     const {
         register,
         handleSubmit,
-        control,
         formState: { errors, isDirty },
         reset,
     } = useForm<EditUserProfileFormData>({
@@ -114,8 +110,28 @@ const EditProfilePage = () => {
                         <FieldLabel>
                             Email <span className="text-red-500">*</span>
                         </FieldLabel>
-                        <Input type="email" placeholder="Your email" {...register('email')} />
+                        <Input
+                            type="email"
+                            placeholder="Your email"
+                            {...register('email')}
+                            disabled
+                        />
                         <FieldError errors={errors.email ? [errors.email] : undefined} />
+                    </Field>
+
+                    <Field className="gap-2">
+                        <FieldLabel>Current Position</FieldLabel>
+                        <Input
+                            placeholder="e.g. Software Engineer at Company"
+                            {...register('headline')}
+                        />
+                        <FieldError errors={errors.headline ? [errors.headline] : undefined} />
+                    </Field>
+
+                    <Field className="gap-2">
+                        <FieldLabel>Location</FieldLabel>
+                        <Input placeholder="e.g. Ho Chi Minh City, Vietnam" {...register('bio')} />
+                        <FieldError errors={errors.bio ? [errors.bio] : undefined} />
                     </Field>
 
                     {/* <Field className="gap-2">
