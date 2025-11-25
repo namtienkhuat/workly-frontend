@@ -43,7 +43,8 @@ export interface PostResponse {
 export interface AuthorData {
     userId: string;
     name: string;
-    avatarUrl?: string;
+    avatarUrl?: string
+    headline?: string;
 }
 
 export interface Follower {

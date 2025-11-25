@@ -75,3 +75,10 @@ export interface Follower {
     headline?: string;
     followedAt?: string;
 }
+
+export interface UserBasicInfo {
+    userId: string;
+    name: string;
+    headline?: string;
+    avatarUrl?: string;
+}

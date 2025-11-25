@@ -25,4 +25,4 @@ export const TWO_COLUMN_ROUTES: string[] = ['/company', '/company/', '/profile']
  * Routes with 3-column layout (left sidebar + main content + right sidebar)
  * Routes starting with these patterns will get 3-column layout
  */
-export const THREE_COLUMN_ROUTES: string[] = ['/', '/feed'];
+export const THREE_COLUMN_ROUTES: string[] = ['/', '/feed', '/home'];
