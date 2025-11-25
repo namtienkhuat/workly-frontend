@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '@/utils/api';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { paths } from '@/configs/route';
+import { Button } from '@/components/ui/button';
 
 interface HealthResponse {
     status: string;

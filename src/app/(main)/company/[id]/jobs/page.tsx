@@ -177,7 +177,7 @@ const CompanyJobs = () => {
                     placeholder="Enter search..."
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                    onKeyUp={(e) => e.key === "Enter" && handleSearch()}
                 />
                 <Select
                     options={searchTypeOptions}
@@ -282,7 +282,7 @@ const CompanyJobs = () => {
                     >
                         <div className="flex flex-col gap-6 p-4">
                             {jobs.map((job, idx) => (
-                                <JobCard key={job.id || idx} {...job} />
+                                <JobCard key={job._id || idx} {...job} onReload={fetchInitialJobs} />
                             ))}
                         </div>
                     </InfiniteScroll>

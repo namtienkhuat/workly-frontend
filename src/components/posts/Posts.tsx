@@ -53,7 +53,6 @@ const Posts = ({ type }: { type: string }) => {
   useEffect(() => {
     fetchPosts(1);
   }, [params.id]);
-  console.log("abc", canUpload);
 
   if (loading) {
     return (
