@@ -33,9 +33,9 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
           key: data.id,
           title: (
             <div className="flex">
-              {data.author.avatarUrl ? (
+              {data.author.imageUrl ? (
                 <Image
-                  src={data.author.avatarUrl}
+                  src={data.author.imageUrl}
                   alt={data.author.name}
                   loading="lazy"
                   width={40}

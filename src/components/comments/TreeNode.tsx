@@ -43,9 +43,9 @@ export const convertToTreeNode = (
     key: comment.id,
     title: (
         <div className="flex">
-            {comment.author.avatarUrl ? (
+            {comment.author.imageUrl ? (
                 <Image
-                    src={comment.author.avatarUrl}
+                    src={comment.author.imageUrl}
                     alt={comment.author.name}
                     loading="lazy"
                     width={40}

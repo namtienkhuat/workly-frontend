@@ -50,9 +50,9 @@ export interface PostResponse {
 }
 
 export interface AuthorData {
-    userId: string;
+    id: string;
     name: string;
-    avatarUrl?: string
+    imageUrl?: string
     headline?: string;
 }
 

@@ -25,9 +25,10 @@ interface PostCardProps {
     reload: () => void;
     type: string;
     authorId: string;
+    openPopupEdit: () => void;
 }
 
-const PostCard = ({ post, reload, type, authorId }: PostCardProps) => {
+const PostCard = ({ post, reload, type, authorId, openPopupEdit }: PostCardProps) => {
     const router = useRouter();
     const [liked, setLiked] = useState(false);
     const [commentOpen, setCommentOpen] = useState(false);
@@ -54,7 +55,14 @@ const PostCard = ({ post, reload, type, authorId }: PostCardProps) => {
     const handleNext = () => {
         setCurrentIndex((prev) => (prev === mediaList.length - 1 ? 0 : prev + 1));
     };
-
+    const onEdit = async () => {
+        try {
+            openPopupEdit();
+            reload();
+        } catch (err) {
+            toast.error("edit post fail");
+        }
+    }
     const handleLike = async () => {
         if (!currentUser?.userId) {
             alert('Bạn cần đăng nhập');
@@ -95,11 +103,11 @@ const PostCard = ({ post, reload, type, authorId }: PostCardProps) => {
             <header className="flex items-start justify-between gap-4">
                 <div
                     className="flex items-start gap-2 cursor-pointer"
-                    onClick={() => router.push(`/profile/${post.author?.userId}`)}
+                    onClick={() => router.push(`/profile/${post.author?.id}`)}
                 >
                     <Avatar className="h-12 w-12">
-                        {post.author?.avatarUrl && (
-                            <AvatarImage src={post.author.avatarUrl} alt={post.author.name} />
+                        {post.author?.imageUrl && (
+                            <AvatarImage src={post.author.imageUrl} alt={post.author.name} />
                         )}
                         <AvatarFallback
                             style={{ backgroundColor: StringUtil.getRandomColor() }}
@@ -141,7 +149,8 @@ const PostCard = ({ post, reload, type, authorId }: PostCardProps) => {
                                 className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted"
                                 onClick={() => {
                                     setMenuOpen(false);
-                                    // TODO: wire edit flow when ready
+                                    onEdit();
+
                                 }}
                             >
                                 Edit
