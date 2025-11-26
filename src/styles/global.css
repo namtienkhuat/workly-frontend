@@ -120,3 +120,46 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Prevent transitions on page load */
+.prevent-transitions * {
+    transition: none !important;
+}
+
+html:not(.hydrated) * {
+    transition: none !important;
+}
+
+/* Font Size Settings */
+html.font-small {
+    font-size: 14px;
+}
+
+html.font-medium {
+    font-size: 16px;
+}
+
+html.font-large {
+    font-size: 18px;
+}
+
+/* Accent Color Settings */
+html.accent-blue {
+    --primary: 217 91% 60%;
+    --ring: 217 91% 60%;
+}
+
+html.accent-green {
+    --primary: 142 76% 36%;
+    --ring: 142 76% 36%;
+}
+
+html.accent-purple {
+    --primary: 262 83% 58%;
+    --ring: 262 83% 58%;
+}
+
+html.accent-orange {
+    --primary: 25 95% 53%;
+    --ring: 25 95% 53%;
+}

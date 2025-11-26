@@ -21,13 +21,13 @@ const navItems: NavItem[] = [
         label: 'Account',
         description: 'Password and account management',
     },
-    // {
-    //     name: 'appearance',
-    //     href: '/settings/appearance',
-    //     icon: Palette,
-    //     label: 'Appearance',
-    //     description: 'Theme and display preferences',
-    // },
+    {
+        name: 'appearance',
+        href: '/settings/appearance',
+        icon: Palette,
+        label: 'Appearance',
+        description: 'Theme and display preferences',
+    },
     // {
     //     name: 'language',
     //     href: '/settings/language',

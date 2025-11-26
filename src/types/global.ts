@@ -16,14 +16,15 @@ export enum UserRole {
 export interface CompanyProfile {
     companyId: string;
     name: string;
-    industry: Industry;
-    size: CompanySize;
-    foundedYear: number;
+    industry?: Industry | null;
+    size?: CompanySize | string;
+    foundedYear?: number;
     description?: string;
     website?: string;
     logoUrl?: string;
     bannerUrl?: string;
     followersCount?: number;
+    role?: string;
 }
 
 export interface Industry {

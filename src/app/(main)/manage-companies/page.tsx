@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Building2, Search, Plus, Users, Calendar, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,18 +30,21 @@ export default function ManageCompaniesPage() {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
     const { data: companiesData, isLoading } = useGetMyCompanies();
-    
-    const companies: CompanyProfile[] = companiesData?.companies || [];
+
+    const companies: CompanyProfile[] = companiesData?.data?.companies || [];
 
     const filteredCompanies = useMemo(() => {
         if (!searchQuery.trim()) return companies;
-        
+
         const query = searchQuery.toLowerCase();
-        return companies.filter((company) =>
-            company.name.toLowerCase().includes(query) ||
-            company.industry?.name?.toLowerCase().includes(query)
+        return companies.filter(
+            (company) =>
+                company.name?.toLowerCase().includes(query) ||
+                company.industry?.name?.toLowerCase().includes(query)
         );
     }, [companies, searchQuery]);
+
+    console.log('✅ Filtered companies:', filteredCompanies.length);
 
     const handleCreateCompany = () => {
         router.push('/company/new');
@@ -57,11 +60,7 @@ export default function ManageCompaniesPage() {
                         Quản lý và điều hành các công ty của bạn
                     </p>
                 </div>
-                <Button
-                    onClick={handleCreateCompany}
-                    size="lg"
-                    className="gap-2"
-                >
+                <Button onClick={handleCreateCompany} size="lg" className="gap-2">
                     <Plus className="h-5 w-5" />
                     Tạo công ty mới
                 </Button>
@@ -112,12 +111,8 @@ export default function ManageCompaniesPage() {
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-12">
                         <Search className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">
-                            Không tìm thấy công ty nào
-                        </h3>
-                        <p className="text-muted-foreground">
-                            Thử tìm kiếm với từ khóa khác
-                        </p>
+                        <h3 className="text-lg font-semibold mb-2">Không tìm thấy công ty nào</h3>
+                        <p className="text-muted-foreground">Thử tìm kiếm với từ khóa khác</p>
                     </CardContent>
                 </Card>
             ) : (
@@ -152,9 +147,25 @@ export default function ManageCompaniesPage() {
                                         {/* Company Info */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-2 mb-2">
-                                                <h3 className="text-lg font-semibold group-hover:text-primary transition-colors truncate">
-                                                    {company.name}
-                                                </h3>
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="text-lg font-semibold group-hover:text-primary transition-colors truncate">
+                                                        {company.name}
+                                                    </h3>
+                                                    {company.role && (
+                                                        <Badge
+                                                            variant={
+                                                                company.role === 'OWNER'
+                                                                    ? 'default'
+                                                                    : 'outline'
+                                                            }
+                                                            className="text-xs flex-shrink-0"
+                                                        >
+                                                            {company.role === 'OWNER'
+                                                                ? '👑 Owner'
+                                                                : '⚙️ Admin'}
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                                 <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                                             </div>
 
@@ -171,7 +182,9 @@ export default function ManageCompaniesPage() {
                                                     {company.foundedYear && (
                                                         <div className="flex items-center gap-1">
                                                             <Calendar className="h-4 w-4" />
-                                                            <span>Thành lập {company.foundedYear}</span>
+                                                            <span>
+                                                                Thành lập {company.foundedYear}
+                                                            </span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -193,4 +206,3 @@ export default function ManageCompaniesPage() {
         </div>
     );
 }
-
