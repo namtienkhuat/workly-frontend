@@ -59,7 +59,7 @@ const Posts = ({ type }: { type: string }) => {
   if (loading) {
     return (
       <div>
-        {canUpload && <UploadPostModal reload={fetchPosts} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} />}
+        {canUpload && <UploadPostModal reload={fetchPosts} editPost={posts.find(p => p._id === status)} setStatus={setStatus} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} status={status} />}
         <div className="text-center py-10 text-gray-500">Đang tải bài viết...</div>
       </div>
     );
@@ -68,7 +68,7 @@ const Posts = ({ type }: { type: string }) => {
   if (posts.length === 0) {
     return (
       <div>
-        {canUpload && <UploadPostModal reload={fetchPosts} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} />}
+        {canUpload && <UploadPostModal reload={fetchPosts} editPost={posts.find(p => p._id === status)} setStatus={setStatus} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} status={status} />}
         <div className="text-center py-10 text-gray-400">Chưa có bài viết nào.</div>
       </div>
     );
