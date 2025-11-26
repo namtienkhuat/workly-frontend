@@ -19,6 +19,7 @@ export const apiPaths = {
     getTest: "/posts/test",
     checkAccessCompany: "/companies/",
     createPost: "/posts/create",
+    updatePost: "/posts/update",
     deletePost: "/posts/delete",
     getJobByCompanyId: "/jobs/myJob",
     createJob: "/jobs/create",

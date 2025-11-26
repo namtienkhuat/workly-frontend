@@ -15,6 +15,8 @@ const Posts = ({ type }: { type: string }) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [canUploadCompany, setCanUploadCompany] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [status, setStatus] = useState<string>('');
   const { isLoading: isLoadingAuth, user: currentUser } = useAuth();
   const params = useParams();
   const pageSize = 10;
@@ -57,7 +59,7 @@ const Posts = ({ type }: { type: string }) => {
   if (loading) {
     return (
       <div>
-        {canUpload && <UploadPostModal reload={fetchPosts} type={type} authorId={params.id as string} />}
+        {canUpload && <UploadPostModal reload={fetchPosts} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} />}
         <div className="text-center py-10 text-gray-500">Đang tải bài viết...</div>
       </div>
     );
@@ -66,7 +68,7 @@ const Posts = ({ type }: { type: string }) => {
   if (posts.length === 0) {
     return (
       <div>
-        {canUpload && <UploadPostModal reload={fetchPosts} type={type} authorId={params.id as string} />}
+        {canUpload && <UploadPostModal reload={fetchPosts} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} />}
         <div className="text-center py-10 text-gray-400">Chưa có bài viết nào.</div>
       </div>
     );
@@ -74,7 +76,7 @@ const Posts = ({ type }: { type: string }) => {
 
   return (
     <div>
-      {canUpload && <UploadPostModal reload={fetchPosts} type={type} authorId={params.id as string} />}
+      {canUpload && <UploadPostModal reload={fetchPosts} editPost={posts.find(p => p._id === status)} setStatus={setStatus} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} status={status} />}
 
       <InfiniteScroll
         dataLength={posts.length}
@@ -91,7 +93,7 @@ const Posts = ({ type }: { type: string }) => {
       >
         <div className="flex flex-col gap-12">
           {posts.map((post) => (
-            <Post key={post._id} post={post} reload={() => fetchPosts(1)} type={type} authorId={params.id as string} />
+            <Post key={post._id} post={post} reload={() => fetchPosts(1)} type={type} authorId={params.id as string} openPopupEdit={() => { setIsOpen(true); setStatus(post._id) }} />
           ))}
         </div>
       </InfiniteScroll>

@@ -28,6 +28,15 @@ export interface CreatePostDTO {
     media_url: MediaItem[];
     visibility: PostVisibilityType;
 }
+export interface UpdatePostDTO {
+    postId: string;
+    author_id: string;
+    author_type: string;
+    content: string;
+    media_url_add: MediaItem[];
+    media_url_delete: MediaItem[];
+    visibility: PostVisibilityType;
+}
 
 export interface PostResponse {
     _id: string;

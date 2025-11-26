@@ -29,9 +29,10 @@ interface PostProps {
     reload: any;
     type: string;
     authorId: string;
+    openPopupEdit: any
 }
 
-const Post = ({ post, reload, type, authorId }: PostProps) => {
+const Post = ({ post, reload, type, authorId, openPopupEdit }: PostProps) => {
     const [liked, setLiked] = useState(false);
     const [commentOpen, setCommentOpen] = useState(false);
     const [open, setOpen] = useState(false);
@@ -76,6 +77,14 @@ const Post = ({ post, reload, type, authorId }: PostProps) => {
             toast.error("delete post fail");
         }
     };
+    const onEdit = async () => {
+        try {
+            openPopupEdit();
+            reload();
+        } catch (err) {
+            toast.error("edit post fail");
+        }
+    }
     const handleLike = async () => {
         if (!currentUser?.userId) { toast.warning("login is required"); return; };
 
@@ -147,7 +156,7 @@ const Post = ({ post, reload, type, authorId }: PostProps) => {
                             className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                             onClick={() => {
                                 setOpen(false);
-                                // onEdit();
+                                onEdit();
                             }}
                         >
                             Edit

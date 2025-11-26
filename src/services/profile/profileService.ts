@@ -1,5 +1,5 @@
 import { apiPaths } from "@/configs/route";
-import { CreatePostDTO, PostResponse } from "@/models/profileModel";
+import { CreatePostDTO, PostResponse, UpdatePostDTO } from "@/models/profileModel";
 import { getData, getPaging, postData } from "@/utils/api";
 import { PagingResponse, ResponseData } from "@/utils/models/ResponseType";
 import { InsertOneResult } from 'mongodb';
@@ -20,7 +20,12 @@ export default {
 			data: add,
 		});
 	},
-
+	async updatePost(update: UpdatePostDTO): Promise<ResponseData<any>> {
+		return postData({
+			url: apiPaths.updatePost,
+			data: update
+		})
+	},
 	async getProfilePostPaging(params: any): Promise<PagingResponse<PostResponse>> {
 		return getPaging({ url: apiPaths.getProfilePost, params: params });
 	},

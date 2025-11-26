@@ -28,22 +28,23 @@ import Select from "react-select";
 import { toast } from 'sonner';
 import z from 'zod';
 import jobService from '@/services/job/jobService';
+import { useGetAllIndustries, useGetAllSkills } from '@/hooks/useQueryData';
 interface OptionType {
     value: string;
     label: string;
 }
 
-const skillOptions: OptionType[] = [
-    { value: "javascript", label: "JavaScript" },
-    { value: "react", label: "React" },
-    { value: "typescript", label: "TypeScript" },
-];
+// const skillOptions: OptionType[] = [
+//     { value: "javascript", label: "JavaScript" },
+//     { value: "react", label: "React" },
+//     { value: "typescript", label: "TypeScript" },
+// ];
 
-const industryOptions: OptionType[] = [
-    { value: "it", label: "IT" },
-    { value: "finance", label: "Finance" },
-    { value: "education", label: "Education" },
-];
+// const industryOptions: OptionType[] = [
+//     { value: "it", label: "IT" },
+//     { value: "finance", label: "Finance" },
+//     { value: "education", label: "Education" },
+// ];
 
 const createJobSchema = z.object({
     title: z.string().min(1, 'Job title is required'),
@@ -53,7 +54,7 @@ const createJobSchema = z.object({
     salaryMin: z.number().min(0, 'Minimum salary must be positive').optional(),
     salaryMax: z.number().min(0, 'Maximum salary must be positive').optional(),
     skills: z.array(z.string()).min(1, 'Skill is required'),
-    industry: z.enum(['it', 'finance', 'education']),
+    industry: z.string().min(1, 'industry is required'),
 });
 
 type CreateJobFormData = z.infer<typeof createJobSchema>;
@@ -63,6 +64,9 @@ const CreateJobPage = () => {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [isFetching, setIsFetching] = useState(false);
+    const [skillOptions, setSkillOptions] = useState<OptionType[]>([])
+    const [industryOptions, setIndustryOptions] = useState<OptionType[]>([])
+
 
     const jobId = searchParams.get('jobId');
     const isEditMode = !!jobId;
@@ -76,12 +80,35 @@ const CreateJobPage = () => {
     } = useForm<CreateJobFormData>({
         resolver: zodResolver(createJobSchema),
     });
+    const { data: industriesData } = useGetAllIndustries();
+    const { data: skillData } = useGetAllSkills();
+
+    useEffect(() => {
+        console.log(skillData);
+
+        if (skillData && skillData.data && Array.isArray(skillData.data)) {
+            setSkillOptions(skillData.data.map((s: any) => {
+                return {
+                    value: s.skillId.toLowerCase(),
+                    label: s.name
+                }
+            }));
+        }
+        if (industriesData && industriesData.data && Array.isArray(industriesData.data)) {
+            setIndustryOptions(industriesData.data.map((i: any) => {
+                return {
+                    value: i.industryId.toLowerCase(),
+                    label: i.name
+                }
+            }));
+        }
+    }, [industriesData, skillData]);
 
     useEffect(() => {
         const fetchJobData = async () => {
-            if (!isEditMode) return;
 
             try {
+                if (!isEditMode) return;
                 setIsFetching(true);
                 const response = await jobService.getJobCompanyDetail(jobId, id);
                 const jobData = response.data;
@@ -149,7 +176,6 @@ const CreateJobPage = () => {
                 reset();
             }
 
-            toast.success('Job posted successfully!');
             reset();
             router.push(`/company/${id}/jobs`);
         } catch (error: any) {

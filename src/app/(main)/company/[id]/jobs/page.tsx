@@ -8,27 +8,17 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { Job } from "@/models/jobModel";
 import JobService from "@/services/job/jobService";
 import { useParams } from "next/navigation";
+import { useGetAllIndustries, useGetAllSkills } from "@/hooks/useQueryData";
+import ProfileService from "@/services/profile/profileService";
 
 interface OptionType {
     value: string;
     label: string;
 }
 
-const skillOptions: OptionType[] = [
-    { value: "javascript", label: "JavaScript" },
-    { value: "react", label: "React" },
-    { value: "typescript", label: "TypeScript" },
-];
-
-const industryOptions: OptionType[] = [
-    { value: "it", label: "IT" },
-    { value: "finance", label: "Finance" },
-    { value: "education", label: "Education" },
-];
-
 const timeOptions: OptionType[] = [
-    { value: "PartTime", label: "Part-time" },
-    { value: "FullTime", label: "Full-time" },
+    { value: "partime", label: "Part-time" },
+    { value: "fulltime", label: "Full-time" },
 ];
 
 const searchTypeOptions: OptionType[] = [
@@ -41,6 +31,9 @@ const CompanyJobs = () => {
     const [searchType, setSearchType] = useState<OptionType | null>(searchTypeOptions[0] ?? null);
     const [startTime, setStartTime] = useState<Date | null>(null);
     const [endTime, setEndTime] = useState<Date | null>(null);
+    const [canUploadCompany, setCanUploadCompany] = useState(false);
+    const [skillOptions, setSkillOptions] = useState<OptionType[]>([])
+    const [industryOptions, setIndustryOptions] = useState<OptionType[]>([])
     const [selectedSkills, setSelectedSkills] = useState<OptionType[]>([]);
     const [selectedIndustries, setSelectedIndustries] = useState<OptionType[]>([]);
     const [selectedTimesOption, setSelectedTimesOption] = useState<OptionType[]>([]);
@@ -53,7 +46,46 @@ const CompanyJobs = () => {
     const [hasMore, setHasMore] = useState(true);
     const [pageSize] = useState(10);
     const [searchParams, setSearchParams] = useState<any>({});
+    const { data: industriesData } = useGetAllIndustries();
+    const { data: skillData } = useGetAllSkills();
 
+    useEffect(() => {
+        const checkAccess = async () => {
+            try {
+                setLoading(true);
+                const canAccess = await ProfileService.checkAccessCompany(params.id as string);
+                setCanUploadCompany(canAccess);
+            } catch (error) {
+                console.error('Check access error:', error);
+                setCanUploadCompany(false);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (params.id) {
+            checkAccess();
+        }
+    }, [params.id]);
+
+    useEffect(() => {
+        if (skillData && skillData.data && Array.isArray(skillData.data)) {
+            setSkillOptions(skillData.data.map((s: any) => {
+                return {
+                    value: s.skillId.toLowerCase(),
+                    label: s.name
+                }
+            }));
+        }
+        if (industriesData && industriesData.data && Array.isArray(industriesData.data)) {
+            setIndustryOptions(industriesData.data.map((i: any) => {
+                return {
+                    value: i.industryId.toLowerCase(),
+                    label: i.name
+                }
+            }));
+        }
+    }, [industriesData, skillData]);
     // Load jobs on component mount
     useEffect(() => {
         fetchInitialJobs();
@@ -142,7 +174,6 @@ const CompanyJobs = () => {
         setHasMore(true);
     };
     useEffect(() => {
-        // Chỉ chạy khi tất cả các state reset về giá trị ban đầu
         if (
             searchText === "" &&
             searchType === (searchTypeOptions[0] ?? null) &&
@@ -282,7 +313,7 @@ const CompanyJobs = () => {
                     >
                         <div className="flex flex-col gap-6 p-4">
                             {jobs.map((job, idx) => (
-                                <JobCard key={job._id || idx} {...job} onReload={fetchInitialJobs} />
+                                <JobCard key={job._id || idx} {...job} onReload={fetchInitialJobs} canUploadCompany={canUploadCompany} />
                             ))}
                         </div>
                     </InfiniteScroll>

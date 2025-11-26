@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import CommonService from "../../services/common/commonService"
-import { CreatePostDTO, PostVisibilityType } from "@/models/profileModel";
+import { CreatePostDTO, PostVisibilityType, UpdatePostDTO } from "@/models/profileModel";
 import { apiPaths } from "@/configs/route";
 import ProfileService from "@/services/profile/profileService";
 import { toast } from "sonner";
@@ -12,25 +12,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { getInitials } from "@/utils/helpers";
+import { getInitials, getMediaUrl, getMimeType } from "@/utils/helpers";
 import StringUtil from "@/utils/StringUtil";
 
 type PreviewFile = {
     url: string;
     type: string;
     file: File;
+    isOriginal?: boolean;
+    originalUrl?: string;
+    originalType?: string;
 };
-
-type FormData = {
-    description: string;
-    media: FileList;
-};
-
-export default function UploadPostModal({ reload, type, authorId }: { reload: any, type: string, authorId: string }) {
-    const [isOpen, setIsOpen] = useState(false);
+export default function UploadPostModal({ reload, type, authorId, isOpen, setIsOpen, status, setStatus, editPost }:
+    { reload: any, type: string, authorId: string, isOpen: any, setIsOpen: any, status?: string, setStatus?: any, editPost?: any }) {
     const [previews, setPreviews] = useState<PreviewFile[]>([]);
     const [progress, setProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
+    const [newFiles, setNewFiles] = useState<PreviewFile[]>([]);
+    const [deletedFiles, setDeletedFiles] = useState<PreviewFile[]>([]);
+
+
     const { isLoading: isLoadingAuth, user: currentUser } = useAuth();
 
     const [mode, setMode] = useState<PostVisibilityType>(PostVisibilityType.PUBLIC);
@@ -38,7 +39,33 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
         description: z.string().min(1, "Description is required"),
         media: z.any()
     })
+    useEffect(() => {
+        if (status !== '' && editPost) {
+            reset({ description: editPost.content });
+            if (editPost.media_url && editPost.media_url.length > 0) {
+                const previewsFromServer = editPost.media_url.map((media: any) => {
+                    const fileUrl = media?.url || media;
+                    const mediaType = media?.type;
 
+                    return {
+                        url: getMediaUrl(fileUrl, mediaType),
+                        type: getMimeType(mediaType, fileUrl),
+                        file: null,
+                        isOriginal: true,
+                        originalUrl: fileUrl,
+                        originalType: mediaType
+                    };
+                });
+
+                setPreviews(previewsFromServer);
+            }
+            setMode(editPost.visibility);
+        } else {
+            reset({ description: '' });
+            setPreviews([]);
+            setMode(PostVisibilityType.PUBLIC);
+        }
+    }, [editPost, status]);
 
     type FormData = z.infer<typeof formSchema>;
 
@@ -52,6 +79,18 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
             resolver: zodResolver(formSchema),
         }
     );
+
+    const handleClosePopup = () => {
+        reload()
+        reset({ description: '' });
+        setPreviews([]);
+        setProgress(0);
+        setMode(PostVisibilityType.PUBLIC);
+        setIsOpen(false);
+        setStatus('');
+        setNewFiles([]);
+        setDeletedFiles([]);
+    }
 
     const uploadFiles = async (files: FileList): Promise<any> => {
         try {
@@ -72,28 +111,48 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
     }
     const onSubmit = async (data: FormData) => {
         try {
-            let mediaUrls = [];
-            // Step 1: Upload files if there are any
-            if (previews.length > 0) {
-                const files = filesArrayToFileList(previews);
-                mediaUrls = await uploadFiles(files);
+            let finalMediaUrls = [];
+
+            if (status !== '' && editPost) {
+                // MODE EDIT
+                // Upload new files
+                if (newFiles.length > 0) {
+                    const files = filesArrayToFileList(newFiles);
+                    finalMediaUrls = await uploadFiles(files);
+                }
+
+                const updatePostData: UpdatePostDTO = {
+                    postId: editPost._id,
+                    content: data.description,
+                    media_url_add: finalMediaUrls,
+                    media_url_delete: deletedFiles as any,
+                    visibility: mode ? mode : PostVisibilityType.PUBLIC,
+                    author_type: type,
+                    author_id: authorId
+                };
+
+                await ProfileService.updatePost(updatePostData);
             }
 
-            // Step 2: Create post with uploaded URLs
-            const postData: CreatePostDTO = {
-                content: data.description,
-                media_url: mediaUrls.length > 0 ? mediaUrls : [],
-                visibility: mode ? mode : PostVisibilityType.PUBLIC,
-                author_type: type,
-                author_id: authorId
-            };
+            if (status === '' && !editPost) {
+                // MODE ADD
+                if (previews.length > 0) {
+                    const files = filesArrayToFileList(previews);
+                    finalMediaUrls = await uploadFiles(files);
+                }
 
-            await ProfileService.addPost(postData);
-            reload()
-            reset();
-            setPreviews([]);
-            setProgress(0);
-            setIsOpen(false);
+                const postData: CreatePostDTO = {
+                    content: data.description,
+                    media_url: finalMediaUrls,
+                    visibility: mode ? mode : PostVisibilityType.PUBLIC,
+                    author_type: type,
+                    author_id: authorId
+                };
+
+                await ProfileService.addPost(postData);
+            }
+
+            handleClosePopup();
             toast.success('Successfully!');
         } catch (err) {
             console.error(err);
@@ -109,9 +168,13 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
                 url: URL.createObjectURL(file),
                 type: file.type,
                 file: file,
+                isOriginal: false  // new File
             }));
 
             setPreviews((prev) => [...prev, ...newPreviews]);
+            if (status !== '' && editPost) {
+                setNewFiles((prev) => [...prev, ...newPreviews]);
+            }
         }
     };
 
@@ -126,14 +189,38 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
         }
     };
     const removePreview = (index: number) => {
-        setPreviews((prev) => {
-            const newPreviews = [...prev];
-            const url = newPreviews[index]?.url;
+        const fileToRemove = previews[index];
 
-            if (url) {
-                URL.revokeObjectURL(url);
+        if (!fileToRemove) return;
+
+        if (status !== '' && editPost) {
+            if (fileToRemove.isOriginal && fileToRemove.originalUrl) {
+                setDeletedFiles((prev) => {
+                    const updated = [...prev, fileToRemove];
+                    return updated;
+                });
             }
 
+
+            if (!fileToRemove.isOriginal) {
+                setNewFiles((prevNew) => {
+                    const indexInNewList = prevNew.findIndex(
+                        (item) => item.file === fileToRemove.file
+                    );
+                    if (indexInNewList === -1) return prevNew;
+                    const newFilePreviews = [...prevNew];
+                    newFilePreviews.splice(indexInNewList, 1);
+                    return newFilePreviews;
+                });
+            }
+        }
+
+        if (fileToRemove.url && !fileToRemove.isOriginal) {
+            URL.revokeObjectURL(fileToRemove.url);
+        }
+
+        setPreviews((prev) => {
+            const newPreviews = [...prev];
             newPreviews.splice(index, 1);
             return newPreviews;
         });
@@ -163,7 +250,7 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
                         </Avatar>
                     )}</div>
                 <button
-                    onClick={() => setIsOpen(true)}
+                    onClick={() => { setIsOpen(true); setStatus('') }}
                     className="bg-[#DCDCDC] font-bold text-white text-left px-4 py-2 w-full border border-[#D3D3D3] rounded-lg hover:bg-[#D3D3D3] transition"
                 >
                     What are you thinking?
@@ -174,11 +261,7 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xl p-6 relative animate-fade-in">
                         <button
-                            onClick={() => {
-                                setIsOpen(false);
-                                setPreviews([]);
-                                setProgress(0);
-                            }}
+                            onClick={handleClosePopup}
                             className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:hover:text-white"
                             disabled={isSubmitting}
                         >
@@ -253,12 +336,20 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
                                                     src={file.url}
                                                     controls
                                                     className="w-full max-h-64 rounded-md object-cover"
+                                                    onError={(e) => {
+                                                        console.error('Video load ERROR:', file.url);
+                                                        console.error('Error details:', e);
+                                                    }}
                                                 />
                                             ) : (
                                                 <img
                                                     src={file.url}
                                                     alt={`preview-${index}`}
                                                     className="w-full max-h-64 object-cover rounded-md"
+                                                    onError={(e) => {
+                                                        console.error('Image load ERROR:', file.url);
+                                                        console.error('Error details:', e);
+                                                    }}
                                                 />
                                             )}
                                             {/* Remove button */}
@@ -280,17 +371,13 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
                             <div className="flex justify-end gap-3 pt-3">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setIsOpen(false);
-                                        setPreviews([]);
-                                        setProgress(0);
-                                    }}
+                                    onClick={handleClosePopup}
                                     disabled={isSubmitting}
                                     className="px-4 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 
                                                 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800
                                                 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Hủy
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
@@ -302,7 +389,7 @@ export default function UploadPostModal({ reload, type, authorId }: { reload: an
                                         ? progress > 0 && progress < 100
                                             ? `Đang tải lên... ${progress}%`
                                             : "Đang đăng..."
-                                        : "Đăng bài"}
+                                        : status === '' ? "Add" : "Update"}
                                 </button>
                             </div>
                         </form>

@@ -1,8 +1,12 @@
 import { BACKEND_URL } from "./models/Constants"
 
+export const STORAGE_URL = 'http://localhost:8000/storage';
+
 export default {
     generatePath(path: string): string {
-        return BACKEND_URL + "/posts/uploads/images/" + path
+        console.log(STORAGE_URL + "/uploads/images/" + path);
+
+        return STORAGE_URL + "/uploads/images/" + path
     },
     generatePathVideo(path: string): string {
         return BACKEND_URL + "/posts/video/" + path

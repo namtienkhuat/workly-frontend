@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import profileService from "@/services/profile/profileService";
 import { useRouter } from "next/navigation";
 
-const JobCard: React.FC<Job & { onReload: any }> = ({
+const JobCard: React.FC<Job & { onReload: any, canUploadCompany: boolean }> = ({
     _id,
     title,
     content,
@@ -16,32 +16,13 @@ const JobCard: React.FC<Job & { onReload: any }> = ({
     location,
     jobType,
     skills,
-    onReload
+    onReload,
+    canUploadCompany
 }) => {
     const [open, setOpen] = useState(false);
-    const [canUploadCompany, setCanUploadCompany] = useState(false);
-    const [loading, setLoading] = useState(true);
     const params = useParams()
     const router = useRouter()
 
-    useEffect(() => {
-        const checkAccess = async () => {
-            try {
-                setLoading(true);
-                const canAccess = await profileService.checkAccessCompany(params.id as string);
-                setCanUploadCompany(canAccess);
-            } catch (error) {
-                console.error('Check access error:', error);
-                setCanUploadCompany(false);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (params.id) {
-            checkAccess();
-        }
-    }, [params.id]);
 
 
     const onDeleteJob = async () => {
