@@ -39,8 +39,6 @@ const Post = ({ post, reload, type, authorId }: PostProps) => {
     const [totalComment, setTotalComment] = useState(0);
     const [totalLikes, setTotalLikes] = useState<string[]>(post.totalLikes.map(l => l.authorId));
     const { isLoading: isLoadingAuth, user: currentUser } = useAuth();
-    console.log("post", post);
-
 
     useEffect(() => {
         setLiked(totalLikes?.includes(currentUser?.userId ?? "") || false)
@@ -79,7 +77,7 @@ const Post = ({ post, reload, type, authorId }: PostProps) => {
         }
     };
     const handleLike = async () => {
-        if (!currentUser?.userId) return alert("Bạn cần đăng nhập");
+        if (!currentUser?.userId) { toast.warning("login is required"); return; };
 
         if (liked) {
             await likeService.unlikePost(post._id).then(() => {
