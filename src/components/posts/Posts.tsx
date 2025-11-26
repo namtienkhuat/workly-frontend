@@ -1,6 +1,5 @@
 "use client"
 import { useEffect, useState } from "react";
-import Post from "./Post";
 import { PostResponse } from "@/models/profileModel";
 import ProfileService from "@/services/profile/profileService";
 import { toast } from "sonner";
@@ -8,6 +7,7 @@ import UploadPostModal from "../UploadPost/UploadPost";
 import { useAuth } from "@/hooks/useAuth";
 import { useParams } from "next/navigation";
 import InfiniteScroll from "react-infinite-scroll-component";
+import PostCard from "./PostCard";
 
 const Posts = ({ type }: { type: string }) => {
   const [posts, setPosts] = useState<PostResponse[]>([]);
@@ -93,7 +93,7 @@ const Posts = ({ type }: { type: string }) => {
       >
         <div className="flex flex-col gap-12">
           {posts.map((post) => (
-            <Post key={post._id} post={post} reload={() => fetchPosts(1)} type={type} authorId={params.id as string} openPopupEdit={() => { setIsOpen(true); setStatus(post._id) }} />
+            <PostCard key={post._id} post={post} reload={() => fetchPosts(1)} type={type} authorId={params.id as string} openPopupEdit={() => { setIsOpen(true); setStatus(post._id) }} />
           ))}
         </div>
       </InfiniteScroll>
