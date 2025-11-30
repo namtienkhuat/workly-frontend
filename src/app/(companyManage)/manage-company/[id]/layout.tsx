@@ -11,6 +11,7 @@ import CompanyHeader from '@/components/company/CompanyHeader';
 import CompanyTabNav from '@/components/company/CompanyTabNav';
 import CompanySkeletonHeader from '@/components/company/CompanySkeletonHeader';
 import EditImageDialog from '@/components/Avatar/EditImageDialog';
+import { CompanyChatInitializer } from '@/features/chat/components/CompanyChatInitializer';
 
 const ManageCompanyLayout = ({ children }: { children: React.ReactNode }) => {
     const { id } = useParams<{ id: string }>();
@@ -75,9 +76,13 @@ const ManageCompanyLayout = ({ children }: { children: React.ReactNode }) => {
     if (!companyProfile) return <div>Company not found</div>;
 
     return (
-        <div className="flex flex-col mt-5 mb-20">
-            <div>
-                <Card className="mx-auto max-w-5xl">
+        <>
+            {/* Initialize company chat for unread count badge */}
+            <CompanyChatInitializer companyId={id} />
+            
+            <div className="flex flex-col mt-5 mb-20">
+                <div>
+                    <Card className="mx-auto max-w-5xl">
                     <CompanyHeader
                         companyProfile={companyProfile}
                         isEditable={true}
@@ -112,7 +117,8 @@ const ManageCompanyLayout = ({ children }: { children: React.ReactNode }) => {
                 onCropComplete={handleBannerCropComplete}
                 isSubmitting={isSubmitting}
             />
-        </div>
+            </div>
+        </>
     );
 };
 

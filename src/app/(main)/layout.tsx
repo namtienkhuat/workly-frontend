@@ -19,7 +19,7 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
                 <LayoutProvider>
                     {isChatPage ? (
                         <div className="h-full mx-auto max-w-7xl p-6 flex flex-col">
-                            <div className="flex-1 rounded-lg border bg-background shadow-sm overflow-hidden">
+                            <div className="flex-1 rounded-xl border border-border/50 bg-background shadow-xl overflow-hidden backdrop-blur-sm">
                                 {children}
                             </div>
                         </div>

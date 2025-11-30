@@ -14,9 +14,20 @@ const config: Config = {
                     "0%": { opacity: '0', transform: "scale(0.95)" },
                     "100%": { opacity: '1', transform: "scale(1)" },
                 },
+                "slide-in": {
+                    "0%": { transform: "translateX(-100%)", opacity: '0' },
+                    "100%": { transform: "translateX(0)", opacity: '1' },
+                },
+                "zoom-in": {
+                    "0%": { transform: "scale(0.5)", opacity: '0' },
+                    "100%": { transform: "scale(1)", opacity: '1' },
+                },
             },
             animation: {
                 "fade-in": "fade-in 0.2s ease-out",
+                "slide-in": "slide-in 0.3s ease-out",
+                "zoom-in": "zoom-in 0.2s ease-out",
+                "in": "fade-in 0.5s ease-out",
             },
             colors: {
                 dark: '#313638',
@@ -59,8 +70,49 @@ const config: Config = {
                 md: 'calc(var(--radius) - 2px)',
                 sm: 'calc(var(--radius) - 4px)',
             },
+            transitionDelay: {
+                '100': '100ms',
+                '200': '200ms',
+                '1000': '1000ms',
+            },
         },
     },
-    // plugins: [require('tailwindcss-animate')],
+    plugins: [
+        // Custom scrollbar plugin
+        function({ addUtilities }: any) {
+            const newUtilities = {
+                '.scrollbar-thin': {
+                    'scrollbar-width': 'thin',
+                },
+                '.scrollbar-thumb-primary\\/20': {
+                    '&::-webkit-scrollbar': {
+                        width: '6px',
+                        height: '6px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        background: 'transparent',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        background: 'hsl(var(--primary) / 0.2)',
+                        'border-radius': '999px',
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': {
+                        background: 'hsl(var(--primary) / 0.3)',
+                    },
+                },
+                '.scrollbar-thumb-primary\\/30': {
+                    '&::-webkit-scrollbar-thumb': {
+                        background: 'hsl(var(--primary) / 0.3)',
+                    },
+                },
+                '.scrollbar-track-transparent': {
+                    '&::-webkit-scrollbar-track': {
+                        background: 'transparent',
+                    },
+                },
+            };
+            addUtilities(newUtilities, ['responsive', 'hover']);
+        },
+    ],
 };
 export default config;

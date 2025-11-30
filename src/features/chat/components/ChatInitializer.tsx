@@ -6,6 +6,7 @@ import { useChat } from '../hooks/useChat';
 import { ParticipantType } from '../types';
 import { useAuth } from '@/hooks/useAuth';
 import { TOKEN_KEY } from '@/constants';
+import { useChatStore } from '../store';
 
 /**
  * ChatInitializer - Initialize chat socket and load conversations
@@ -17,6 +18,7 @@ export function ChatInitializer() {
     const pathname = usePathname();
     const { initialize, isSocketConnected, loadConversations, currentUserId, conversations } =
         useChat();
+    const setPersonalUserId = useChatStore((state) => state.setPersonalUserId);
     const loadedOnce = useRef(false);
 
     // Skip initialization in company management routes
@@ -52,8 +54,10 @@ export function ChatInitializer() {
         }
 
         console.log('👤 Initializing personal chat socket...', { uid });
+        // Set personalUserId first so Header badge always shows user's unread count
+        setPersonalUserId(uid);
         initialize(uid, ParticipantType.USER, token);
-    }, [isLoading, isAuthenticated, user, initialize, isCompanyRoute]);
+    }, [isLoading, isAuthenticated, user, initialize, isCompanyRoute, setPersonalUserId]);
 
     // Load conversations when socket connected (only once)
     useEffect(() => {

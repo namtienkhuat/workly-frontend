@@ -21,7 +21,12 @@ const UserSettingsLayout = ({ children }: { children: React.ReactNode }) => {
         refetch: refetchUserProfile,
     } = useGetUserBasicInfo(currentUser?.userId || '');
     const userProfile: UserProfile = userProfileData?.data;
-    const userInfo = userProfileData?.data?.user || {};
+    const userInfo = userProfileData?.data?.user
+        ? {
+              ...userProfileData.data.user,
+              location: userProfileData.data.relationships?.location,
+          }
+        : ({} as UserProfile);
 
     const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
     const [isBgCoverDialogOpen, setIsBgCoverDialogOpen] = useState(false);

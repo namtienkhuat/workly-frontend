@@ -29,6 +29,7 @@ interface ChatStore {
     // User
     currentUserId: string | null;
     currentUserType: ParticipantType | null;
+    personalUserId: string | null; // Always stores the logged-in user's ID (for Header badge)
 
     // Socket
     isSocketConnected: boolean;
@@ -56,6 +57,7 @@ interface ChatStore {
     // ==================== ACTIONS ====================
     // Initialization
     setCurrentUser: (userId: string, userType: ParticipantType) => void;
+    setPersonalUserId: (userId: string) => void;
     initializeSocket: (userId: string, userType: ParticipantType, token: string) => void;
     disconnectSocket: () => void;
 
@@ -125,6 +127,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     // ==================== INITIAL STATE ====================
     currentUserId: null,
     currentUserType: null,
+    personalUserId: null,
     isSocketConnected: false,
     conversations: {},
     isLoadingConversations: false,
@@ -145,6 +148,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             localStorage.setItem('userId', userId);
             localStorage.setItem('userType', userType);
         }
+    },
+
+    setPersonalUserId: (userId: string) => {
+        set({ personalUserId: userId });
     },
 
     initializeSocket: (userId: string, userType: ParticipantType, token: string) => {
@@ -203,18 +210,30 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                 if (isFromOther && currentUserId) {
                     // If conversation is open (user is viewing it), auto-mark as read
                     if (isConversationOpen) {
+                        const { currentUserType } = get();
+                        
                         // User is actively viewing this conversation - mark all messages as read immediately
                         updatedUnreadCount = {
                             ...conversation.unreadCount,
                             [currentUserId]: 0,
                         };
 
-                        // Auto-mark all messages as read via API (async, don't wait)
-                        messageApiService
-                            .markAllMessagesAsRead(data.conversationId)
-                            .catch((err) => {
-                                console.error('Failed to auto-mark messages as read:', err);
-                            });
+                        // Skip API call for COMPANY type to avoid 403 errors (temporary fix)
+                        // The conversation participants may not be properly set up yet
+                        if (currentUserType === ParticipantType.COMPANY) {
+                            console.warn('⚠️ Skipping auto-mark as read for COMPANY type (temporary fix for 403 error)');
+                        } else {
+                            // Auto-mark all messages as read via API (async, don't wait)
+                            messageApiService
+                                .markAllMessagesAsRead(data.conversationId)
+                                .catch((err) => {
+                                    console.error('Failed to auto-mark messages as read:', err);
+                                    // Silently fail for 403 errors (permission issues)
+                                    if (err.response?.status === 403) {
+                                        console.warn('No permission to mark messages as read (403) - conversation may be read-only');
+                                    }
+                                });
+                        }
 
                         // Also update all messages status in local state
                         const currentMessages = get().messages[data.conversationId] || [];
@@ -702,11 +721,41 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     },
 
     markMessagesAsRead: async (conversationId: string) => {
+        const { currentUserType, currentUserId } = get();
+        
+        // Skip API call for COMPANY type to avoid 403 errors (temporary fix)
+        if (currentUserType === ParticipantType.COMPANY) {
+            console.warn('⚠️ Skipping mark as read for COMPANY type (temporary fix for 403 error)');
+            
+            // Still update local state
+            const conversation = get().conversations[conversationId];
+            const currentMessages = get().messages[conversationId] || [];
+
+            if (conversation && currentUserId) {
+                const updatedConversation = {
+                    ...conversation,
+                    unreadCount: {
+                        ...conversation.unreadCount,
+                        [currentUserId]: 0,
+                    },
+                };
+
+                set({
+                    conversations: {
+                        ...get().conversations,
+                        [conversationId]: updatedConversation,
+                    },
+                });
+                
+                console.log(`✅ Locally marked all messages as read for conversation ${conversationId} (no API call)`);
+            }
+            return;
+        }
+        
         try {
             await messageApiService.markAllMessagesAsRead(conversationId);
 
             const conversation = get().conversations[conversationId];
-            const currentUserId = get().currentUserId;
             const currentMessages = get().messages[conversationId] || [];
 
             if (conversation && currentUserId) {
@@ -755,8 +804,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
                 console.log(`✅ Marked all messages as read for conversation ${conversationId}`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to mark messages as read:', error);
+            // Silently handle 403 errors (permission issues)
+            if (error?.response?.status === 403) {
+                console.warn('No permission to mark messages as read (403) - conversation may be read-only');
+            } else {
+                // Re-throw other errors
+                throw error;
+            }
         }
     },
 

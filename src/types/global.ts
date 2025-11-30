@@ -42,6 +42,11 @@ export interface School {
     name: string;
 }
 
+export interface Location {
+    locationId: string;
+    name: string;
+}
+
 export interface Education {
     schoolId: string;
     school: School;
@@ -50,6 +55,15 @@ export interface Education {
     startDate: string;
     endDate?: string;
     description: string;
+}
+
+export interface WorkExperience {
+    companyId: string;
+    companyName?: string;
+    title: string;
+    startDate: string;
+    endDate?: string;
+    description?: string;
 }
 
 export interface UserProfile {
@@ -65,7 +79,15 @@ export interface UserProfile {
     industries: Industry[];
     skills: Skill[];
     educations: [];
+    workExperiences?: WorkExperience[];
+    location?: Location;
+    locationId?: string;
     followersCount?: number;
+    relationships?: {
+        educations?: Education[];
+        workExperiences?: WorkExperience[];
+        location?: Location;
+    };
 }
 
 export interface Follower {

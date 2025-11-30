@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -21,9 +20,10 @@ import { EditUserSkillsFormData, editUserSkillsSchema } from '@/lib/validations/
 import SelectSkills from '../_components/SelectSkills';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Skill } from '@/types/global';
+import { SparklesIcon, InfoIcon } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const EditSkillsPage = () => {
-    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [initialValuesLoaded, setInitialValuesLoaded] = useState(false);
 
@@ -64,10 +64,8 @@ const EditSkillsPage = () => {
 
         if (success) {
             toast.success('Skills updated successfully!');
-
             reset({ skillIds: formData.skillIds }, { keepDirty: false });
-
-            refetchUserProfile();
+            await refetchUserProfile();
         } else {
             toast.error('Failed to update skills', { description: message });
         }
@@ -90,16 +88,31 @@ const EditSkillsPage = () => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-2xl">Edit Skills</CardTitle>
-                <CardDescription>
-                    Select the skills that best describe your expertise.
-                </CardDescription>
+                <div className="flex items-center gap-2">
+                    <SparklesIcon className="h-6 w-6 text-primary" />
+                    <div>
+                        <CardTitle className="text-2xl">Skills</CardTitle>
+                        <CardDescription>
+                            Showcase your technical and professional skills to highlight your
+                            expertise
+                        </CardDescription>
+                    </div>
+                </div>
             </CardHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
-                <CardContent>
+                <CardContent className="space-y-4">
+                    <Alert>
+                        <InfoIcon className="h-4 w-4" />
+                        <AlertDescription>
+                            Add skills that you're proficient in. These help employers and
+                            recruiters find you for relevant opportunities.
+                        </AlertDescription>
+                    </Alert>
+
                     <Field className="gap-2">
-                        <FieldLabel>
-                            Your Skills <span className="text-red-500">*</span>
+                        <FieldLabel className="flex items-center gap-2 text-base">
+                            <SparklesIcon className="h-4 w-4" />
+                            Select Your Skills
                         </FieldLabel>
 
                         <Controller
@@ -115,9 +128,16 @@ const EditSkillsPage = () => {
                         />
 
                         <FieldError errors={errors.skillIds ? [errors.skillIds] : undefined} />
+
+                        {skillsFromProfile.length > 0 && (
+                            <p className="text-sm text-muted-foreground">
+                                Currently selected: <strong>{skillsFromProfile.length}</strong>{' '}
+                                {skillsFromProfile.length === 1 ? 'skill' : 'skills'}
+                            </p>
+                        )}
                     </Field>
                 </CardContent>
-                <CardFooter className="flex justify-end gap-2">
+                <CardFooter className="flex justify-end gap-2 bg-muted/50">
                     <Button type="submit" disabled={isLoading || !isDirty}>
                         {isLoading ? 'Saving...' : 'Save Changes'}
                     </Button>

@@ -18,7 +18,10 @@ const PublicProfileLayout = ({ children }: { children: React.ReactNode }) => {
     const [isCurrentUser, setIsCurrentUser] = useState(false);
 
     const { data: userProfileData, isLoading } = useGetUserBasicInfo(id);
-    const userProfile: UserProfile = userProfileData?.data?.user;
+    const userProfile: UserProfile = {
+        ...userProfileData?.data?.user,
+        location: userProfileData?.data?.relationships?.location,
+    };
 
     useEffect(() => {
         setIsCurrentUser(currentUser?.userId === id);

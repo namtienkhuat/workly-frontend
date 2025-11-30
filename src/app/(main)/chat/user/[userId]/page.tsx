@@ -123,7 +123,7 @@ export default function ChatUserPage() {
     }
 
     return (
-        <div className="flex h-full">
+        <div className="flex h-full bg-gradient-to-br from-background via-background to-muted/20">
             <ConversationList
                 conversations={conversations}
                 currentUserId={currentUserId}
@@ -134,7 +134,7 @@ export default function ChatUserPage() {
                 isLoading={isLoadingConversations}
             />
 
-            <div className="flex-1">
+            <div className="flex-1 relative">
                 {isLoading ? (
                     <div className="flex h-full items-center justify-center">
                         <LoadingSpinner size="lg" message="Đang tải cuộc trò chuyện..." />
@@ -142,9 +142,20 @@ export default function ChatUserPage() {
                 ) : fullChatId ? (
                     <ChatView conversationId={fullChatId} onClose={handleClose} />
                 ) : (
-                    <div className="flex h-full items-center justify-center">
-                        <div className="text-center px-6">
-                            <h2 className="mb-2 text-2xl font-semibold">
+                    <div className="flex h-full items-center justify-center relative overflow-hidden">
+                        {/* Animated background */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 via-transparent to-destructive/5 opacity-50" />
+                        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-destructive/10 rounded-full blur-3xl" />
+                        
+                        <div className="text-center px-6 relative z-10 animate-in fade-in duration-500">
+                            <div className="mb-6 flex justify-center">
+                                <div className="rounded-full bg-destructive/10 p-6 border-2 border-destructive/20">
+                                    <svg className="w-16 h-16 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <h2 className="mb-2 text-2xl font-bold text-foreground/90">
                                 Không thể tải cuộc trò chuyện
                             </h2>
                             <p className="text-muted-foreground">Vui lòng thử lại sau.</p>
