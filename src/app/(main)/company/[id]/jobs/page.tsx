@@ -39,7 +39,6 @@ const CompanyJobs = () => {
     const [selectedTimesOption, setSelectedTimesOption] = useState<OptionType[]>([]);
     const params = useParams();
 
-
     const [jobs, setJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -52,14 +51,11 @@ const CompanyJobs = () => {
     useEffect(() => {
         const checkAccess = async () => {
             try {
-                setLoading(true);
                 const canAccess = await ProfileService.checkAccessCompany(params.id as string);
                 setCanUploadCompany(canAccess);
             } catch (error) {
                 console.error('Check access error:', error);
                 setCanUploadCompany(false);
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -86,7 +82,7 @@ const CompanyJobs = () => {
             }));
         }
     }, [industriesData, skillData]);
-    // Load jobs on component mount
+
     useEffect(() => {
         fetchInitialJobs();
     }, []);
@@ -107,18 +103,20 @@ const CompanyJobs = () => {
     const fetchInitialJobs = async () => {
         try {
             setLoading(true);
-            const params = {
+            const requestParams = {
                 page: 1,
                 pageSize: pageSize,
                 ...buildSearchParams(),
             };
 
-            const response = await JobService.getCompanyJobPaging(params);
+            const response = await JobService.getCompanyJobPaging(requestParams);
 
-            if (response) {
+            if (response && response.data) {
                 setJobs(response.data || []);
                 setCurrentPage(1);
-                setHasMore(response.totalPage ? response.totalPage > 1 : false);
+
+                const totalPages = response.pagination?.totalPages || 0;
+                setHasMore(totalPages > 1);
                 setSearchParams(buildSearchParams());
             }
         } catch (error) {
@@ -133,20 +131,25 @@ const CompanyJobs = () => {
     const fetchMoreJobs = async () => {
         if (loading) return;
 
+        console.log('Fetching more jobs...'); // Debug log
+
         try {
             const nextPage = currentPage + 1;
-            const params = {
+            const requestParams = {
                 page: nextPage,
                 pageSize: pageSize,
                 ...searchParams,
             };
 
-            const response = await JobService.getCompanyJobPaging(params);
+            const response = await JobService.getCompanyJobPaging(requestParams);
 
             if (response && response.data) {
                 setJobs(prevJobs => [...prevJobs, ...response.data]);
                 setCurrentPage(nextPage);
-                setHasMore(response.totalPage ? nextPage < response.totalPage : false);
+
+                // Fix: Dùng pagination.totalPages
+                const totalPages = response.pagination?.totalPages || 0;
+                setHasMore(nextPage < totalPages);
             } else {
                 setHasMore(false);
             }
@@ -172,32 +175,9 @@ const CompanyJobs = () => {
         setSelectedTimesOption([]);
         setCurrentPage(1);
         setHasMore(true);
+        fetchInitialJobs();
     };
-    useEffect(() => {
-        if (
-            searchText === "" &&
-            searchType === (searchTypeOptions[0] ?? null) &&
-            startTime === null &&
-            endTime === null &&
-            selectedSkills.length === 0 &&
-            selectedIndustries.length === 0 &&
-            selectedTimesOption.length === 0 &&
-            currentPage === 1 &&
-            hasMore === true
-        ) {
-            fetchInitialJobs();
-        }
-    }, [
-        searchText,
-        searchType,
-        startTime,
-        endTime,
-        selectedSkills,
-        selectedIndustries,
-        selectedTimesOption,
-        currentPage,
-        hasMore
-    ]);
+
     return (
         <div className="p-4 max-w-4xl mx-auto space-y-6">
             {/* Input text + search type */}
@@ -310,10 +290,16 @@ const CompanyJobs = () => {
                                 <p className="text-gray-500">No more jobs to load</p>
                             </div>
                         }
+                        scrollThreshold={0.9}
                     >
                         <div className="flex flex-col gap-6 p-4">
                             {jobs.map((job, idx) => (
-                                <JobCard key={job._id || idx} {...job} onReload={fetchInitialJobs} canUploadCompany={canUploadCompany} />
+                                <JobCard
+                                    key={idx}
+                                    {...job}
+                                    onReload={fetchInitialJobs}
+                                    canUploadCompany={canUploadCompany}
+                                />
                             ))}
                         </div>
                     </InfiniteScroll>

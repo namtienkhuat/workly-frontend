@@ -30,7 +30,12 @@ export const getMediaUrl = (filename: string, type: 'IMAGE' | 'VIDEO'): string =
     const folder = type === 'VIDEO' ? 'videos' : 'images';
     return `${STORAGE_URL}/uploads/${folder}/${filename}`;
 };
+export const getCVUrl = (fileName: string): string => {
+    console.log(`${STORAGE_URL}${fileName}`);
 
+    return `${STORAGE_URL}${fileName}`;
+
+}
 export const getMimeType = (type: 'IMAGE' | 'VIDEO', filename: string): string => {
     if (type === 'VIDEO') {
         // Video MIME types

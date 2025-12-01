@@ -46,6 +46,14 @@ interface OptionType {
 //     { value: "education", label: "Education" },
 // ];
 
+const experienceLevelOptions = [
+    { value: 'intern', label: 'Intern' },
+    { value: 'fresher', label: 'Fresher' },
+    { value: 'junior', label: 'Junior' },
+    { value: 'mid-level', label: 'Mid-Level' },
+    { value: 'senior', label: 'Senior' },
+    { value: 'lead', label: 'Lead/Manager' }
+];
 const createJobSchema = z.object({
     title: z.string().min(1, 'Job title is required'),
     description: z.string().min(1, 'Job description is required'),
@@ -55,6 +63,8 @@ const createJobSchema = z.object({
     salaryMax: z.number().min(0, 'Maximum salary must be positive').optional(),
     skills: z.array(z.string()).min(1, 'Skill is required'),
     industry: z.string().min(1, 'industry is required'),
+    endDate: z.string().min(1, "endDate is required"),
+    experienceLevel: z.array(z.string()).min(1, "experienceLevel is required")
 });
 
 type CreateJobFormData = z.infer<typeof createJobSchema>;
@@ -159,7 +169,9 @@ const CreateJobPage = () => {
                 salary: formData.salaryMin && formData.salaryMax
                     ? `$${formData.salaryMin} - $${formData.salaryMax}`
                     : undefined,
+                endDate: formData.endDate,
                 skills: formData.skills.map(i => i.toLowerCase()),
+                level: formData.experienceLevel.map(e => e.toLowerCase())
             };
             if (isEditMode) {
                 // Update job
@@ -237,31 +249,46 @@ const CreateJobPage = () => {
                             errors={errors.location ? [errors.location] : undefined}
                         />
                     </Field>
-
-                    <Field className="gap-2">
-                        <FieldLabel>
-                            Employment Type <span className="text-red-500">*</span>
-                        </FieldLabel>
-                        <Controller
-                            name="employmentType"
-                            control={control}
-                            render={({ field }) => (
-                                <SelectSingle value={field.value} onValueChange={field.onChange}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select employment type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="full-time">Full-time</SelectItem>
-                                        <SelectItem value="part-time">Part-time</SelectItem>
-                                    </SelectContent>
-                                </SelectSingle>
-                            )}
-                        />
-                        <FieldError
-                            className="mt-1 text-xs"
-                            errors={errors.employmentType ? [errors.employmentType] : undefined}
-                        />
-                    </Field>
+                    <div className="grid grid-cols-2 gap-4">
+                        <Field className="gap-2">
+                            <FieldLabel>
+                                Employment Type <span className="text-red-500">*</span>
+                            </FieldLabel>
+                            <Controller
+                                name="employmentType"
+                                control={control}
+                                render={({ field }) => (
+                                    <SelectSingle value={field.value} onValueChange={field.onChange}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select employment type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="full-time">Full-time</SelectItem>
+                                            <SelectItem value="part-time">Part-time</SelectItem>
+                                        </SelectContent>
+                                    </SelectSingle>
+                                )}
+                            />
+                            <FieldError
+                                className="mt-1 text-xs"
+                                errors={errors.employmentType ? [errors.employmentType] : undefined}
+                            />
+                        </Field>
+                        <Field className="gap-2">
+                            <FieldLabel>
+                                End Date <span className="text-red-500">*</span>
+                            </FieldLabel>
+                            <Input
+                                type="date"
+                                {...register('endDate')}
+                                min={new Date().toISOString().split('T')[0]}
+                            />
+                            <FieldError
+                                className="mt-1 text-xs"
+                                errors={errors.endDate ? [errors.endDate] : undefined}
+                            />
+                        </Field>
+                    </div >
 
                     <div className="grid grid-cols-2 gap-4">
                         <Field className="gap-2">
@@ -339,6 +366,33 @@ const CreateJobPage = () => {
                                         <FieldError
                                             className="text-xs text-red-500"
                                             errors={errors.industry ? [errors.industry] : undefined}
+                                        />
+                                    </div>
+                                )}
+                            />
+                        </Field>
+                        <Field className="gap-2">
+                            <FieldLabel>
+                                Experience Level<span className="text-red-500">*</span>
+                            </FieldLabel>
+
+                            <Controller
+                                name="experienceLevel"
+                                control={control}
+                                render={({ field }) => (
+                                    <div className="space-y-1">
+                                        <Select
+                                            isMulti
+                                            value={experienceLevelOptions.filter(opt => field.value?.includes(opt.value))}
+                                            onChange={(options) => {
+                                                field.onChange((options as OptionType[]).map(opt => opt.value));
+                                            }}
+                                            options={experienceLevelOptions}
+                                            className="text-sm"
+                                        />
+                                        <FieldError
+                                            className="text-xs text-red-500"
+                                            errors={errors.experienceLevel ? [errors.experienceLevel] : undefined}
                                         />
                                     </div>
                                 )}

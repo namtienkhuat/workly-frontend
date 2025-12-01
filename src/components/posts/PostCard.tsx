@@ -23,7 +23,7 @@ import { useRouter } from 'next/navigation';
 interface PostCardProps {
     post: PostResponse;
     reload: () => void;
-    type?: 'USER' | 'COMPANY';
+    type: any;
     authorId: string;
     openPopupEdit: () => void;
     isFeed?: boolean;
