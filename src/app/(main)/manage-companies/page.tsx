@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building2, Search, Plus, Users, Calendar, ExternalLink } from 'lucide-react';
+import { Building2, Search, Plus, Users, Calendar, ExternalLink, ShieldCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -158,11 +158,16 @@ export default function ManageCompaniesPage() {
                                                                     ? 'default'
                                                                     : 'outline'
                                                             }
-                                                            className="text-xs flex-shrink-0"
+                                                            className="text-xs flex-shrink-0 gap-1"
                                                         >
-                                                            {company.role === 'OWNER'
-                                                                ? '👑 Owner'
-                                                                : '⚙️ Admin'}
+                                                            {company.role === 'OWNER' ? (
+                                                                '👑 Owner'
+                                                            ) : (
+                                                                <>
+                                                                    <ShieldCheck className="h-3 w-3" />
+                                                                    Admin
+                                                                </>
+                                                            )}
                                                         </Badge>
                                                     )}
                                                 </div>

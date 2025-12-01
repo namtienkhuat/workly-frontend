@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -21,9 +20,10 @@ import { EditUserIndustriesFormData, editUserIndustriesSchema } from '@/lib/vali
 import { Skeleton } from '@/components/ui/skeleton';
 import { Industry } from '@/types/global';
 import SelectIndustries from '@/app/(main)/profile/edit/_components/selectIndustries';
+import { Building2Icon, InfoIcon } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const EditIndustriesPage = () => {
-    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [initialValuesLoaded, setInitialValuesLoaded] = useState(false);
 
@@ -66,10 +66,8 @@ const EditIndustriesPage = () => {
 
         if (success) {
             toast.success('Industries updated successfully!');
-
             reset({ industryIds: formData.industryIds }, { keepDirty: false });
-
-            refetchUserProfile();
+            await refetchUserProfile();
         } else {
             toast.error('Failed to update industries', { description: message });
         }
@@ -92,16 +90,31 @@ const EditIndustriesPage = () => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-2xl">Edit Industries</CardTitle>
-                <CardDescription>
-                    Select the industries that best describe your expertise.
-                </CardDescription>
+                <div className="flex items-center gap-2">
+                    <Building2Icon className="h-6 w-6 text-primary" />
+                    <div>
+                        <CardTitle className="text-2xl">Industries</CardTitle>
+                        <CardDescription>
+                            Select the industries that align with your professional experience and
+                            interests
+                        </CardDescription>
+                    </div>
+                </div>
             </CardHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
-                <CardContent>
+                <CardContent className="space-y-4">
+                    <Alert>
+                        <InfoIcon className="h-4 w-4" />
+                        <AlertDescription>
+                            Choose industries where you have experience or expertise. This helps
+                            connect you with relevant opportunities and professionals in your field.
+                        </AlertDescription>
+                    </Alert>
+
                     <Field className="gap-2">
-                        <FieldLabel>
-                            Your Industries <span className="text-red-500">*</span>
+                        <FieldLabel className="flex items-center gap-2 text-base">
+                            <Building2Icon className="h-4 w-4" />
+                            Select Your Industries
                         </FieldLabel>
 
                         <Controller
@@ -119,9 +132,16 @@ const EditIndustriesPage = () => {
                         <FieldError
                             errors={errors.industryIds ? [errors.industryIds] : undefined}
                         />
+
+                        {industriesFromProfile.length > 0 && (
+                            <p className="text-sm text-muted-foreground">
+                                Currently selected: <strong>{industriesFromProfile.length}</strong>{' '}
+                                {industriesFromProfile.length === 1 ? 'industry' : 'industries'}
+                            </p>
+                        )}
                     </Field>
                 </CardContent>
-                <CardFooter className="flex justify-end gap-2">
+                <CardFooter className="flex justify-end gap-2 bg-muted/50">
                     <Button type="submit" disabled={isLoading || !isDirty}>
                         {isLoading ? 'Saving...' : 'Save Changes'}
                     </Button>

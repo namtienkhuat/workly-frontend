@@ -197,11 +197,11 @@ const ProfleHeader = ({
                                 </CardDescription>
                             </div>
                         )}
-                        {userProfile?.bio && (
+                        {userProfile?.location?.name && (
                             <div className="flex items-center gap-2 mt-1.5">
                                 <MapPin className="w-4 h-4 text-muted-foreground" />
                                 <CardDescription className="text-sm text-muted-foreground/80">
-                                    {userProfile.bio}
+                                    {userProfile.location.name}
                                 </CardDescription>
                             </div>
                         )}
@@ -227,9 +227,7 @@ const ProfleHeader = ({
                             </Button>
                         ) : isEditable ? (
                             <Button variant="outline" asChild>
-                                <Link href={`/profile/${userProfile.userId}`}>
-                                    View Profile
-                                </Link>
+                                <Link href={`/profile/${userProfile.userId}`}>View Profile</Link>
                             </Button>
                         ) : (
                             <div className="flex items-center gap-2">

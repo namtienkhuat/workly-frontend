@@ -76,7 +76,10 @@ export function useGetIndustry(queryParams: Record<string, any> = {}) {
 }
 
 export function useGetMe() {
-    return useData(['/me?include=education,industry,skill', {}], getDataWithStatus);
+    return useData(
+        ['/me?include=education,industry,skill,location,work-experience', {}],
+        getDataWithStatus
+    );
 }
 
 export function useGetSkills(queryParams: Record<string, any> = {}) {
@@ -96,11 +99,14 @@ export function useGetAllSchools(queryParams: Record<string, any> = {}) {
 }
 
 export function useGetUserBasicInfo(id: string) {
-    return useData([`/users/${id}`, {}], getDataWithStatus);
+    return useData([`/users/${id}?include=location`, {}], getDataWithStatus);
 }
 
 export function useGetUserProfile(id: string) {
-    return useData([`/users/${id}?include=skill,education,industry`, {}], getDataWithStatus);
+    return useData(
+        [`/users/${id}?include=skill,education,industry,location,work-experience`, {}],
+        getDataWithStatus
+    );
 }
 
 export function useGetAllIndustries(queryParams: Record<string, any> = {}) {
@@ -155,4 +161,8 @@ export function useGetMessages(conversationId: string, queryParams: Record<strin
 // Company management queries
 export function useGetMyCompanies(queryParams: Record<string, any> = {}) {
     return useData(['/companies/my-companies', queryParams], getDataWithStatus);
+}
+
+export function useGetCompanyAdmins(companyId: string) {
+    return useData([`/companies/${companyId}/admins`, {}], getDataWithStatus);
 }

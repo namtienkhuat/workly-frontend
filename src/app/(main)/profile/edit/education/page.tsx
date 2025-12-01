@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -15,13 +14,20 @@ import {
 } from '@/components/ui/card';
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useGetMe } from '@/hooks/useQueryData';
 import { UserProfile } from '@/types/global';
 import { patchUserEducation } from '@/services/apiServices';
 import { EditUserEducationFormData, editUserEducationSchema } from '@/lib/validations/user';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrashIcon, PlusIcon } from 'lucide-react';
+import {
+    TrashIcon,
+    PlusIcon,
+    GraduationCapIcon,
+    CalendarIcon,
+    BookOpenIcon,
+} from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -30,6 +36,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import SelectSchool from '@/app/(main)/profile/edit/_components/SelectSchool';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 const convertISOToYear = (value?: string | null): string => {
     if (!value) return '';
@@ -40,7 +48,6 @@ const convertISOToYear = (value?: string | null): string => {
 };
 
 const EditEducationPage = () => {
-    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     const [initialValuesLoaded, setInitialValuesLoaded] = useState(false);
@@ -105,10 +112,8 @@ const EditEducationPage = () => {
 
         if (success) {
             toast.success('Education updated successfully!');
-
             reset(formData, { keepDirty: false });
-
-            refetchUserProfile();
+            await refetchUserProfile();
         } else {
             toast.error('Failed to update education', {
                 description: message,
@@ -133,93 +138,159 @@ const EditEducationPage = () => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-2xl">Edit Education</CardTitle>
-                <CardDescription>Manage your educational background.</CardDescription>
+                <div className="flex items-center gap-2">
+                    <GraduationCapIcon className="h-6 w-6 text-primary" />
+                    <div>
+                        <CardTitle className="text-2xl">Education</CardTitle>
+                        <CardDescription>
+                            Add your educational background and academic achievements
+                        </CardDescription>
+                    </div>
+                </div>
             </CardHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <CardContent className="space-y-6">
-                    {fields.map((field, index) => (
-                        <div key={field.id} className="p-4 border rounded-md relative space-y-4">
+                    {fields.length === 0 && (
+                        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                            <GraduationCapIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                            <p className="text-muted-foreground mb-4">
+                                No education records added yet
+                            </p>
                             <Button
                                 type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="absolute top-2 right-2"
-                                onClick={() => remove(index)}
+                                variant="outline"
+                                onClick={() =>
+                                    append({
+                                        schoolId: '',
+                                        degree: '',
+                                        major: '',
+                                        startDate: '',
+                                        endDate: '',
+                                        description: '',
+                                    })
+                                }
                             >
-                                <TrashIcon className="h-4 w-4 text-red-500" />
+                                <PlusIcon className="mr-2 h-4 w-4" />
+                                Add Your First Education
                             </Button>
+                        </div>
+                    )}
 
-                            <Field className="gap-2">
-                                <FieldLabel>School</FieldLabel>
-                                <Controller
-                                    name={`educations.${index}.schoolId`}
-                                    control={control}
-                                    render={({ field }) => (
-                                        <SelectSchool
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                        />
-                                    )}
-                                />
-                                <FieldError
-                                    errors={
-                                        errors.educations?.[index]?.schoolId
-                                            ? [errors.educations?.[index]?.schoolId]
-                                            : undefined
-                                    }
-                                />
-                            </Field>
+                    {fields.map((field, index) => (
+                        <div
+                            key={field.id}
+                            className="p-6 border rounded-lg bg-card space-y-4 relative"
+                        >
+                            <div className="flex items-start justify-between mb-4">
+                                <Badge variant="outline" className="gap-1">
+                                    <GraduationCapIcon className="h-3 w-3" />
+                                    Education #{index + 1}
+                                </Badge>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => remove(index)}
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                    <TrashIcon className="h-4 w-4" />
+                                </Button>
+                            </div>
 
-                            <Field className="gap-2">
-                                <FieldLabel>Degree</FieldLabel>
-                                <Controller
-                                    name={`educations.${index}.degree`}
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select degree" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Associate">Associate</SelectItem>
-                                                <SelectItem value="Bachelor">Bachelor</SelectItem>
-                                                <SelectItem value="Master">Master</SelectItem>
-                                                <SelectItem value="Doctorate">Doctorate</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
-                                <FieldError
-                                    errors={
-                                        errors.educations?.[index]?.degree
-                                            ? [errors.educations?.[index]?.degree]
-                                            : undefined
-                                    }
-                                />
-                            </Field>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field className="gap-2 md:col-span-2">
+                                    <FieldLabel>
+                                        School <span className="text-destructive">*</span>
+                                    </FieldLabel>
+                                    <Controller
+                                        name={`educations.${index}.schoolId`}
+                                        control={control}
+                                        render={({ field }) => (
+                                            <SelectSchool
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                            />
+                                        )}
+                                    />
+                                    <FieldError
+                                        errors={
+                                            errors.educations?.[index]?.schoolId
+                                                ? [errors.educations[index].schoolId!]
+                                                : undefined
+                                        }
+                                    />
+                                </Field>
 
-                            <Field className="gap-2">
-                                <FieldLabel>Major</FieldLabel>
-                                <Controller
-                                    name={`educations.${index}.major`}
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Input {...field} placeholder="e.g., Computer Science" />
-                                    )}
-                                />
-                                <FieldError
-                                    errors={
-                                        errors.educations?.[index]?.major
-                                            ? [errors.educations?.[index]?.major]
-                                            : undefined
-                                    }
-                                />
-                            </Field>
-
-                            <div className="grid grid-cols-2 gap-4">
                                 <Field className="gap-2">
-                                    <FieldLabel>Start Date</FieldLabel>
+                                    <FieldLabel className="flex items-center gap-2">
+                                        <GraduationCapIcon className="h-3.5 w-3.5" />
+                                        Degree <span className="text-destructive">*</span>
+                                    </FieldLabel>
+                                    <Controller
+                                        name={`educations.${index}.degree`}
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select degree" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Associate">
+                                                        Associate Degree
+                                                    </SelectItem>
+                                                    <SelectItem value="Bachelor">
+                                                        Bachelor's Degree
+                                                    </SelectItem>
+                                                    <SelectItem value="Master">
+                                                        Master's Degree
+                                                    </SelectItem>
+                                                    <SelectItem value="Doctorate">
+                                                        Doctorate (PhD)
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
+                                    <FieldError
+                                        errors={
+                                            errors.educations?.[index]?.degree
+                                                ? [errors.educations[index].degree!]
+                                                : undefined
+                                        }
+                                    />
+                                </Field>
+
+                                <Field className="gap-2">
+                                    <FieldLabel className="flex items-center gap-2">
+                                        <BookOpenIcon className="h-3.5 w-3.5" />
+                                        Major / Field of Study <span className="text-destructive">*</span>
+                                    </FieldLabel>
+                                    <Controller
+                                        name={`educations.${index}.major`}
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Input
+                                                {...field}
+                                                placeholder="e.g. Computer Science"
+                                            />
+                                        )}
+                                    />
+                                    <FieldError
+                                        errors={
+                                            errors.educations?.[index]?.major
+                                                ? [errors.educations[index].major!]
+                                                : undefined
+                                        }
+                                    />
+                                </Field>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field className="gap-2">
+                                    <FieldLabel className="flex items-center gap-2">
+                                        <CalendarIcon className="h-3.5 w-3.5" />
+                                        Start Year <span className="text-destructive">*</span>
+                                    </FieldLabel>
                                     <Controller
                                         name={`educations.${index}.startDate`}
                                         control={control}
@@ -227,20 +298,27 @@ const EditEducationPage = () => {
                                             <Input
                                                 {...field}
                                                 type="text"
-                                                placeholder="e.g., 2018"
+                                                placeholder="e.g. 2018"
                                             />
                                         )}
                                     />
                                     <FieldError
                                         errors={
                                             errors.educations?.[index]?.startDate
-                                                ? [errors.educations?.[index]?.startDate]
+                                                ? [errors.educations[index].startDate!]
                                                 : undefined
                                         }
                                     />
                                 </Field>
+
                                 <Field className="gap-2">
-                                    <FieldLabel>End Date (Optional)</FieldLabel>
+                                    <FieldLabel className="flex items-center gap-2">
+                                        <CalendarIcon className="h-3.5 w-3.5" />
+                                        End Year
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                            (Leave empty if current)
+                                        </span>
+                                    </FieldLabel>
                                     <Controller
                                         name={`educations.${index}.endDate`}
                                         control={control}
@@ -248,9 +326,16 @@ const EditEducationPage = () => {
                                             <Input
                                                 {...field}
                                                 type="text"
-                                                placeholder="e.g., 2022 or Present"
+                                                placeholder="e.g. 2022 or leave empty"
                                             />
                                         )}
+                                    />
+                                    <FieldError
+                                        errors={
+                                            errors.educations?.[index]?.endDate
+                                                ? [errors.educations[index].endDate!]
+                                                : undefined
+                                        }
                                     />
                                 </Field>
                             </div>
@@ -261,43 +346,48 @@ const EditEducationPage = () => {
                                     name={`educations.${index}.description`}
                                     control={control}
                                     render={({ field }) => (
-                                        <Input
+                                        <Textarea
                                             {...field}
-                                            placeholder="Can you describe your major, degree e.g.,"
+                                            placeholder="Describe your studies, achievements, honors, or relevant coursework..."
+                                            rows={4}
                                         />
                                     )}
                                 />
                                 <FieldError
                                     errors={
                                         errors.educations?.[index]?.description
-                                            ? [errors.educations?.[index]?.description]
+                                            ? [errors.educations[index].description!]
                                             : undefined
                                     }
                                 />
                             </Field>
+
+                            {index < fields.length - 1 && <Separator className="mt-4" />}
                         </div>
                     ))}
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() =>
-                            append({
-                                schoolId: '',
-                                degree: '',
-                                major: '',
-                                startDate: '',
-                                endDate: '',
-                                description: '',
-                            })
-                        }
-                    >
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                        Add Education
-                    </Button>
+                    {fields.length > 0 && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() =>
+                                append({
+                                    schoolId: '',
+                                    degree: '',
+                                    major: '',
+                                    startDate: '',
+                                    endDate: '',
+                                    description: '',
+                                })
+                            }
+                        >
+                            <PlusIcon className="mr-2 h-4 w-4" />
+                            Add Another Education
+                        </Button>
+                    )}
                 </CardContent>
-                <CardFooter className="flex justify-end gap-2">
+                <CardFooter className="flex justify-end gap-2 bg-muted/50">
                     <Button type="submit" disabled={isLoading || !isDirty}>
                         {isLoading ? 'Saving...' : 'Save Changes'}
                     </Button>

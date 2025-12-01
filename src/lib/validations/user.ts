@@ -5,7 +5,7 @@ export const editUserProfileSchema = z.object({
     name: z.string().min(1, 'Name is required.'),
     email: z.string().email('Invalid email address.'),
     headline: z.string().optional(),
-    bio: z.string().optional(),
+    locationId: z.string().optional(),
     // username: z.string().min(3, 'Username must be at least 3 characters.'),
 });
 
@@ -38,6 +38,22 @@ export const editUserEducationSchema = z.object({
 });
 
 export type EditUserEducationFormData = z.infer<typeof editUserEducationSchema>;
+
+// Schema cho Work Experience
+export const workExperienceEntrySchema = z.object({
+    companyId: z.string().min(1, 'Company is required.'),
+    companyName: z.string().optional(),
+    title: z.string().min(1, 'Job title is required.'),
+    startDate: z.string().min(1, 'Start date is required.'),
+    endDate: z.string().optional(),
+    description: z.string().optional(),
+});
+
+export const editUserWorkExperiencesSchema = z.object({
+    workExperiences: z.array(workExperienceEntrySchema).optional(),
+});
+
+export type EditUserWorkExperiencesFormData = z.infer<typeof editUserWorkExperiencesSchema>;
 
 export const changePasswordSchema = z
     .object({

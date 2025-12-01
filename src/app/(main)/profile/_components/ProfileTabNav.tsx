@@ -13,6 +13,7 @@ const ownerTabs: TabConfig[] = [
     { id: 'skills', label: 'Skills' },
     { id: 'industries', label: 'Industries' },
     { id: 'education', label: 'Education' },
+    { id: 'work-experiences', label: 'Work Experiences' },
 ];
 
 const viewTabs: TabConfig[] = [

@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { ChatView, ConversationList } from '@/features/chat/components';
-import { CompanyChatInitializer } from '@/features/chat/components/CompanyChatInitializer';
 import { useCompanyChat } from '@/features/chat/hooks/useCompanyChat';
 import { ParticipantType } from '@/features/chat/types';
 import { LoadingSpinner } from '@/features/chat/components/ui';
@@ -89,47 +88,53 @@ export default function CompanyUserChatPage() {
     }
 
     return (
-        <>
-            {/* Initialize chat with company identity */}
-            <CompanyChatInitializer companyId={companyId} />
+        <Card className="overflow-hidden border-border/50 shadow-lg">
+            <CardContent className="p-0">
+                <div className="flex h-[600px] bg-gradient-to-br from-background via-background to-muted/20">
+                    {/* Conversation List - Left Side */}
+                    <ConversationList
+                        conversations={conversations}
+                        currentUserId={currentUserId}
+                        onSelectConversation={handleSelectConversation}
+                        activeConversationId={fullChatId}
+                        isLoading={isLoadingConversations}
+                    />
 
-            <Card>
-                <CardContent className="p-0">
-                    <div className="flex h-[600px]">
-                        {/* Conversation List - Left Side */}
-                        <ConversationList
-                            conversations={conversations}
-                            currentUserId={currentUserId}
-                            onSelectConversation={handleSelectConversation}
-                            activeConversationId={fullChatId}
-                            isLoading={isLoadingConversations}
-                        />
-
-                        {/* Chat View - Right Side */}
-                        <div className="flex-1">
-                            {isLoading ? (
-                                <div className="flex h-full items-center justify-center bg-gray-50">
-                                    <LoadingSpinner
-                                        size="lg"
-                                        message="Đang tải cuộc trò chuyện..."
-                                    />
-                                </div>
-                            ) : fullChatId ? (
-                                <ChatView conversationId={fullChatId} onClose={handleClose} />
-                            ) : (
-                                <div className="flex h-full items-center justify-center bg-gray-50">
-                                    <div className="text-center">
-                                        <h2 className="mb-2 text-2xl font-semibold text-gray-700">
-                                            Không thể tải cuộc trò chuyện
-                                        </h2>
-                                        <p className="text-gray-500">Vui lòng thử lại sau.</p>
+                    {/* Chat View - Right Side */}
+                    <div className="flex-1 relative">
+                        {isLoading ? (
+                            <div className="flex h-full items-center justify-center">
+                                <LoadingSpinner
+                                    size="lg"
+                                    message="Đang tải cuộc trò chuyện..."
+                                />
+                            </div>
+                        ) : fullChatId ? (
+                            <ChatView conversationId={fullChatId} onClose={handleClose} />
+                        ) : (
+                            <div className="flex h-full items-center justify-center relative overflow-hidden">
+                                {/* Animated background */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 via-transparent to-destructive/5 opacity-50" />
+                                <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-destructive/10 rounded-full blur-3xl" />
+                                
+                                <div className="text-center px-6 relative z-10 animate-in fade-in duration-500">
+                                    <div className="mb-6 flex justify-center">
+                                        <div className="rounded-full bg-destructive/10 p-6 border-2 border-destructive/20">
+                                            <svg className="w-16 h-16 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                        </div>
                                     </div>
+                                    <h2 className="mb-2 text-2xl font-bold text-foreground/90">
+                                        Không thể tải cuộc trò chuyện
+                                    </h2>
+                                    <p className="text-muted-foreground">Vui lòng thử lại sau.</p>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
-                </CardContent>
-            </Card>
-        </>
+                </div>
+            </CardContent>
+        </Card>
     );
 }

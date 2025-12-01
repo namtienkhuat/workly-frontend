@@ -184,9 +184,45 @@ export async function patchUserIndustries(formData: { industryIds: string[] }) {
     }
 }
 
+export async function patchUserLocation(formData: { locationId?: string }) {
+    try {
+        const { data } = await api.patch('/me/location', formData);
+
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+}
+
 export const patchUserEducation = async (formData: EditUserEducationFormData) => {
     try {
         const { data } = await api.patch('/me/educations', formData.educations);
+
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
+export const patchUserWorkExperiences = async (formData: { workExperiences?: any[] }) => {
+    try {
+        const { data } = await api.patch('/me/work-experiences', formData.workExperiences);
 
         return {
             status: 'success',
@@ -257,6 +293,92 @@ export const deleteMyAccount = async () => {
             status: 'success',
             success: true,
             data: data.message,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.message || 'Unknown error',
+        };
+    }
+};
+
+///////////////////////////////////////////////////////////////////////
+// COMPANY ADMINS
+export const addCompanyAdmin = async (
+    companyId: string,
+    payload: { userId?: string; email?: string }
+) => {
+    try {
+        const { data } = await api.post(`/companies/${companyId}/admins`, payload);
+
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+            message: data.message,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.response?.data?.message || error?.message || 'Unknown error',
+        };
+    }
+};
+
+export const removeCompanyAdmin = async (companyId: string, userId: string) => {
+    try {
+        const { data } = await api.delete(`/companies/${companyId}/admins/${userId}`);
+
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+            message: data.message,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.response?.data?.message || error?.message || 'Unknown error',
+        };
+    }
+};
+
+export const deleteCompany = async (companyId: string) => {
+    try {
+        const { data } = await api.delete(`/companies/${companyId}`);
+
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
+            message: data.message,
+        };
+    } catch (error: any) {
+        return {
+            status: 'error',
+            success: false,
+            message: error?.response?.data?.message || error?.message || 'Unknown error',
+        };
+    }
+};
+
+///////////////////////////////////////////////////////////////////////
+// LOCATIONS
+export const getLocations = async (search?: string) => {
+    try {
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        params.append('limit', '100');
+        
+        const { data } = await api.get(`/locations?${params.toString()}`);
+
+        return {
+            status: 'success',
+            success: true,
+            data: data.data,
         };
     } catch (error: any) {
         return {
