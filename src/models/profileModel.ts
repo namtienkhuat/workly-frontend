@@ -45,6 +45,7 @@ export interface PostResponse {
     visibility: PostVisibilityType;
     author: AuthorData;
     author_type: AuthorType;
+    author_id?: string;
     created_at: string;
     totalComments: number;
     totalLikes: FeelingResponse[];

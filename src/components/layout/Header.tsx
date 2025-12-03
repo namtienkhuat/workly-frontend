@@ -37,12 +37,12 @@ export const Header = () => {
                 icon: Home,
                 label: 'Home',
             },
-            {
-                name: 'network',
-                href: '/my-network',
-                icon: Users,
-                label: 'Network',
-            },
+            // {
+            //     name: 'network',
+            //     href: '/my-network',
+            //     icon: Users,
+            //     label: 'Network',
+            // },
             {
                 name: 'jobs',
                 href: '/jobs',

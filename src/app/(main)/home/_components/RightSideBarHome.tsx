@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import UserInfo from '@/components/user/UserInfo';
-import { UserProfile } from '@/types/global';
-import { useGetRecommendedUsers } from '@/hooks/useQueryData';
+import CompanyInfo from '@/components/company/CompanyInfo';
+import { useGetRecommendedCompanies, useGetRecommendedUsers } from '@/hooks/useQueryData';
+import { CompanyProfile, UserProfile } from '@/types/global';
 
+// TODO:
 const FollowButton = () => {
     const [isFollowing, setIsFollowing] = useState(false);
 
@@ -28,25 +30,31 @@ const FollowButton = () => {
     );
 };
 
-const RightSidebar = () => {
+const RightSidebarHome = () => {
     const router = useRouter();
-    const { id } = useParams<{ id: string }>();
 
     const [suggestedUsers, setSuggestedUsers] = useState<UserProfile[]>([]);
+    const [suggestedCompanies, setSuggestedCompanies] = useState<CompanyProfile[]>([]);
     const { data: recommendedUsers } = useGetRecommendedUsers({
         page: 1,
-        limit: 10,
+        limit: 5,
+    });
+    const { data: recommendedCompanies } = useGetRecommendedCompanies({
+        page: 1,
+        limit: 3,
     });
 
     useEffect(() => {
-        if (!recommendedUsers) return;
+        if (recommendedUsers) {
+            setSuggestedUsers(recommendedUsers?.data?.recommendations);
+        }
+    }, [recommendedUsers]);
 
-        const userSuggested: UserProfile[] = recommendedUsers?.data?.recommendations || [];
-        const filteredUsers = userSuggested.filter((user) => user.userId !== id);
-        const randomUsers = filteredUsers.slice().slice(0, 5);
-
-        setSuggestedUsers(randomUsers);
-    }, [recommendedUsers, id]);
+    useEffect(() => {
+        if (recommendedCompanies) {
+            setSuggestedCompanies(recommendedCompanies?.data?.recommendations);
+        }
+    }, [recommendedCompanies]);
 
     return (
         <div className="space-y-6">
@@ -74,8 +82,32 @@ const RightSidebar = () => {
                     </CardContent>
                 </Card>
             )}
+            {/* Companies you may know */}
+            {suggestedCompanies.length > 0 && (
+                <Card>
+                    <CardHeader className="py-2 pt-4">
+                        <CardTitle className="text-base font-semibold">
+                            Companies you may know
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-0 pb-2">
+                        {suggestedCompanies.map((company) => (
+                            <CompanyInfo
+                                key={company.companyId}
+                                companyId={company.companyId}
+                                name={company.name}
+                                description={company.industry?.name}
+                                avatarUrl={company.logoUrl}
+                                showHover
+                                onClick={() => router.push(`/company/${company.companyId}`)}
+                                actionButton={<FollowButton />}
+                            />
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 };
 
-export default RightSidebar;
+export default RightSidebarHome;

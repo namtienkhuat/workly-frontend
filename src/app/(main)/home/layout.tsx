@@ -1,7 +1,7 @@
 import { SetSidebar } from '@/components/layout/SetSideBar';
 import type { Metadata } from 'next';
 import React from 'react';
-import RightSidebar from '../profile/_components/RightSidebar';
+import RightSidebarHome from './_components/RightSideBarHome';
 
 export const metadata: Metadata = {
     title: 'Home | Workly',
@@ -12,7 +12,7 @@ const HomeLayout = ({ children }: { children: React.ReactNode }) => {
     return (
         <>
             <SetSidebar position="right">
-                <RightSidebar />
+                <RightSidebarHome />
             </SetSidebar>
             <div className="mx-auto max-w-5xl">{children}</div>
         </>

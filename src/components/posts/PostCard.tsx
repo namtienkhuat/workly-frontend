@@ -115,9 +115,9 @@ const PostCard = ({
                     className="flex items-start gap-2 cursor-pointer"
                     onClick={() => {
                         if (type === 'USER') {
-                            router.push(`/profile/${post.author?.id}`);
+                            router.push(`/profile/${post.author_id}`);
                         } else {
-                            router.push(`/company/${post.author?.id}`);
+                            router.push(`/company/${post.author_id}`);
                         }
                     }}
                 >

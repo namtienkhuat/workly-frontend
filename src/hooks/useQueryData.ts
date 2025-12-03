@@ -166,3 +166,11 @@ export function useGetMyCompanies(queryParams: Record<string, any> = {}) {
 export function useGetCompanyAdmins(companyId: string) {
     return useData([`/companies/${companyId}/admins`, {}], getDataWithStatus);
 }
+
+export function useGetRecommendedUsers(queryParams: Record<string, any> = {}) {
+    return useData(['/recommend/users', queryParams], getDataWithStatus);
+}
+
+export function useGetRecommendedCompanies(queryParams: Record<string, any> = {}) {
+    return useData(['/recommend/companies', queryParams], getDataWithStatus);
+}
