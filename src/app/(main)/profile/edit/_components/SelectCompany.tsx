@@ -38,10 +38,9 @@ const SelectCompany = ({ value, onChange }: SelectCompanyProps) => {
 
     const companyList: CompanyProfile[] = companyData?.data ?? [];
 
-    // Add "Other" option
     const allCompanies = [
         { companyId: 'UNLISTED', name: 'Other (Company not listed)' } as CompanyProfile,
-        ...companyList,
+        ...companyList.filter((company) => company.companyId !== 'UNLISTED'),
     ];
 
     const handleSelect = (companyId: string) => {
@@ -86,7 +85,9 @@ const SelectCompany = ({ value, onChange }: SelectCompanyProps) => {
                                     <Check
                                         className={cn(
                                             'mr-2 h-4 w-4',
-                                            value === company.companyId ? 'opacity-100' : 'opacity-0'
+                                            value === company.companyId
+                                                ? 'opacity-100'
+                                                : 'opacity-0'
                                         )}
                                     />
                                     {company.name}
@@ -101,4 +102,3 @@ const SelectCompany = ({ value, onChange }: SelectCompanyProps) => {
 };
 
 export default SelectCompany;
-
