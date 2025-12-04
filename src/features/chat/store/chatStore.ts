@@ -119,11 +119,38 @@ function saveHiddenConversations(hidden: Set<string>) {
     try {
         localStorage.setItem('hiddenConversations', JSON.stringify([...hidden]));
     } catch (error) {
-        console.error('Failed to save hidden conversations:', error);
+        // Failed to save
     }
 }
 
-export const useChatStore = create<ChatStore>((set, get) => ({
+// Helper to load cleared conversations from localStorage
+function loadClearedConversations(): Set<string> {
+    if (typeof window === 'undefined') return new Set();
+    try {
+        const stored = localStorage.getItem('clearedConversations');
+        return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+        return new Set();
+    }
+}
+
+// Helper to save cleared conversations to localStorage
+function saveClearedConversations(cleared: Set<string>) {
+    if (typeof window === 'undefined') return;
+    try {
+        localStorage.setItem('clearedConversations', JSON.stringify([...cleared]));
+    } catch (error) {
+        // Failed to save
+    }
+}
+
+export const useChatStore = create<ChatStore>((set, get) => {
+    // Debug: Expose store to window for debugging
+    if (typeof window !== 'undefined') {
+        (window as any).__chatStore__ = { get };
+    }
+    
+    return {
     // ==================== INITIAL STATE ====================
     currentUserId: null,
     currentUserType: null,
@@ -132,7 +159,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     conversations: {},
     isLoadingConversations: false,
     hiddenConversations: loadHiddenConversations(),
-    clearedConversations: new Set<string>(),
+    clearedConversations: loadClearedConversations(),
     messages: {},
     isLoadingMessages: {},
     userInfoCache: {},
@@ -166,12 +193,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
         // Setup connection handler
         socket.on('connect', () => {
-            console.log('✅ Socket connected successfully');
             set({ isSocketConnected: true });
         });
 
         socket.on('disconnect', () => {
-            console.log('❌ Socket disconnected');
             set({ isSocketConnected: false });
         });
 
@@ -181,21 +206,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             const isFromOther = data.message.sender.id !== currentUserId;
             const isConversationOpen = openChatWindows.includes(data.conversationId);
 
-            console.log('📨 New message received:', {
-                conversationId: data.conversationId,
-                senderId: data.message.sender.id,
-                currentUserId,
-                isFromOther,
-                isConversationOpen,
-            });
-
+            const isHidden = hiddenConversations.has(data.conversationId);
+            
             // If message is from another user and conversation is hidden, unhide it
-            if (hiddenConversations.has(data.conversationId) && isFromOther) {
-                console.log(
-                    '📬 New message from hidden conversation, unhiding:',
-                    data.conversationId
-                );
-                get().unhideConversation(data.conversationId);
+            const shouldUnhide = isHidden && isFromOther;
+
+            if (shouldUnhide) {
+                // Keep unread count when unhiding (don't reset to 0)
+                get().unhideConversation(data.conversationId, true);
             }
 
             get().addMessage(data.message);
@@ -221,17 +239,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                         // Skip API call for COMPANY type to avoid 403 errors (temporary fix)
                         // The conversation participants may not be properly set up yet
                         if (currentUserType === ParticipantType.COMPANY) {
-                            console.warn('⚠️ Skipping auto-mark as read for COMPANY type (temporary fix for 403 error)');
+                            // Skip for company type
                         } else {
                             // Auto-mark all messages as read via API (async, don't wait)
                             messageApiService
                                 .markAllMessagesAsRead(data.conversationId)
                                 .catch((err) => {
-                                    console.error('Failed to auto-mark messages as read:', err);
                                     // Silently fail for 403 errors (permission issues)
-                                    if (err.response?.status === 403) {
-                                        console.warn('No permission to mark messages as read (403) - conversation may be read-only');
-                                    }
                                 });
                         }
 
@@ -262,18 +276,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                                 [data.conversationId]: updatedMessages,
                             },
                         });
-
-                        console.log(`👁️ Auto-marked all messages as read (conversation is open)`);
                     } else {
                         // Conversation is not open - increment unread count
                         updatedUnreadCount = {
                             ...conversation.unreadCount,
                             [currentUserId]: (conversation.unreadCount[currentUserId] || 0) + 1,
                         };
-                        console.log(
-                            `📈 Incremented unread count for user ${currentUserId}:`,
-                            updatedUnreadCount[currentUserId]
-                        );
                     }
                 } else if (!isFromOther && currentUserId) {
                     // Message from current user - ensure unread count is 0 for sender
@@ -281,7 +289,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                         ...conversation.unreadCount,
                         [currentUserId]: 0,
                     };
-                    console.log(`✅ Reset unread count for sender ${currentUserId} (own message)`);
                 }
 
                 get().updateConversation({
@@ -292,7 +299,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                 });
             } else {
                 // Conversation not in store yet, reload conversations to get it
-                console.log('New conversation detected, reloading conversations...');
                 get().loadConversations();
             }
         });
@@ -345,23 +351,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             set({ isLoadingConversations: true });
 
             const { currentUserId, currentUserType } = get();
-            console.log('📥 Loading conversations with identity:', {
-                currentUserId,
-                currentUserType,
-                timestamp: new Date().toISOString(),
-            });
 
             const response = await conversationApiService.getConversations({
                 page: CHAT_CONSTANTS.DEFAULT_PAGE,
                 limit: CHAT_CONSTANTS.DEFAULT_PAGE_SIZE,
-            });
-
-            console.log('📨 Received conversations from API:', {
-                count: response.data.length,
-                conversations: response.data.map((c) => ({
-                    id: c._id,
-                    participants: c.participants,
-                })),
             });
 
             const conversationsMap: Record<string, ConversationWithUserInfo> = {};
@@ -392,9 +385,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                 })
             );
 
-            set({ conversations: conversationsMap });
-
-            // Auto-unhide conversations with new unread messages
+            // First, identify conversations that need to be unhidden
             const { hiddenConversations } = get();
             const conversationsToUnhide: string[] = [];
 
@@ -403,17 +394,27 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                     // Check if there are unread messages for current user
                     const unreadCount = currentUserId ? conv.unreadCount[currentUserId] || 0 : 0;
                     if (unreadCount > 0) {
-                        console.log(
-                            `📬 Auto-unhiding conversation ${convId} with ${unreadCount} unread messages`
-                        );
                         conversationsToUnhide.push(convId);
                     }
                 }
             });
 
-            // Unhide conversations with new messages (keep unread count from server)
+            // Remove from hidden set ONLY (keep cleared status)
+            const newHidden = new Set(hiddenConversations);
             conversationsToUnhide.forEach((convId) => {
-                get().unhideConversation(convId, true); // Keep unread count
+                newHidden.delete(convId);
+            });
+
+            // Save to localStorage
+            if (conversationsToUnhide.length > 0) {
+                saveHiddenConversations(newHidden);
+            }
+
+            // Now set conversations (with unreadCount from server intact)
+            set({ 
+                conversations: conversationsMap,
+                hiddenConversations: newHidden,
+                // Don't touch clearedConversations - keep it as is
             });
 
             // Join all conversation rooms to receive real-time messages
@@ -426,10 +427,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                     socketService.joinConversation(conversationId);
                 }
             });
-
-            console.log('✅ Joined all conversation rooms');
         } catch (error) {
-            console.error('Failed to load conversations:', error);
+            // Error loading conversations
         } finally {
             set({ isLoadingConversations: false });
         }
@@ -474,7 +473,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
             return conversation;
         } catch (error) {
-            console.error('Failed to create conversation:', error);
             throw error;
         }
     },
@@ -495,13 +493,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
             // Save to localStorage for persistence
             saveHiddenConversations(newHidden);
+            saveClearedConversations(newCleared);
 
             // Clear messages for this conversation locally
             // When unhidden, user will only see new messages
             const { [conversationId]: _, ...remainingMessages } = messages;
 
-            // Leave the conversation room
-            socketService.leaveConversation(conversationId);
+            // DON'T leave the conversation room - keep listening for new messages
+            // This allows real-time message delivery even when conversation is hidden
+            // socketService.leaveConversation(conversationId); // ← REMOVED
 
             // Update state
             set({
@@ -510,10 +510,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                 messages: remainingMessages,
                 openChatWindows: openChatWindows.filter((id) => id !== conversationId),
             });
-
-            console.log('✅ Conversation hidden and messages cleared:', conversationId);
         } catch (error) {
-            console.error('Failed to hide conversation:', error);
             throw error;
         }
     },
@@ -525,41 +522,24 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         const newHidden = new Set(hiddenConversations);
         newHidden.delete(conversationId);
 
+        // DON'T remove from clearedConversations - keep it to prevent loading old messages
+        // User deleted this conversation, so they should only see new messages
+        // clearedConversations will persist even after unhide
+
         // Save to localStorage
         saveHiddenConversations(newHidden);
 
-        // Rejoin the conversation room
+        // Rejoin the conversation room (already joined, but just in case)
         socketService.joinConversation(conversationId);
 
-        // Optionally reset unread count for current user
-        const conversation = conversations[conversationId];
-        if (conversation && currentUserId && !keepUnreadCount) {
-            // Reset unread count to 0 (for manual unhide via new message)
-            const updatedConversation = {
-                ...conversation,
-                unreadCount: {
-                    ...conversation.unreadCount,
-                    [currentUserId]: 0,
-                },
-            };
+        // DON'T reset unread count - keep it to show badge
+        // The conversation state already has the correct unreadCount from server
 
-            set({
-                hiddenConversations: newHidden,
-                conversations: {
-                    ...conversations,
-                    [conversationId]: updatedConversation,
-                },
-            });
-        } else {
-            // Keep unread count as is (for auto-unhide on reload)
-            set({ hiddenConversations: newHidden });
-        }
-
-        console.log(
-            '✅ Conversation unhidden:',
-            conversationId,
-            keepUnreadCount ? '(keeping unread count)' : '(fresh start)'
-        );
+        set({ 
+            hiddenConversations: newHidden,
+            // Don't update clearedConversations or conversations here
+            // Let the existing state remain
+        });
     },
 
     updateConversation: (conversation: Conversation) => {
@@ -577,25 +557,46 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     updateConversationUserInfo: (userId: string, userInfo: Partial<any>) => {
         const conversations = get().conversations;
+        const userInfoCache = get().userInfoCache;
+        const updatedConversations: Record<string, ConversationWithUserInfo> = {};
+        let hasUpdates = false;
+
         Object.keys(conversations).forEach((convId) => {
             const conv = conversations[convId];
             if (conv?.otherParticipant?.id === userId) {
-                set({
-                    conversations: {
-                        ...get().conversations,
-                        [convId]: {
-                            ...conv,
-                            otherParticipant: conv.otherParticipant
-                                ? {
-                                      ...conv.otherParticipant,
-                                      ...userInfo,
-                                  }
-                                : undefined,
-                        },
-                    },
-                });
+                updatedConversations[convId] = {
+                    ...conv,
+                    otherParticipant: conv.otherParticipant
+                        ? {
+                              ...conv.otherParticipant,
+                              ...userInfo,
+                          }
+                        : undefined,
+                };
+                hasUpdates = true;
+            } else {
+                updatedConversations[convId] = conv;
             }
         });
+
+        // Also update userInfoCache to keep it in sync
+        const updatedCache = userInfoCache[userId]
+            ? {
+                  ...userInfoCache,
+                  [userId]: {
+                      ...userInfoCache[userId],
+                      ...userInfo,
+                  },
+              }
+            : userInfoCache;
+
+        // Only update state if there were changes
+        if (hasUpdates) {
+            set({ 
+                conversations: updatedConversations,
+                userInfoCache: updatedCache,
+            });
+        }
     },
 
     // ==================== MESSAGES ====================
@@ -613,11 +614,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             // Don't load old messages for cleared conversations
             // Only new real-time messages will appear
             if (clearedConversations.has(conversationId)) {
-                console.log('⚠️ Skipping message load for cleared conversation:', conversationId);
+                const existingMessages = get().messages[conversationId] || [];
+                
                 set({
                     messages: {
                         ...get().messages,
-                        [conversationId]: [],
+                        [conversationId]: existingMessages,
+                    },
+                    isLoadingMessages: {
+                        ...get().isLoadingMessages,
+                        [conversationId]: false,
                     },
                 });
                 socketService.joinConversation(conversationId);
@@ -648,7 +654,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
             socketService.joinConversation(conversationId);
         } catch (error) {
-            console.error('Failed to load messages:', error);
+            // Error loading messages
         } finally {
             set({
                 isLoadingMessages: {
@@ -661,7 +667,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     sendMessage: async (conversationId: string, content: string) => {
         try {
-            const { currentUserId, currentUserType, isSocketConnected } = get();
+            const { currentUserId, currentUserType, isSocketConnected, clearedConversations } = get();
+            
+            // When user sends a message in a previously cleared conversation,
+            // remove from clearedConversations so future reloads will load full history
+            if (clearedConversations.has(conversationId)) {
+                const newCleared = new Set(clearedConversations);
+                newCleared.delete(conversationId);
+                saveClearedConversations(newCleared);
+                set({ clearedConversations: newCleared });
+            }
 
             if (!currentUserId || !currentUserType) {
                 throw new Error('User not authenticated');
@@ -693,22 +708,37 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
             get().stopTyping(conversationId);
         } catch (error) {
-            console.error('Failed to send message:', error);
             throw error;
         }
     },
 
     addMessage: (message: Message) => {
         const existingMessages = get().messages[message.conversationId] || [];
-
-        // Remove temporary messages
-        const filteredMessages = existingMessages.filter(
-            (m) => !(m._id.startsWith('temp-') && m.status === MessageStatus.SENDING)
-        );
+        const { currentUserId } = get();
 
         // Check if message already exists
-        const messageExists = filteredMessages.some((m) => m._id === message._id);
-        if (messageExists) return;
+        const messageExists = existingMessages.some((m) => m._id === message._id);
+        if (messageExists) {
+            return;
+        }
+
+        // If this is a real message from current user, remove matching temp message
+        let filteredMessages = existingMessages;
+        if (!message._id.startsWith('temp-') && message.sender.id === currentUserId) {
+            // Find and remove temp message with same content and sender
+            filteredMessages = existingMessages.filter((m) => {
+                if (m._id.startsWith('temp-') && m.status === MessageStatus.SENDING) {
+                    // Remove temp message if content matches and created within last 10 seconds
+                    const isSameContent = m.content === message.content;
+                    const timeDiff = Math.abs(
+                        new Date(message.createdAt).getTime() - new Date(m.createdAt).getTime()
+                    );
+                    const shouldRemove = isSameContent && timeDiff < 10000;
+                    return !shouldRemove;
+                }
+                return true;
+            });
+        }
 
         const newList = sortMessagesByTime([...filteredMessages, message]);
 
@@ -721,12 +751,19 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     },
 
     markMessagesAsRead: async (conversationId: string) => {
-        const { currentUserType, currentUserId } = get();
+        const { currentUserType, currentUserId, clearedConversations } = get();
+        
+        // When user reads messages in a previously cleared conversation,
+        // remove from clearedConversations so future reloads will load full history
+        if (clearedConversations.has(conversationId)) {
+            const newCleared = new Set(clearedConversations);
+            newCleared.delete(conversationId);
+            saveClearedConversations(newCleared);
+            set({ clearedConversations: newCleared });
+        }
         
         // Skip API call for COMPANY type to avoid 403 errors (temporary fix)
         if (currentUserType === ParticipantType.COMPANY) {
-            console.warn('⚠️ Skipping mark as read for COMPANY type (temporary fix for 403 error)');
-            
             // Still update local state
             const conversation = get().conversations[conversationId];
             const currentMessages = get().messages[conversationId] || [];
@@ -746,8 +783,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                         [conversationId]: updatedConversation,
                     },
                 });
-                
-                console.log(`✅ Locally marked all messages as read for conversation ${conversationId} (no API call)`);
             }
             return;
         }
@@ -801,15 +836,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                         [conversationId]: updatedMessages,
                     },
                 });
-
-                console.log(`✅ Marked all messages as read for conversation ${conversationId}`);
             }
         } catch (error: any) {
-            console.error('Failed to mark messages as read:', error);
             // Silently handle 403 errors (permission issues)
-            if (error?.response?.status === 403) {
-                console.warn('No permission to mark messages as read (403) - conversation may be read-only');
-            } else {
+            if (error?.response?.status !== 403) {
                 // Re-throw other errors
                 throw error;
             }
@@ -898,7 +928,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             // Fetch from API
             const profile = await userApiService.getParticipantInfo(participantId, participantType);
             if (!profile) return null;
-            const userInfo = convertParticipantProfileToUserInfo(profile, participantType, false);
+            
+            // Check if we have previous online status from cache (in case of refresh)
+            const existingCached = get().userInfoCache[participantId];
+            const isOnline = existingCached?.isOnline ?? false;
+            
+            const userInfo = convertParticipantProfileToUserInfo(profile, participantType, isOnline);
 
             // Cache it
             set({
@@ -910,7 +945,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
             return userInfo;
         } catch (error) {
-            console.error(`Failed to fetch participant info for ${participantId}:`, error);
             return null;
         }
     },
@@ -941,4 +975,4 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         const typingUsers = get().typingUsers[conversationId] || [];
         return typingUsers.length > 0;
     },
-}));
+}});

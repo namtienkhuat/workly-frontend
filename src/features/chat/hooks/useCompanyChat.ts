@@ -29,32 +29,7 @@ export function useCompanyChat(companyId: string) {
 
     // Filter conversations that belong to this company
     const companyConversations = useMemo(() => {
-        console.log('🔍 [useCompanyChat] RAW store state:', {
-            companyId,
-            conversationsObjectType: typeof conversations,
-            conversationsObjectKeys: Object.keys(conversations),
-            conversationsObjectKeysLength: Object.keys(conversations).length,
-        });
-
         const allConversations = Object.values(conversations);
-
-        console.log('🔍 [useCompanyChat] After Object.values():', {
-            allConversationsLength: allConversations.length,
-            allConversationsSample: allConversations.slice(0, 2), // First 2 conversations
-        });
-
-        console.log('🔍 Filter Debug:', {
-            companyId,
-            totalConversations: allConversations.length,
-            participantsList: allConversations.map((c) => ({
-                convId: c._id,
-                participants: c.participants,
-                hasTargetCompanyId: c.participants.some((p) => p.id === companyId),
-                hasTargetCompanyType: c.participants.some(
-                    (p) => p.id === companyId && p.type === ParticipantType.COMPANY
-                ),
-            })),
-        });
 
         const filtered = allConversations.filter((conv) => {
             // Check if this company is a participant in the conversation
@@ -64,8 +39,6 @@ export function useCompanyChat(companyId: string) {
 
             return hasCompany;
         });
-
-        console.log('🔍 Filtered result:', filtered.length, 'conversations for company', companyId);
 
         return filtered;
     }, [conversations, companyId]);

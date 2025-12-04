@@ -58,14 +58,22 @@ export default function ChatUserPage() {
 
         const handleStartConversation = async () => {
             try {
+                // Check if user exists (including deleted users)
                 const { data } = await getUserById(userId);
                 if (!data) {
                     toast.error('Không tìm thấy người dùng.');
                     return;
                 }
 
+                // Even if user is deleted, we still open the conversation
+                // The UI will show that the account no longer exists
                 setIsLoading(true);
                 await startConversation(userId, ParticipantType.USER, true);
+                
+                // Show info toast if user is deleted
+                if (data.user?.isDeleted) {
+                    toast.info('Tài khoản này không còn tồn tại. Bạn có thể xem lịch sử tin nhắn nhưng không thể gửi tin nhắn mới.');
+                }
             } catch (err: any) {
                 console.error('Error starting conversation:', err);
                 toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
@@ -92,10 +100,8 @@ export default function ChatUserPage() {
     const handleDeleteConversation = async (conversationId: string) => {
         try {
             await deleteConversation(conversationId);
-            // If deleted conversation is the current one, go back to chat list
-            if (conversationId === fullChatId) {
-                router.push('/chat');
-            }
+            // Always redirect to chat list after deleting
+            router.push('/chat');
         } catch (error) {
             console.error('Error deleting conversation:', error);
         }

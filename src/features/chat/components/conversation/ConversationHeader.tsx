@@ -37,17 +37,30 @@ export function ConversationHeader({
     return (
         <div className="flex items-center justify-between border-b p-4">
             <div className="flex items-center gap-3">
-                <UserAvatar
-                    avatar={user.avatar}
-                    name={user.name}
-                    size="md"
-                    showOnlineIndicator
-                    isOnline={user.isOnline}
-                />
+                <div className="relative">
+                    <UserAvatar
+                        avatar={user.avatar}
+                        name={user.name}
+                        size="md"
+                        showOnlineIndicator={!user.isDeleted}
+                        isOnline={user.isOnline}
+                    />
+                    {user.isDeleted && (
+                        <div className="absolute inset-0 bg-muted/80 rounded-full flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground">❌</span>
+                        </div>
+                    )}
+                </div>
                 <div>
-                    <h3 className="font-semibold">{user.name}</h3>
+                    <h3 className={`font-semibold ${user.isDeleted ? 'text-muted-foreground italic' : ''}`}>
+                        {user.isDeleted 
+                            ? (user.type === 'COMPANY' ? 'Công ty không tồn tại' : 'Tài khoản không tồn tại')
+                            : user.name}
+                    </h3>
                     <p className="text-xs text-muted-foreground">
-                        {user.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
+                        {user.isDeleted 
+                            ? 'Tài khoản đã bị xóa'
+                            : user.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
                     </p>
                 </div>
             </div>

@@ -24,5 +24,6 @@ export interface UserInfo {
     avatar?: string;
     isOnline?: boolean;
     type: ParticipantType;
+    isDeleted?: boolean; // Đánh dấu tài khoản đã bị xóa
 }
 

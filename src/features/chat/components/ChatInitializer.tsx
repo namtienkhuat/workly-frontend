@@ -24,24 +24,11 @@ export function ChatInitializer() {
     // Skip initialization in company management routes
     const isCompanyRoute = pathname?.startsWith('/manage-company');
 
-    console.log('👤 ChatInitializer:', {
-        isLoading,
-        isAuthenticated,
-        userId: user?.userId,
-        isSocketConnected,
-        currentUserId,
-        conversationsCount: conversations.length,
-        pathname,
-        isCompanyRoute,
-        willSkip: isCompanyRoute,
-    });
-
     // Initialize socket when user is authenticated (skip in company routes)
     useEffect(() => {
         if (isLoading) return;
         if (!isAuthenticated || !user) return;
         if (isCompanyRoute) {
-            console.log('👤 Skipping ChatInitializer - in company management route');
             return;
         }
 
@@ -49,11 +36,9 @@ export function ChatInitializer() {
         const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
 
         if (!uid || !token) {
-            console.warn('👤 Missing uid or token for chat initialization');
             return;
         }
 
-        console.log('👤 Initializing personal chat socket...', { uid });
         // Set personalUserId first so Header badge always shows user's unread count
         setPersonalUserId(uid);
         initialize(uid, ParticipantType.USER, token);
@@ -64,7 +49,6 @@ export function ChatInitializer() {
         if (isCompanyRoute) return; // Skip loading in company routes
 
         if (isSocketConnected && !loadedOnce.current) {
-            console.log('👤 Loading personal conversations...');
             loadConversations();
             loadedOnce.current = true;
         }
@@ -73,9 +57,6 @@ export function ChatInitializer() {
     // Cleanup when navigating to company routes
     useEffect(() => {
         if (isCompanyRoute && isSocketConnected) {
-            console.log(
-                '👤 Navigating to company route, will let CompanyChatInitializer take over'
-            );
         }
     }, [isCompanyRoute, isSocketConnected]);
 

@@ -14,17 +14,6 @@ export function convertParticipantProfileToUserInfo(
         // Backend uses avatarUrl, frontend expects avatar
         const avatar = userProfile.avatarUrl || userProfile.avatar;
 
-        if (avatar) {
-            console.log('✅ Avatar found for user:', userProfile.userId, avatar);
-        } else {
-            console.warn(
-                '⚠️ No avatar found for user:',
-                userProfile.userId,
-                'Profile:',
-                userProfile
-            );
-        }
-
         return {
             id: userProfile.userId,
             type: ParticipantType.USER,
@@ -35,22 +24,12 @@ export function convertParticipantProfileToUserInfo(
             email: userProfile.email,
             avatar, // Map avatarUrl to avatar
             isOnline,
+            isDeleted: userProfile.isDeleted || false, // Preserve isDeleted status
         };
     } else {
         const companyProfile = profile as CompanyProfile;
         // Backend uses logoUrl, frontend expects logo/avatar
         const logo = companyProfile.logoUrl || companyProfile.logo;
-
-        if (logo) {
-            console.log('✅ Logo found for company:', companyProfile.companyId, logo);
-        } else {
-            console.warn(
-                '⚠️ No logo found for company:',
-                companyProfile.companyId,
-                'Profile:',
-                companyProfile
-            );
-        }
 
         return {
             id: companyProfile.companyId,
@@ -59,6 +38,7 @@ export function convertParticipantProfileToUserInfo(
             email: companyProfile.email || '',
             avatar: logo, // Map logoUrl to avatar
             isOnline,
+            isDeleted: companyProfile.isDeleted || false, // Preserve isDeleted status
         };
     }
 }
