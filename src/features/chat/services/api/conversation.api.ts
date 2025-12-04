@@ -47,11 +47,6 @@ conversationApi.interceptors.request.use(
         if (identity) {
             config.headers['x-user-id'] = identity.userId;
             config.headers['x-user-type'] = identity.userType;
-
-            console.log('🔄 Adding identity headers:', {
-                userId: identity.userId,
-                userType: identity.userType,
-            });
         }
 
         return config;

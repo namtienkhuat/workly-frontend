@@ -44,8 +44,6 @@ export default function ManageCompaniesPage() {
         );
     }, [companies, searchQuery]);
 
-    console.log('✅ Filtered companies:', filteredCompanies.length);
-
     const handleCreateCompany = () => {
         router.push('/company/new');
     };

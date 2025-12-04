@@ -25,6 +25,9 @@ export function ChatContainer({
     const { otherParticipant } = useConversation(conversationId);
     const { messages, isLoading, send, markAsRead } = useMessages(conversationId);
     const currentUserId = useChatStore((state) => state.currentUserId);
+    const startTyping = useChatStore((state) => state.startTyping);
+    const stopTyping = useChatStore((state) => state.stopTyping);
+    const isTyping = useChatStore((state) => state.isTyping(conversationId));
 
     // Mark messages as read when viewing
     useEffect(() => {
@@ -42,6 +45,8 @@ export function ChatContainer({
         );
     }
 
+    const isDeleted = otherParticipant?.isDeleted || false;
+
     return (
         <div className={`flex flex-col ${className}`}>
             {/* Header */}
@@ -58,14 +63,26 @@ export function ChatContainer({
                     messages={messages}
                     currentUserId={currentUserId}
                     isLoading={isLoading}
-                    isTyping={false}
+                    isTyping={isTyping}
                     emptyMessage={`Bắt đầu cuộc trò chuyện với ${otherParticipant.name}`}
                 />
             </div>
 
             {/* Input */}
             <div className="border-t p-4">
-                <MessageInput onSend={send} />
+                {isDeleted ? (
+                    <div className="flex items-center justify-center gap-2 p-4 bg-muted/50 rounded-lg border border-muted">
+                        <span className="text-sm text-muted-foreground italic">
+                            Không thể gửi tin nhắn. {otherParticipant.type === 'COMPANY' ? 'Công ty' : 'Tài khoản'} này không còn tồn tại.
+                        </span>
+                    </div>
+                ) : (
+                    <MessageInput 
+                        onSend={send}
+                        onTypingStart={() => startTyping(conversationId)}
+                        onTypingStop={() => stopTyping(conversationId)}
+                    />
+                )}
             </div>
         </div>
     );

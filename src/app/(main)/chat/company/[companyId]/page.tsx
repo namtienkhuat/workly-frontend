@@ -82,10 +82,8 @@ export default function ChatCompanyPage() {
     const handleDeleteConversation = async (conversationId: string) => {
         try {
             await deleteConversation(conversationId);
-            // If deleted conversation is the current one, go back to chat list
-            if (conversationId === fullChatId) {
-                router.push('/chat');
-            }
+            // Always redirect to chat list after deleting
+            router.push('/chat');
         } catch (error) {
             console.error('Error deleting conversation:', error);
         }

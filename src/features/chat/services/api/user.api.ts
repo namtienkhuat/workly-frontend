@@ -14,6 +14,7 @@ export interface UserProfile {
     address?: string;
     bio?: string;
     userId: string;
+    isDeleted?: boolean; // Đánh dấu tài khoản đã bị xóa
 }
 
 export interface CompanyProfile {
@@ -27,6 +28,7 @@ export interface CompanyProfile {
     address?: string;
     phoneNumber?: string;
     companyId: string;
+    isDeleted?: boolean; // Đánh dấu công ty đã bị xóa
 }
 
 export type ParticipantProfile = UserProfile | CompanyProfile;
@@ -39,22 +41,63 @@ export interface ApiResponse<T> {
 
 /**
  * Get user by ID
+ * Returns deleted placeholder if user not found
  */
 export async function getUserById(userId: string): Promise<ApiResponse<{ user: UserProfile }>> {
-    const response = await api.get<ApiResponse<{ user: UserProfile }>>(`/users/${userId}`);
-    return response.data;
+    try {
+        const response = await api.get<ApiResponse<{ user: UserProfile }>>(`/users/${userId}`);
+        return response.data;
+    } catch (error: any) {
+        // If user not found (deleted), return placeholder
+        if (error.response?.status === 404) {
+            return {
+                success: true,
+                data: {
+                    user: {
+                        id: userId,
+                        userId: userId,
+                        email: '',
+                        name: 'Tài khoản không tồn tại',
+                        avatar: '',
+                        isDeleted: true,
+                    } as UserProfile & { isDeleted: boolean },
+                },
+            };
+        }
+        throw error;
+    }
 }
 
 /**
  * Get company by ID
+ * Returns deleted placeholder if company not found
  */
 export async function getCompanyById(
     companyId: string
 ): Promise<ApiResponse<{ company: CompanyProfile }>> {
-    const response = await api.get<ApiResponse<{ company: CompanyProfile }>>(
-        `/companies/${companyId}`
-    );
-    return response.data;
+    try {
+        const response = await api.get<ApiResponse<{ company: CompanyProfile }>>(
+            `/companies/${companyId}`
+        );
+        return response.data;
+    } catch (error: any) {
+        // If company not found (deleted), return placeholder
+        if (error.response?.status === 404) {
+            return {
+                success: true,
+                data: {
+                    company: {
+                        id: companyId,
+                        companyId: companyId,
+                        name: 'Công ty không tồn tại',
+                        logo: '',
+                        isDeleted: true,
+                    } as CompanyProfile & { isDeleted: boolean },
+                },
+            };
+        }
+        throw error;
+    }
 }
 
 /**
@@ -87,10 +130,7 @@ export async function getParticipantsInfo(
                 const info = await getParticipantInfo(participant.id, participant.type);
                 results[participant.id] = info;
             } catch (error) {
-                console.error(
-                    `Failed to fetch info for ${participant.type} ${participant.id}:`,
-                    error
-                );
+                // Failed to fetch participant info
             }
         })
     );

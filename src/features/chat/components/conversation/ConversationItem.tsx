@@ -4,14 +4,8 @@ import { useState } from 'react';
 import { MoreVertical, User, Trash2, Building2 } from 'lucide-react';
 import { UserAvatar } from '../ui';
 import { ConversationWithUserInfo, ParticipantType } from '../../types';
-import { formatConversationTime, formatUnreadCount } from '../../utils';
-import { getUserById } from '@/features/chat/services';
-import { useChatStore } from '@/features/chat/store';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
+import { formatConversationTime } from '../../utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -42,14 +36,11 @@ export function ConversationItem({
 }: ConversationItemProps) {
     const { otherParticipant, lastMessage, lastMessageAt, unreadCount } = conversation;
     const myUnreadCount = currentUserId ? unreadCount[currentUserId] || 0 : 0;
-    const userInfoCache = useChatStore((state) => state.userInfoCache);
     const [isHovered, setIsHovered] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     if (!otherParticipant) return null;
-
-    const otherUserInfo = userInfoCache[otherParticipant.id];
 
     const handleDeleteClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -71,34 +62,39 @@ export function ConversationItem({
     return (
         <div
             className={`relative flex w-full items-center gap-3 p-4 transition-all duration-300 group ${
-                isActive 
-                    ? 'bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 border-l-4 border-l-primary shadow-sm' 
+                isActive
+                    ? 'bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 border-l-4 border-l-primary shadow-sm'
                     : 'hover:bg-gradient-to-r hover:from-accent/80 hover:to-accent/40 cursor-pointer hover:shadow-sm'
             }`}
+            onClick={() => onClick(conversation._id)}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             {/* Subtle animated background effect */}
             {!isActive && (
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
             )}
-            
-            <button
-                onClick={() => onClick(conversation._id)}
-                className="flex flex-1 items-center gap-3 relative z-10"
-            >
+
+            <div className="flex flex-1 items-center gap-3 relative z-10">
                 {/* Avatar with glow effect on unread */}
                 <div className="relative">
                     {myUnreadCount > 0 && (
                         <div className="absolute -inset-1 bg-primary/20 rounded-full blur-md animate-pulse" />
                     )}
-                    <UserAvatar
-                        avatar={otherUserInfo?.avatar || ''}
-                        name={otherUserInfo?.name || ''}
-                        size="lg"
-                        showOnlineIndicator
-                        isOnline={otherParticipant.isOnline}
-                    />
+                    <div className="relative">
+                        <UserAvatar
+                            avatar={otherParticipant.avatar || ''}
+                            name={otherParticipant.name || ''}
+                            size="lg"
+                            showOnlineIndicator={!otherParticipant.isDeleted}
+                            isOnline={otherParticipant.isOnline}
+                        />
+                        {otherParticipant.isDeleted && (
+                            <div className="absolute inset-0 bg-muted/80 rounded-full flex items-center justify-center">
+                                <span className="text-xs text-muted-foreground">❌</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Info */}
@@ -106,27 +102,37 @@ export function ConversationItem({
                     <div className="flex items-center justify-between gap-2">
                         <h3
                             className={`truncate transition-colors ${
-                                myUnreadCount > 0 
-                                    ? 'font-semibold text-foreground' 
-                                    : 'font-medium text-foreground/90'
+                                otherParticipant.isDeleted
+                                    ? 'text-muted-foreground italic'
+                                    : myUnreadCount > 0
+                                      ? 'font-semibold text-foreground'
+                                      : 'font-medium text-foreground/90'
                             }`}
                         >
-                            {otherParticipant.name}
+                            {otherParticipant.isDeleted
+                                ? otherParticipant.type === ParticipantType.COMPANY
+                                    ? 'Công ty không tồn tại'
+                                    : 'Tài khoản không tồn tại'
+                                : otherParticipant.name}
                         </h3>
                         {lastMessageAt && (
-                            <span className={`text-xs whitespace-nowrap transition-colors ${
-                                myUnreadCount > 0 ? 'text-primary font-medium' : 'text-muted-foreground'
-                            }`}>
+                            <span
+                                className={`text-xs whitespace-nowrap transition-colors ${
+                                    myUnreadCount > 0
+                                        ? 'text-primary font-medium'
+                                        : 'text-muted-foreground'
+                                }`}
+                            >
                                 {formatConversationTime(lastMessageAt)}
                             </span>
                         )}
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1">
                         <p
-                            className={`truncate text-sm transition-colors ${
-                                myUnreadCount > 0 
-                                    ? 'font-medium text-foreground/80' 
+                            className={`flex-1 truncate text-sm transition-colors ${
+                                myUnreadCount > 0
+                                    ? 'font-medium text-foreground/80'
                                     : 'text-muted-foreground'
                             }`}
                         >
@@ -134,18 +140,20 @@ export function ConversationItem({
                         </p>
 
                         {myUnreadCount > 0 && (
-                            <span className="ml-2 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary/80 px-2 text-xs font-bold text-primary-foreground shadow-md shadow-primary/30 animate-in zoom-in duration-200">
-                                {formatUnreadCount(myUnreadCount)}
+                            <span className="flex-shrink-0 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                                {myUnreadCount > 99 ? '99+' : myUnreadCount}
                             </span>
                         )}
                     </div>
                 </div>
-            </button>
+            </div>
 
             {/* More Options Menu with smooth transition */}
-            <div className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 transition-all duration-200 ${
-                (isHovered || isMenuOpen) ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
-            }`}>
+            <div
+                className={`absolute right-2 top-1/2 -translate-y-1/2 z-50 transition-all duration-200 ${
+                    isHovered || isMenuOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+                }`}
+            >
                 <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                     <PopoverTrigger asChild>
                         <button
@@ -153,26 +161,32 @@ export function ConversationItem({
                                 e.stopPropagation();
                                 setIsMenuOpen(!isMenuOpen);
                             }}
-                            className="rounded-full p-2 bg-background/80 backdrop-blur-sm border border-border/50 hover:bg-accent hover:border-primary/30 transition-all duration-200 shadow-sm hover:shadow-md"
+                            className="rounded-full p-2 bg-background hover:bg-accent transition-all duration-200 border border-border"
                         >
-                            <MoreVertical className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
                         </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-52 p-1 shadow-lg border-border/50 backdrop-blur-sm" align="end">
+                    <PopoverContent
+                        className="w-52 p-1 shadow-lg border-border/50 backdrop-blur-sm z-50"
+                        align="end"
+                        sideOffset={5}
+                    >
                         <div className="flex flex-col gap-0.5">
-                            <button
-                                onClick={handleViewProfile}
-                                className="flex items-center gap-3 px-3 py-2.5 text-sm rounded-md hover:bg-accent transition-all duration-200 group/item"
-                            >
-                                <div className="rounded-md bg-primary/10 p-1.5 group-hover/item:bg-primary/20 transition-colors">
-                                    {otherParticipant.type === ParticipantType.COMPANY ? (
-                                        <Building2 className="h-3.5 w-3.5 text-primary" />
-                                    ) : (
-                                        <User className="h-3.5 w-3.5 text-primary" />
-                                    )}
-                                </div>
-                                <span className="font-medium">Xem trang cá nhân</span>
-                            </button>
+                            {!otherParticipant.isDeleted && (
+                                <button
+                                    onClick={handleViewProfile}
+                                    className="flex items-center gap-3 px-3 py-2.5 text-sm rounded-md hover:bg-accent transition-all duration-200 group/item"
+                                >
+                                    <div className="rounded-md bg-primary/10 p-1.5 group-hover/item:bg-primary/20 transition-colors">
+                                        {otherParticipant.type === ParticipantType.COMPANY ? (
+                                            <Building2 className="h-3.5 w-3.5 text-primary" />
+                                        ) : (
+                                            <User className="h-3.5 w-3.5 text-primary" />
+                                        )}
+                                    </div>
+                                    <span className="font-medium">Xem trang cá nhân</span>
+                                </button>
+                            )}
                             <button
                                 onClick={handleDeleteClick}
                                 className="flex items-center gap-3 px-3 py-2.5 text-sm text-destructive rounded-md hover:bg-destructive/10 transition-all duration-200 group/item"
@@ -194,8 +208,8 @@ export function ConversationItem({
                         <AlertDialogTitle>Xóa cuộc trò chuyện?</AlertDialogTitle>
                         <AlertDialogDescription>
                             Bạn có chắc chắn muốn xóa cuộc trò chuyện với{' '}
-                            <span className="font-semibold">{otherParticipant.name}</span>? Hành động
-                            này không thể hoàn tác.
+                            <span className="font-semibold">{otherParticipant.name}</span>? Hành
+                            động này không thể hoàn tác.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -71,6 +71,10 @@ export function useGetCompanyProfile(id: string) {
     return useData([`/companies/${id}`, {}], getDataWithStatus);
 }
 
+export function useGetCompanyAccess(id: string) {
+    return useData([`/companies/${id}/check-access`, {}], getDataWithStatus);
+}
+
 export function useGetIndustry(queryParams: Record<string, any> = {}) {
     return useData(['/industries', queryParams], getDataWithStatus);
 }

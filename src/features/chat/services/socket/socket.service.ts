@@ -47,21 +47,19 @@ class SocketService {
         if (!this.socket) return;
 
         this.socket.on(SOCKET_EVENTS.CONNECT, () => {
-            console.log('Socket connected:', this.socket?.id);
             this.reconnectAttempts = 0;
         });
 
         this.socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
-            console.log('Socket disconnected:', reason);
+            // Socket disconnected
         });
 
         this.socket.on(SOCKET_EVENTS.CONNECT_ERROR, (error) => {
-            console.error('Socket connection error:', error);
             this.reconnectAttempts++;
         });
 
         this.socket.on(SOCKET_EVENTS.ERROR, (error) => {
-            console.error('Socket error:', error);
+            // Socket error
         });
     }
 

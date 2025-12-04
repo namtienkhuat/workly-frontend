@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useParams, useRouter } from 'next/navigation';
-import { useGetCompanyAdmins, useGetCompanyProfile } from '@/hooks/useQueryData';
-import { UserPlus, Trash2, Shield, Mail, User, ShieldCheck } from 'lucide-react';
+import { useGetCompanyAdmins, useGetCompanyProfile, useGetMe } from '@/hooks/useQueryData';
+import { UserPlus, Trash2, Shield, Mail, User, ShieldCheck, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -45,15 +46,19 @@ interface Admin {
 const AdminsPage = () => {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
+    const queryClient = useQueryClient();
     const { data: adminsData, isLoading, refetch } = useGetCompanyAdmins(id);
     const { data: companyProfileData } = useGetCompanyProfile(id);
+    const { data: currentUserData } = useGetMe();
 
     const admins: Admin[] = adminsData?.data?.admins || [];
     const currentUserRole = companyProfileData?.data?.company?.role;
     const isOwner = currentUserRole === 'OWNER';
+    const currentUserId = currentUserData?.data?.user?.userId;
 
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+    const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
     const [addMethod, setAddMethod] = useState<'email' | 'userId'>('email');
     const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -97,6 +102,10 @@ const AdminsPage = () => {
         setIsSubmitting(false);
 
         if (result.success) {
+            await queryClient.invalidateQueries({
+                queryKey: ['/companies/my-companies'],
+            });
+
             toast.success('Admin removed successfully!', {
                 description: result.message,
             });
@@ -113,6 +122,31 @@ const AdminsPage = () => {
     const openRemoveDialog = (admin: Admin) => {
         setSelectedAdmin(admin);
         setIsRemoveDialogOpen(true);
+    };
+
+    const handleLeaveAdmin = async () => {
+        if (!currentUserId) return;
+
+        setIsSubmitting(true);
+        const result = await removeCompanyAdmin(id, currentUserId);
+        setIsSubmitting(false);
+
+        if (result.success) {
+            await queryClient.invalidateQueries({
+                queryKey: ['/companies/my-companies'],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: [`/companies/${id}`],
+            });
+
+            toast.success('You have left the admin role successfully!');
+            setIsLeaveDialogOpen(false);
+            router.push('/home');
+        } else {
+            toast.error('Failed to leave admin role', {
+                description: result.message,
+            });
+        }
     };
 
     const handleAdminClick = (userId: string) => {
@@ -232,7 +266,7 @@ const AdminsPage = () => {
                                         </div>
                                     </div>
 
-                                    {isOwner && admin.role !== 'OWNER' && (
+                                    {isOwner && admin.role !== 'OWNER' ? (
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -245,7 +279,22 @@ const AdminsPage = () => {
                                             <Trash2 className="h-4 w-4" />
                                             Remove
                                         </Button>
-                                    )}
+                                    ) : !isOwner &&
+                                      admin.role === 'ADMIN' &&
+                                      admin.userId === currentUserId ? (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIsLeaveDialogOpen(true);
+                                            }}
+                                            className="text-orange-600 hover:text-orange-600 hover:bg-orange-50 gap-2"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                            Leave
+                                        </Button>
+                                    ) : null}
                                 </div>
                             ))}
                         </div>
@@ -365,6 +414,40 @@ const AdminsPage = () => {
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {isSubmitting ? 'Removing...' : 'Remove Admin'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Leave Admin Confirmation Dialog */}
+            <AlertDialog open={isLeaveDialogOpen} onOpenChange={setIsLeaveDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Leave Admin Role</AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                            <div className="space-y-3">
+                                <div>
+                                    Are you sure you want to leave your admin role for this company?
+                                </div>
+                                <div className="text-orange-600 font-medium">
+                                    After leaving, you will:
+                                </div>
+                                <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                                    <li>No longer be able to manage company information</li>
+                                    <li>No longer be able to add or remove other admins</li>
+                                    <li>Need to be re-invited by the owner to regain access</li>
+                                </ul>
+                            </div>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleLeaveAdmin}
+                            disabled={isSubmitting}
+                            className="bg-orange-600 text-white hover:bg-orange-700"
+                        >
+                            {isSubmitting ? 'Leaving...' : 'Yes, Leave Admin Role'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

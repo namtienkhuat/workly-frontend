@@ -22,20 +22,14 @@ export function CompanyChatInitializer({ companyId }: CompanyChatInitializerProp
 
     const isInitialized = useRef(false);
     const lastCompanyId = useRef<string | null>(null);
+    const loadedOnce = useRef(false);
 
     useEffect(() => {
         if (isLoading) return;
         if (!isAuthenticated || !user) return;
-        
+
         const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
         if (!companyId || !token) return;
-
-        console.log('🏢 CompanyChatInitializer: Effect triggered', {
-            companyId,
-            currentUserId,
-            isInitialized: isInitialized.current,
-            lastCompanyId: lastCompanyId.current,
-        });
 
         // Skip if already initialized for same company
         if (
@@ -43,30 +37,19 @@ export function CompanyChatInitializer({ companyId }: CompanyChatInitializerProp
             lastCompanyId.current === companyId &&
             currentUserId === companyId
         ) {
-            console.log('✅ Already initialized for this company, skipping');
             return;
         }
 
         // Disconnect old socket if switching company
         if (currentUserId !== companyId) {
-            console.log('🔄 Switching identity, disconnecting first', {
-                from: currentUserId,
-                to: companyId,
-            });
             disconnectSocket();
             isInitialized.current = false;
         }
-
-        console.log('🔧 Setting current user to company:', {
-            companyId,
-            type: ParticipantType.COMPANY,
-        });
 
         // 🔥 SET CURRENT USER FIRST (this was missing!)
         setCurrentUser(companyId, ParticipantType.COMPANY);
 
         // Now safely initialize socket
-        console.log('🔌 Initializing socket for company');
         initializeSocket(companyId, ParticipantType.COMPANY, token);
 
         isInitialized.current = true;
@@ -82,20 +65,18 @@ export function CompanyChatInitializer({ companyId }: CompanyChatInitializerProp
         setCurrentUser,
     ]);
 
-    // Load conversations once socket is connected
+    // Load conversations once socket is connected (only once per company)
     useEffect(() => {
-        console.log('🔌 Socket connection state changed:', {
-            isSocketConnected,
-            currentUserId,
-            companyId,
-            matches: currentUserId === companyId,
-        });
-
-        if (isSocketConnected && currentUserId === companyId) {
-            console.log('✅ Loading conversations for company');
+        if (isSocketConnected && currentUserId === companyId && !loadedOnce.current) {
             loadConversations();
+            loadedOnce.current = true;
         }
     }, [isSocketConnected, currentUserId, companyId, loadConversations]);
+    
+    // Reset loadedOnce when company changes
+    useEffect(() => {
+        loadedOnce.current = false;
+    }, [companyId]);
 
     // Cleanup
     useEffect(() => {
@@ -103,6 +84,7 @@ export function CompanyChatInitializer({ companyId }: CompanyChatInitializerProp
             disconnectSocket();
             isInitialized.current = false;
             lastCompanyId.current = null;
+            loadedOnce.current = false;
         };
     }, [disconnectSocket]);
 
