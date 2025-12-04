@@ -11,6 +11,7 @@ interface RouteProtectionProps {
     publicRoutes?: string[];
 }
 
+// TODO:
 // Default restricted routes that require authentication
 const DEFAULT_RESTRICTED_ROUTES = ['/chat', '/settings', '/manage-companies', '/profile'];
 const DEFAULT_PUBLIC_ROUTES = ['/home', '/jobs', '/my-network'];
@@ -30,7 +31,8 @@ export const RouteProtection: React.FC<RouteProtectionProps> = ({
     const getFeatureName = (route: string): string => {
         if (route.startsWith('/chat')) return 'tin nhắn';
         if (route.startsWith('/settings')) return 'cài đặt';
-        if (route.startsWith('/manage-companies') || route.startsWith('/manage-company')) return 'quản lý công ty';
+        if (route.startsWith('/manage-companies') || route.startsWith('/manage-company'))
+            return 'quản lý công ty';
         if (route.startsWith('/profile')) return 'hồ sơ cá nhân';
         return 'tính năng này';
     };
@@ -98,4 +100,3 @@ export const RouteProtection: React.FC<RouteProtectionProps> = ({
 
     return <>{children}</>;
 };
-

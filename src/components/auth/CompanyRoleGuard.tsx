@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { use, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useGetCompanyProfile } from '@/hooks/useQueryData';
+import { useGetCompanyAccess, useGetCompanyProfile } from '@/hooks/useQueryData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShieldX, ArrowLeft, ShieldCheck, Crown, AlertCircle, Sparkles } from 'lucide-react';
@@ -22,13 +22,16 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
     const router = useRouter();
     const companyId = params?.id;
 
-    const { data: companyProfileData, isLoading, isError } = useGetCompanyProfile(companyId);
+    const [hasAccess, setHasAccess] = React.useState(false);
+    const { data: companyAccess, isLoading, error } = useGetCompanyAccess(companyId);
 
-    // Get user's role in this company
-    const userRole = companyProfileData?.data?.company?.role;
-
-    // Check if user has required role
-    const hasAccess = userRole && allowedRoles.includes(userRole);
+    console.log(companyAccess);
+    useEffect(() => {
+        if (companyAccess && companyAccess.data) {
+            const access = companyAccess?.data?.isAccess;
+            setHasAccess(access);
+        }
+    }, [companyAccess]);
 
     // Show loading state
     if (isLoading) {
@@ -42,7 +45,7 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
     }
 
     // Show error state if company not found or error
-    if (isError || !companyProfileData) {
+    if (error) {
         return (
             <div className="mx-auto max-w-5xl px-4 py-6">
                 <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-background via-background to-destructive/5">
@@ -136,7 +139,7 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
                                     </Badge>
                                 ))}
                             </div>
-                            {userRole && (
+                            {/* {userRole && (
                                 <div className="mt-4 pt-4 border-t border-primary/20">
                                     <p className="text-sm text-muted-foreground flex items-center gap-2">
                                         <span>Vai trò hiện tại của bạn:</span>
@@ -145,7 +148,7 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
                                         </Badge>
                                     </p>
                                 </div>
-                            )}
+                            )} */}
                         </div>
 
                         {/* Information Section */}
