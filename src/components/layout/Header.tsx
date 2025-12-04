@@ -50,13 +50,12 @@ export const Header = () => {
                 label: 'Home',
                 requiresAuth: false,
             },
-            {
-                name: 'network',
-                href: '/my-network',
-                icon: Users,
-                label: 'Network',
-                requiresAuth: false,
-            },
+            // {
+            //     name: 'network',
+            //     href: '/my-network',
+            //     icon: Users,
+            //     label: 'Network',
+            // },
             {
                 name: 'jobs',
                 href: '/jobs',
@@ -221,7 +220,8 @@ export const Header = () => {
                                 href="/signin"
                                 className={cn(
                                     'relative flex flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-3 py-2 rounded-md transition-all hover:bg-accent min-w-[50px] md:min-w-[65px]',
-                                    pathname?.startsWith('/signin') || pathname?.startsWith('/signup')
+                                    pathname?.startsWith('/signin') ||
+                                        pathname?.startsWith('/signup')
                                         ? 'text-primary'
                                         : 'text-muted-foreground hover:text-foreground'
                                 )}
@@ -229,17 +229,22 @@ export const Header = () => {
                                 <LogIn
                                     className={cn(
                                         'h-5 w-5 md:h-6 md:w-6 transition-all',
-                                        (pathname?.startsWith('/signin') || pathname?.startsWith('/signup')) &&
+                                        (pathname?.startsWith('/signin') ||
+                                            pathname?.startsWith('/signup')) &&
                                             'stroke-primary stroke-[2.5]'
                                     )}
                                     strokeWidth={
-                                        pathname?.startsWith('/signin') || pathname?.startsWith('/signup') ? 2.5 : 2
+                                        pathname?.startsWith('/signin') ||
+                                        pathname?.startsWith('/signup')
+                                            ? 2.5
+                                            : 2
                                     }
                                 />
                                 <span className="text-[10px] md:text-xs font-medium leading-tight">
                                     Sign In
                                 </span>
-                                {(pathname?.startsWith('/signin') || pathname?.startsWith('/signup')) && (
+                                {(pathname?.startsWith('/signin') ||
+                                    pathname?.startsWith('/signup')) && (
                                     <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-full" />
                                 )}
                             </Link>
