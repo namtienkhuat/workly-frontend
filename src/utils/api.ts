@@ -46,13 +46,30 @@ api.interceptors.response.use(
         // Handle different error scenarios
         if (error.response) {
             // Server responded with error status
+            const status = error.response.status;
+            
+            // Handle 401 Unauthorized - token expired or invalid
+            if (status === 401) {
+                // Clear authentication data from localStorage
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem(TOKEN_KEY);
+                    localStorage.removeItem('userId');
+                    localStorage.removeItem('userType');
+                    
+                    // Redirect to home page if not already there
+                    if (window.location.pathname !== '/home' && !window.location.pathname.startsWith('/signin') && !window.location.pathname.startsWith('/signup')) {
+                        window.location.href = '/home';
+                    }
+                }
+            }
+            
             const message =
                 (error.response.data as { message?: string })?.message || 'An error occurred';
             
             // Create custom error that preserves response info
             const customError: any = new Error(message);
             customError.response = error.response;
-            customError.status = error.response.status;
+            customError.status = status;
             return Promise.reject(customError);
         } else if (error.request) {
             // Request made but no response received

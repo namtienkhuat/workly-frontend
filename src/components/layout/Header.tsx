@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     Search,
     Home,
@@ -11,71 +11,117 @@ import {
     Building2,
     User,
     Settings,
+    LogIn,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { UnreadBadge } from '@/features/chat/components/ui/UnreadBadge';
+import { AuthRequiredModal } from '@/components/auth/AuthRequiredModal';
 
 interface NavItem {
     name: string;
     href: string;
     icon: React.ElementType;
     label: string;
+    requiresAuth?: boolean;
+    featureName?: string;
+    hideWhenNotAuthenticated?: boolean; // Hide completely when not authenticated (instead of showing popup)
 }
 
 export const Header = () => {
     const pathname = usePathname();
+    const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
+    const [authModalOpen, setAuthModalOpen] = useState(false);
+    const [restrictedFeature, setRestrictedFeature] = useState<string>('');
 
-    const navItems: NavItem[] = useMemo(
+    // Define which routes require authentication
+    const restrictedRoutes = ['/chat', '/settings', '/manage-companies', '/profile'];
+    const publicRoutes = ['/home', '/jobs', '/my-network'];
+
+    const allNavItems: NavItem[] = useMemo(
         () => [
             {
                 name: 'home',
                 href: '/home',
                 icon: Home,
                 label: 'Home',
+                requiresAuth: false,
             },
             {
                 name: 'network',
                 href: '/my-network',
                 icon: Users,
                 label: 'Network',
+                requiresAuth: false,
             },
             {
                 name: 'jobs',
                 href: '/jobs',
                 icon: Briefcase,
                 label: 'Jobs',
+                requiresAuth: false,
             },
             {
                 name: 'messaging',
                 href: '/chat',
                 icon: MessageCircle,
                 label: 'Messages',
+                requiresAuth: true,
+                featureName: 'tin nhắn',
             },
             {
                 name: 'companies',
                 href: '/manage-companies',
                 icon: Building2,
                 label: 'Companies',
+                requiresAuth: true,
+                featureName: 'quản lý công ty',
             },
             {
                 name: 'me',
                 href: user?.userId ? `/profile/${user.userId}` : '/profile',
                 icon: User,
                 label: 'Me',
+                requiresAuth: true,
+                featureName: 'hồ sơ cá nhân',
+                hideWhenNotAuthenticated: true, // Hide completely when not authenticated
             },
             {
                 name: 'settings',
                 href: '/settings',
                 icon: Settings,
                 label: 'Settings',
+                requiresAuth: true,
+                featureName: 'cài đặt',
+                hideWhenNotAuthenticated: true, // Hide completely when not authenticated
             },
         ],
         [user?.userId]
     );
+
+    // Filter nav items based on authentication
+    // Hide tabs that have hideWhenNotAuthenticated=true when not authenticated
+    // Show tabs that only require auth (show popup on click) when not authenticated
+    const navItems: NavItem[] = useMemo(() => {
+        if (isAuthenticated) {
+            // When authenticated, show all items
+            return allNavItems;
+        }
+        // When not authenticated, filter out items that should be hidden completely
+        return allNavItems.filter((item) => !item.hideWhenNotAuthenticated);
+    }, [isAuthenticated, allNavItems]);
+
+    const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, item: NavItem) => {
+        // If not authenticated and trying to access restricted route
+        if (!isAuthenticated && item.requiresAuth) {
+            e.preventDefault();
+            setRestrictedFeature(item.featureName || item.label.toLowerCase());
+            setAuthModalOpen(true);
+        }
+    };
 
     const isActive = (item: NavItem) => {
         if (item.name === 'me') {
@@ -141,6 +187,7 @@ export const Header = () => {
                                 <Link
                                     key={item.name}
                                     href={item.href}
+                                    onClick={(e) => handleNavClick(e, item)}
                                     className={cn(
                                         'relative flex flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-3 py-2 rounded-md transition-all hover:bg-accent min-w-[50px] md:min-w-[65px]',
                                         active
@@ -155,7 +202,7 @@ export const Header = () => {
                                         )}
                                         strokeWidth={active ? 2.5 : 2}
                                     />
-                                    {item.name === 'messaging' && (
+                                    {item.name === 'messaging' && isAuthenticated && (
                                         <UnreadBadge className="absolute top-1.5 right-2 bg-red-500 px-1.5" />
                                     )}
                                     <span className="text-[10px] md:text-xs font-medium leading-tight">
@@ -167,7 +214,44 @@ export const Header = () => {
                                 </Link>
                             );
                         })}
+
+                        {/* Sign In/Sign Up Button - Only show when not authenticated */}
+                        {!isAuthenticated && (
+                            <Link
+                                href="/signin"
+                                className={cn(
+                                    'relative flex flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-3 py-2 rounded-md transition-all hover:bg-accent min-w-[50px] md:min-w-[65px]',
+                                    pathname?.startsWith('/signin') || pathname?.startsWith('/signup')
+                                        ? 'text-primary'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                )}
+                            >
+                                <LogIn
+                                    className={cn(
+                                        'h-5 w-5 md:h-6 md:w-6 transition-all',
+                                        (pathname?.startsWith('/signin') || pathname?.startsWith('/signup')) &&
+                                            'stroke-primary stroke-[2.5]'
+                                    )}
+                                    strokeWidth={
+                                        pathname?.startsWith('/signin') || pathname?.startsWith('/signup') ? 2.5 : 2
+                                    }
+                                />
+                                <span className="text-[10px] md:text-xs font-medium leading-tight">
+                                    Sign In
+                                </span>
+                                {(pathname?.startsWith('/signin') || pathname?.startsWith('/signup')) && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-full" />
+                                )}
+                            </Link>
+                        )}
                     </nav>
+
+                    {/* Auth Required Modal */}
+                    <AuthRequiredModal
+                        open={authModalOpen}
+                        onOpenChange={setAuthModalOpen}
+                        featureName={restrictedFeature}
+                    />
                 </div>
             </div>
         </header>

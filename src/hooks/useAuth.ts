@@ -1,7 +1,9 @@
 // hooks/useAuth.ts
 import { UserProfile } from '@/types/global';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import api from '@/utils/api';
+import { TOKEN_KEY } from '@/constants';
 
 const fetchMe = async (): Promise<{ data: UserProfile }> => {
     const response = await api.get('/auth/me');
@@ -10,6 +12,7 @@ const fetchMe = async (): Promise<{ data: UserProfile }> => {
 
 export const useAuth = () => {
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     const {
         data: user,
@@ -29,12 +32,46 @@ export const useAuth = () => {
 
     const logout = async () => {
         try {
-            await api.post('/auth/logout');
+            // Call API to sign out on server
+            await api.post('/auth/signout');
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
+            // Clear React Query cache
             queryClient.setQueryData(['auth', 'me'], null);
             queryClient.removeQueries({ queryKey: ['auth', 'me'] });
+
+            // Clear all localStorage data related to authentication
+            if (typeof window !== 'undefined') {
+                // Remove authentication token
+                localStorage.removeItem(TOKEN_KEY);
+
+                // Remove user info stored by chat store
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userType');
+
+                // Remove chat-related data to prevent data leakage between users
+                localStorage.removeItem('hiddenConversations');
+                localStorage.removeItem('clearedConversations');
+
+                // Clear all appearance settings keys that contain user-specific data
+                // This will remove keys like 'appearance_settings_${userId}'
+                const keysToRemove: string[] = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (
+                        key &&
+                        (key.startsWith('appearance_settings_') || key.includes('workly_'))
+                    ) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach((key) => localStorage.removeItem(key));
+            }
+
+            // Redirect to home page
+            router.push('/home');
+            router.refresh(); // Force refresh to update the UI
         }
     };
 
