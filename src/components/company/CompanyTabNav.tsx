@@ -37,18 +37,19 @@ const CompanyTabNav = ({
     const tabs = isAdmin ? adminTabs : viewTabs;
     const pathname = usePathname();
     const conversationsMap = useChatStore((state) => state.conversations);
+    const hiddenConversations = useChatStore((state) => state.hiddenConversations);
 
-    // Calculate total unread messages for this company
     const unreadMessagesCount = useMemo(() => {
         if (!isAdmin) return 0;
 
         const conversations = Object.values(conversationsMap);
         return conversations.reduce((total, conversation) => {
-            // Check if this company is a participant in the conversation
+            if (hiddenConversations.has(conversation._id)) return total;
+
             const companyUnread = conversation.unreadCount[companyId] || 0;
             return total + companyUnread;
         }, 0);
-    }, [conversationsMap, companyId, isAdmin]);
+    }, [conversationsMap, hiddenConversations, companyId, isAdmin]);
 
     return (
         <div className="w-full border-t">

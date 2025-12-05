@@ -202,7 +202,10 @@ export const Header = () => {
                                         strokeWidth={active ? 2.5 : 2}
                                     />
                                     {item.name === 'messaging' && isAuthenticated && (
-                                        <UnreadBadge className="absolute top-1.5 right-2 bg-red-500 px-1.5" />
+                                        <UnreadBadge
+                                            className="absolute top-1.5 right-2 bg-red-500 px-1.5"
+                                            forPersonalUser={true}
+                                        />
                                     )}
                                     <span className="text-[10px] md:text-xs font-medium leading-tight">
                                         {item.label}

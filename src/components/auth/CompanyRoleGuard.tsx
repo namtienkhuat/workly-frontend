@@ -25,7 +25,6 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
     const [hasAccess, setHasAccess] = React.useState(false);
     const { data: companyAccess, isLoading, error } = useGetCompanyAccess(companyId);
 
-    console.log(companyAccess);
     useEffect(() => {
         if (companyAccess && companyAccess.data) {
             const access = companyAccess?.data?.isAccess;

@@ -18,7 +18,7 @@ export default function CompanyMessagesPage() {
         conversations,
         currentUserId,
         isLoadingConversations,
-        isSocketConnected,
+        isCompanySocketConnected,
         deleteConversation,
     } = useCompanyChat(companyId);
     const handleSelectConversation = (conversationId: string) => {
@@ -100,7 +100,7 @@ export default function CompanyMessagesPage() {
                             </h2>
 
                             <p className="text-muted-foreground text-base mb-2">
-                                {isSocketConnected
+                                {isCompanySocketConnected
                                     ? 'Chọn một cuộc trò chuyện từ danh sách bên trái'
                                     : 'Đang kết nối...'}
                             </p>
@@ -114,7 +114,7 @@ export default function CompanyMessagesPage() {
                             )}
 
                             {/* Status indicator */}
-                            {isSocketConnected && (
+                            {isCompanySocketConnected && (
                                 <div className="flex items-center justify-center gap-2 mt-6">
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                                     <span className="text-xs text-muted-foreground">

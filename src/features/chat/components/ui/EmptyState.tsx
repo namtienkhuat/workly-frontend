@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageSquareOff, Search } from 'lucide-react';
+import { MessageCircle, Search } from 'lucide-react';
 
 interface EmptyStateProps {
     message: string;
@@ -24,7 +24,7 @@ export function EmptyState({ message, icon, subtitle }: EmptyStateProps) {
                                 message.includes('tìm thấy') ? (
                                     <Search className="h-12 w-12 text-primary/60" />
                                 ) : (
-                                    <MessageSquareOff className="h-12 w-12 text-primary/60" />
+                                    <MessageCircle className="h-12 w-12 text-primary/60" />
                                 )
                             )}
                         </div>

@@ -15,7 +15,6 @@ import {
     messageApiService,
     socketService,
     userApiService,
-    ParticipantProfile,
 } from '../services';
 import {
     sortMessagesByTime,
@@ -26,19 +25,22 @@ import { CHAT_CONSTANTS } from '../constants/chat.constants';
 
 interface ChatStore {
     // ==================== STATE ====================
+    // Version counter to force re-renders when conversations change
+    conversationsVersion: number;
     // User
     currentUserId: string | null;
     currentUserType: ParticipantType | null;
     personalUserId: string | null; // Always stores the logged-in user's ID (for Header badge)
 
     // Socket
-    isSocketConnected: boolean;
+    isUserSocketConnected: boolean;
+    isCompanySocketConnected: boolean;
 
     // Conversations
     conversations: Record<string, ConversationWithUserInfo>;
     isLoadingConversations: boolean;
-    hiddenConversations: Set<string>; // conversationIds hidden by current user
-    clearedConversations: Set<string>; // conversationIds with cleared history
+    hiddenConversations: Set<string>;
+    clearedConversations: Record<string, number>;
 
     // Messages
     messages: Record<string, Message[]>; // conversationId -> messages[]
@@ -46,6 +48,9 @@ interface ChatStore {
 
     // User Info Cache
     userInfoCache: Record<string, UserInfo>; // participantId -> UserInfo
+
+    // Company context
+    currentCompanyId: string | null;
 
     // UI State
     openChatWindows: string[]; // conversationId[]
@@ -58,7 +63,8 @@ interface ChatStore {
     // Initialization
     setCurrentUser: (userId: string, userType: ParticipantType) => void;
     setPersonalUserId: (userId: string) => void;
-    initializeSocket: (userId: string, userType: ParticipantType, token: string) => void;
+    initializeUserSocket: (userId: string, token: string) => void;
+    initializeCompanySocket: (companyId: string, token: string) => void;
     disconnectSocket: () => void;
 
     // Conversations
@@ -68,7 +74,7 @@ interface ChatStore {
         participantType: ParticipantType
     ) => Promise<Conversation>;
     deleteConversation: (conversationId: string) => Promise<void>;
-    unhideConversation: (conversationId: string, keepUnreadCount?: boolean) => void;
+    unhideConversation: (conversationId: string) => Promise<void>;
     updateConversation: (conversation: Conversation) => void;
     updateConversationUserInfo: (conversationId: string, userInfo: Partial<any>) => void;
 
@@ -93,7 +99,6 @@ interface ChatStore {
         participantId: string,
         participantType: ParticipantType
     ) => Promise<UserInfo | null>;
-    getUserInfo: (participantId: string) => UserInfo | undefined;
 
     // Helpers
     getConversation: (conversationId: string) => ConversationWithUserInfo | undefined;
@@ -123,25 +128,21 @@ function saveHiddenConversations(hidden: Set<string>) {
     }
 }
 
-// Helper to load cleared conversations from localStorage
-function loadClearedConversations(): Set<string> {
-    if (typeof window === 'undefined') return new Set();
+function loadClearedConversations(): Record<string, number> {
+    if (typeof window === 'undefined') return {};
     try {
         const stored = localStorage.getItem('clearedConversations');
-        return stored ? new Set(JSON.parse(stored)) : new Set();
+        return stored ? JSON.parse(stored) : {};
     } catch {
-        return new Set();
+        return {};
     }
 }
 
-// Helper to save cleared conversations to localStorage
-function saveClearedConversations(cleared: Set<string>) {
+function saveClearedConversations(cleared: Record<string, number>) {
     if (typeof window === 'undefined') return;
     try {
-        localStorage.setItem('clearedConversations', JSON.stringify([...cleared]));
-    } catch (error) {
-        // Failed to save
-    }
+        localStorage.setItem('clearedConversations', JSON.stringify(cleared));
+    } catch (error) {}
 }
 
 export const useChatStore = create<ChatStore>((set, get) => {
@@ -149,830 +150,1010 @@ export const useChatStore = create<ChatStore>((set, get) => {
     if (typeof window !== 'undefined') {
         (window as any).__chatStore__ = { get };
     }
-    
+
     return {
-    // ==================== INITIAL STATE ====================
-    currentUserId: null,
-    currentUserType: null,
-    personalUserId: null,
-    isSocketConnected: false,
-    conversations: {},
-    isLoadingConversations: false,
-    hiddenConversations: loadHiddenConversations(),
-    clearedConversations: loadClearedConversations(),
-    messages: {},
-    isLoadingMessages: {},
-    userInfoCache: {},
-    openChatWindows: [],
-    fullChatId: null,
-    typingUsers: {},
+        // ==================== INITIAL STATE ====================
+        conversationsVersion: 0,
+        currentUserId: null,
+        currentUserType: null,
+        personalUserId: null,
+        currentCompanyId: null,
+        isUserSocketConnected: false,
+        isCompanySocketConnected: false,
+        conversations: {},
+        isLoadingConversations: false,
+        hiddenConversations: loadHiddenConversations(),
+        clearedConversations: loadClearedConversations(),
+        messages: {},
+        isLoadingMessages: {},
+        userInfoCache: {},
+        openChatWindows: [],
+        fullChatId: null,
+        typingUsers: {},
 
-    // ==================== INITIALIZATION ====================
-    setCurrentUser: (userId: string, userType: ParticipantType) => {
-        set({ currentUserId: userId, currentUserType: userType });
-
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('userId', userId);
-            localStorage.setItem('userType', userType);
-        }
-    },
-
-    setPersonalUserId: (userId: string) => {
-        set({ personalUserId: userId });
-    },
-
-    initializeSocket: (userId: string, userType: ParticipantType, token: string) => {
-        const { currentUserId } = get();
-        if (currentUserId === userId && socketService.isConnected()) {
-            set({ isSocketConnected: true });
-            return;
-        }
-
-        set({ currentUserId: userId, currentUserType: userType });
-        const socket = socketService.connect(token, userId, userType);
-
-        // Setup connection handler
-        socket.on('connect', () => {
-            set({ isSocketConnected: true });
-        });
-
-        socket.on('disconnect', () => {
-            set({ isSocketConnected: false });
-        });
-
-        // Setup socket event listeners
-        socketService.onNewMessage((data: NewMessageData) => {
-            const { hiddenConversations, currentUserId, openChatWindows } = get();
-            const isFromOther = data.message.sender.id !== currentUserId;
-            const isConversationOpen = openChatWindows.includes(data.conversationId);
-
-            const isHidden = hiddenConversations.has(data.conversationId);
-            
-            // If message is from another user and conversation is hidden, unhide it
-            const shouldUnhide = isHidden && isFromOther;
-
-            if (shouldUnhide) {
-                // Keep unread count when unhiding (don't reset to 0)
-                get().unhideConversation(data.conversationId, true);
-            }
-
-            get().addMessage(data.message);
-
-            // Update conversation's lastMessage
-            const conversation = get().conversations[data.conversationId];
-            if (conversation) {
-                // Only increment unread count if message is from another user
-                // AND currentUserId is set (to avoid incrementing for own messages)
-                let updatedUnreadCount = conversation.unreadCount;
-
-                if (isFromOther && currentUserId) {
-                    // If conversation is open (user is viewing it), auto-mark as read
-                    if (isConversationOpen) {
-                        const { currentUserType } = get();
-                        
-                        // User is actively viewing this conversation - mark all messages as read immediately
-                        updatedUnreadCount = {
-                            ...conversation.unreadCount,
-                            [currentUserId]: 0,
-                        };
-
-                        // Skip API call for COMPANY type to avoid 403 errors (temporary fix)
-                        // The conversation participants may not be properly set up yet
-                        if (currentUserType === ParticipantType.COMPANY) {
-                            // Skip for company type
-                        } else {
-                            // Auto-mark all messages as read via API (async, don't wait)
-                            messageApiService
-                                .markAllMessagesAsRead(data.conversationId)
-                                .catch((err) => {
-                                    // Silently fail for 403 errors (permission issues)
-                                });
-                        }
-
-                        // Also update all messages status in local state
-                        const currentMessages = get().messages[data.conversationId] || [];
-                        const updatedMessages = currentMessages.map((msg) => {
-                            // Only update messages that are not from current user and not already read
-                            if (
-                                msg.sender.id !== currentUserId &&
-                                msg.status !== MessageStatus.READ
-                            ) {
-                                const readByEntry = {
-                                    participantId: currentUserId,
-                                    readAt: new Date(),
-                                };
-                                return {
-                                    ...msg,
-                                    readBy: [...msg.readBy, readByEntry],
-                                    status: MessageStatus.READ,
-                                };
-                            }
-                            return msg;
-                        });
-
-                        set({
-                            messages: {
-                                ...get().messages,
-                                [data.conversationId]: updatedMessages,
-                            },
-                        });
-                    } else {
-                        // Conversation is not open - increment unread count
-                        updatedUnreadCount = {
-                            ...conversation.unreadCount,
-                            [currentUserId]: (conversation.unreadCount[currentUserId] || 0) + 1,
-                        };
-                    }
-                } else if (!isFromOther && currentUserId) {
-                    // Message from current user - ensure unread count is 0 for sender
-                    updatedUnreadCount = {
-                        ...conversation.unreadCount,
-                        [currentUserId]: 0,
-                    };
-                }
-
-                get().updateConversation({
-                    ...conversation,
-                    lastMessage: data.message,
-                    lastMessageAt: data.message.createdAt,
-                    unreadCount: updatedUnreadCount,
-                });
-            } else {
-                // Conversation not in store yet, reload conversations to get it
-                get().loadConversations();
-            }
-        });
-
-        socketService.onUserTyping((data: TypingData) => {
-            get().setUserTyping(data.conversationId, data.userId, data.isTyping);
-        });
-
-        socketService.onMessageRead((data: MessageReadData) => {
-            const messages = get().messages[data.conversationId] || [];
-            const updatedMessages = messages.map((msg) => {
-                if (msg._id === data.messageId) {
-                    return {
-                        ...msg,
-                        readBy: [
-                            ...msg.readBy,
-                            { participantId: data.userId, readAt: data.readAt },
-                        ],
-                        status: MessageStatus.READ,
-                    };
-                }
-                return msg;
-            });
-
+        // ==================== INITIALIZATION ====================
+        setCurrentUser: (userId: string, userType: ParticipantType) => {
             set({
-                messages: {
-                    ...get().messages,
-                    [data.conversationId]: updatedMessages,
-                },
-            });
-        });
-
-        socketService.onUserOnline((data) => {
-            get().updateConversationUserInfo(data.userId, { isOnline: true });
-        });
-
-        socketService.onUserOffline((data) => {
-            get().updateConversationUserInfo(data.userId, { isOnline: false });
-        });
-    },
-
-    disconnectSocket: () => {
-        socketService.disconnect();
-        set({ isSocketConnected: false });
-    },
-
-    // ==================== CONVERSATIONS ====================
-    loadConversations: async () => {
-        try {
-            set({ isLoadingConversations: true });
-
-            const { currentUserId, currentUserType } = get();
-
-            const response = await conversationApiService.getConversations({
-                page: CHAT_CONSTANTS.DEFAULT_PAGE,
-                limit: CHAT_CONSTANTS.DEFAULT_PAGE_SIZE,
+                currentUserId: userId,
+                currentUserType: userType,
+                currentCompanyId:
+                    userType === ParticipantType.COMPANY ? userId : get().currentCompanyId,
             });
 
-            const conversationsMap: Record<string, ConversationWithUserInfo> = {};
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('userId', userId);
+                localStorage.setItem('userType', userType);
+            }
+        },
 
-            // Fetch all participant info in parallel
-            await Promise.all(
-                response.data.map(async (conv) => {
-                    const otherParticipant = conv.participants.find(
-                        (p) => p.id !== get().currentUserId
-                    );
+        setPersonalUserId: (userId: string) => {
+            set({ personalUserId: userId });
+        },
 
-                    if (otherParticipant) {
-                        const userInfo = await get().fetchParticipantInfo(
-                            otherParticipant.id,
-                            otherParticipant.type
-                        );
+        initializeUserSocket: (userId: string, token: string) => {
+            const socket = socketService.connect('user', token, userId, ParticipantType.USER);
 
-                        conversationsMap[conv._id] = {
-                            ...conv,
-                            otherParticipant: userInfo || undefined,
+            socket.on('connect', () => {
+                set({ isUserSocketConnected: true, personalUserId: userId });
+            });
+
+            socket.on('disconnect', () => {
+                set({ isUserSocketConnected: false });
+            });
+
+            const register = () => {
+                socketService.onNewMessage('user', async (data: NewMessageData) => {
+                    const { hiddenConversations, personalUserId } = get();
+                    const isFromOther = data.message.sender.id !== personalUserId;
+                    const isHidden = hiddenConversations.has(data.conversationId);
+                    const shouldUnhide = isHidden && isFromOther;
+                    if (shouldUnhide) {
+                        await get().unhideConversation(data.conversationId);
+                    }
+                    get().addMessage(data.message);
+                    let conversation = get().conversations[data.conversationId];
+                    if (conversation) {
+                        const updatedUnreadCount = { ...conversation.unreadCount };
+                        conversation.participants.forEach((participant) => {
+                            if (participant.id !== data.message.sender.id) {
+                                updatedUnreadCount[participant.id] =
+                                    (updatedUnreadCount[participant.id] || 0) + 1;
+                            } else {
+                                updatedUnreadCount[participant.id] = 0;
+                            }
+                        });
+                        const updatedConv = {
+                            ...conversation,
+                            lastMessage: data.message,
+                            lastMessageAt: data.message.createdAt,
+                            unreadCount: updatedUnreadCount,
                         };
+                        get().updateConversation(updatedConv);
                     } else {
-                        conversationsMap[conv._id] = {
-                            ...conv,
-                            otherParticipant: undefined,
-                        };
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                        conversation = get().conversations[data.conversationId];
+                        if (!conversation) {
+                            // Load conversations with user context to get user's conversations
+                            const {
+                                currentUserId: oldCurrentUserId,
+                                currentUserType: oldCurrentUserType,
+                            } = get();
+                            if (personalUserId && oldCurrentUserId !== personalUserId) {
+                                set({
+                                    currentUserId: personalUserId,
+                                    currentUserType: ParticipantType.USER,
+                                });
+                                await get().loadConversations();
+                                set({
+                                    currentUserId: oldCurrentUserId,
+                                    currentUserType: oldCurrentUserType,
+                                });
+                            } else {
+                                await get().loadConversations();
+                            }
+                        }
                     }
-                })
-            );
+                });
 
-            // First, identify conversations that need to be unhidden
-            const { hiddenConversations } = get();
-            const conversationsToUnhide: string[] = [];
+                socketService.onUserTyping('user', (data: TypingData) => {
+                    get().setUserTyping(data.conversationId, data.userId, data.isTyping);
+                });
 
-            Object.entries(conversationsMap).forEach(([convId, conv]) => {
-                if (hiddenConversations.has(convId)) {
-                    // Check if there are unread messages for current user
-                    const unreadCount = currentUserId ? conv.unreadCount[currentUserId] || 0 : 0;
-                    if (unreadCount > 0) {
-                        conversationsToUnhide.push(convId);
-                    }
-                }
-            });
+                socketService.onMessageRead('user', (data: MessageReadData) => {
+                    const messages = get().messages[data.conversationId] || [];
+                    const updatedMessages = messages.map((msg) => {
+                        if (msg._id === data.messageId) {
+                            return {
+                                ...msg,
+                                readBy: [
+                                    ...msg.readBy,
+                                    { participantId: data.userId, readAt: data.readAt },
+                                ],
+                                status: MessageStatus.READ,
+                            };
+                        }
+                        return msg;
+                    });
+                    set({
+                        messages: {
+                            ...get().messages,
+                            [data.conversationId]: updatedMessages,
+                        },
+                    });
+                });
 
-            // Remove from hidden set ONLY (keep cleared status)
-            const newHidden = new Set(hiddenConversations);
-            conversationsToUnhide.forEach((convId) => {
-                newHidden.delete(convId);
-            });
+                socketService.onUserOnline('user', (data) => {
+                    get().updateConversationUserInfo(data.userId, { isOnline: true });
+                });
 
-            // Save to localStorage
-            if (conversationsToUnhide.length > 0) {
-                saveHiddenConversations(newHidden);
-            }
-
-            // Now set conversations (with unreadCount from server intact)
-            set({ 
-                conversations: conversationsMap,
-                hiddenConversations: newHidden,
-                // Don't touch clearedConversations - keep it as is
-            });
-
-            // Join all conversation rooms to receive real-time messages
-            Object.keys(conversationsMap).forEach((conversationId) => {
-                // Skip joining hidden conversations (without new messages)
-                if (
-                    !hiddenConversations.has(conversationId) ||
-                    conversationsToUnhide.includes(conversationId)
-                ) {
-                    socketService.joinConversation(conversationId);
-                }
-            });
-        } catch (error) {
-            // Error loading conversations
-        } finally {
-            set({ isLoadingConversations: false });
-        }
-    },
-
-    createOrGetConversation: async (participantId: string, participantType: ParticipantType) => {
-        try {
-            const response = await conversationApiService.createOrGetConversation({
-                participantId,
-                participantType,
-            });
-
-            const conversation = response.data;
-            const otherParticipant = conversation.participants.find(
-                (p) => p.id !== get().currentUserId
-            );
-
-            // Fetch real user info
-            let userInfo: UserInfo | undefined;
-            if (otherParticipant) {
-                const fetchedInfo = await get().fetchParticipantInfo(
-                    otherParticipant.id,
-                    otherParticipant.type
-                );
-                userInfo = fetchedInfo || undefined;
-            }
-
-            const conversationWithInfo: ConversationWithUserInfo = {
-                ...conversation,
-                otherParticipant: userInfo,
+                socketService.onUserOffline('user', (data) => {
+                    get().updateConversationUserInfo(data.userId, { isOnline: false });
+                });
             };
 
+            register();
+        },
+
+        initializeCompanySocket: (companyId: string, token: string) => {
+            const socket = socketService.connect(
+                'company',
+                token,
+                companyId,
+                ParticipantType.COMPANY
+            );
+
+            socket.on('connect', () => {
+                set({ isCompanySocketConnected: true, currentCompanyId: companyId });
+            });
+
+            socket.on('disconnect', () => {
+                set({ isCompanySocketConnected: false });
+            });
+
+            const register = () => {
+                socketService.onNewMessage('company', async (data: NewMessageData) => {
+                    const { hiddenConversations, currentUserId } = get();
+                    const isFromOther = data.message.sender.id !== currentUserId;
+                    const isHidden = hiddenConversations.has(data.conversationId);
+                    const shouldUnhide = isHidden && isFromOther;
+                    if (shouldUnhide) {
+                        await get().unhideConversation(data.conversationId);
+                    }
+                    get().addMessage(data.message);
+                    let conversation = get().conversations[data.conversationId];
+                    if (conversation) {
+                        const updatedUnreadCount = { ...conversation.unreadCount };
+                        conversation.participants.forEach((participant) => {
+                            if (participant.id !== data.message.sender.id) {
+                                updatedUnreadCount[participant.id] =
+                                    (updatedUnreadCount[participant.id] || 0) + 1;
+                            } else {
+                                updatedUnreadCount[participant.id] = 0;
+                            }
+                        });
+                        const updatedConv = {
+                            ...conversation,
+                            lastMessage: data.message,
+                            lastMessageAt: data.message.createdAt,
+                            unreadCount: updatedUnreadCount,
+                        };
+                        get().updateConversation(updatedConv);
+                    } else {
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                        conversation = get().conversations[data.conversationId];
+                        if (!conversation) {
+                            await get().loadConversations();
+                        }
+                    }
+                });
+
+                socketService.onUserTyping('company', (data: TypingData) => {
+                    get().setUserTyping(data.conversationId, data.userId, data.isTyping);
+                });
+
+                socketService.onMessageRead('company', (data: MessageReadData) => {
+                    const messages = get().messages[data.conversationId] || [];
+                    const updatedMessages = messages.map((msg) => {
+                        if (msg._id === data.messageId) {
+                            return {
+                                ...msg,
+                                readBy: [
+                                    ...msg.readBy,
+                                    { participantId: data.userId, readAt: data.readAt },
+                                ],
+                                status: MessageStatus.READ,
+                            };
+                        }
+                        return msg;
+                    });
+                    set({
+                        messages: {
+                            ...get().messages,
+                            [data.conversationId]: updatedMessages,
+                        },
+                    });
+                });
+
+                socketService.onUserOnline('company', (data) => {
+                    get().updateConversationUserInfo(data.userId, { isOnline: true });
+                });
+
+                socketService.onUserOffline('company', (data) => {
+                    get().updateConversationUserInfo(data.userId, { isOnline: false });
+                });
+            };
+
+            register();
+        },
+
+        disconnectSocket: () => {
+            socketService.disconnect('user');
+            socketService.disconnect('company');
+            set({ isUserSocketConnected: false, isCompanySocketConnected: false });
+        },
+
+        // ==================== CONVERSATIONS ====================
+        loadConversations: async () => {
+            try {
+                set({ isLoadingConversations: true });
+
+                const {
+                    hiddenConversations,
+                    personalUserId,
+                    currentCompanyId,
+                    currentUserId,
+                    currentUserType,
+                } = get();
+
+                // Ensure we have a valid identity before loading
+                if (!currentUserId || !currentUserType) {
+                    set({ isLoadingConversations: false });
+                    return;
+                }
+
+                const response = await conversationApiService.getConversations({
+                    page: CHAT_CONSTANTS.DEFAULT_PAGE,
+                    limit: CHAT_CONSTANTS.DEFAULT_PAGE_SIZE,
+                });
+
+                const conversationsMap: Record<string, ConversationWithUserInfo> = {};
+
+                // Fetch all participant info in parallel
+                await Promise.all(
+                    response.data.map(async (conv) => {
+                        const otherParticipant = conv.participants.find(
+                            (p) => p.id !== get().currentUserId
+                        );
+
+                        if (otherParticipant) {
+                            const userInfo = await get().fetchParticipantInfo(
+                                otherParticipant.id,
+                                otherParticipant.type
+                            );
+
+                            conversationsMap[conv._id] = {
+                                ...conv,
+                                otherParticipant: userInfo || undefined,
+                            };
+                        } else {
+                            conversationsMap[conv._id] = {
+                                ...conv,
+                                otherParticipant: undefined,
+                            };
+                        }
+                    })
+                );
+
+                // Hidden conversations should stay hidden when loading from API
+                // They will only be unhidden when receiving NEW messages via socket (onNewMessage)
+                const newHidden = new Set(hiddenConversations);
+
+                // Merge with existing conversations instead of replacing
+                const existingConversations = get().conversations;
+                const mergedConversations: Record<string, ConversationWithUserInfo> = {
+                    ...existingConversations,
+                };
+
+                // First, remove any hidden conversations from the merged result
+                Object.keys(mergedConversations).forEach((id) => {
+                    if (newHidden.has(id)) {
+                        delete mergedConversations[id];
+                    }
+                });
+
+                // Then, add/update non-hidden conversations from API
+                Object.entries(conversationsMap).forEach(([id, newConv]) => {
+                    // Skip hidden conversations completely
+                    if (newHidden.has(id)) {
+                        return;
+                    }
+
+                    // Merge with existing conversation if exists, otherwise add new
+                    const existing = mergedConversations[id];
+                    if (existing) {
+                        // Update existing conversation, merge unreadCount and preserve otherParticipant if exists
+                        mergedConversations[id] = {
+                            ...existing,
+                            ...newConv,
+                            otherParticipant: existing.otherParticipant || newConv.otherParticipant,
+                            unreadCount: {
+                                ...existing.unreadCount,
+                                ...newConv.unreadCount,
+                            },
+                        };
+                    } else {
+                        // Add new conversation
+                        mergedConversations[id] = newConv;
+                    }
+                });
+
+                set({
+                    conversations: mergedConversations,
+                    hiddenConversations: newHidden,
+                    conversationsVersion: get().conversationsVersion + 1,
+                });
+
+                // Join all non-hidden conversation rooms to receive real-time messages on both sockets
+                Object.values(mergedConversations).forEach((conv) => {
+                    if (newHidden.has(conv._id)) return;
+                    const hasUser = personalUserId
+                        ? conv.participants.some((p) => p.id === personalUserId)
+                        : false;
+                    const hasCompany = currentCompanyId
+                        ? conv.participants.some(
+                              (p) => p.id === currentCompanyId && p.type === ParticipantType.COMPANY
+                          )
+                        : false;
+                    if (hasUser) {
+                        socketService.joinConversation('user', conv._id);
+                    }
+                    if (hasCompany) {
+                        socketService.joinConversation('company', conv._id);
+                    }
+                });
+            } catch (error) {
+                // Error loading conversations
+            } finally {
+                set({ isLoadingConversations: false });
+            }
+        },
+
+        createOrGetConversation: async (
+            participantId: string,
+            participantType: ParticipantType
+        ) => {
+            try {
+                const response = await conversationApiService.createOrGetConversation({
+                    participantId,
+                    participantType,
+                });
+
+                const conversation = response.data;
+                const otherParticipant = conversation.participants.find(
+                    (p) => p.id !== get().currentUserId
+                );
+
+                // Fetch real user info
+                let userInfo: UserInfo | undefined;
+                if (otherParticipant) {
+                    const fetchedInfo = await get().fetchParticipantInfo(
+                        otherParticipant.id,
+                        otherParticipant.type
+                    );
+                    userInfo = fetchedInfo || undefined;
+                }
+
+                const conversationWithInfo: ConversationWithUserInfo = {
+                    ...conversation,
+                    otherParticipant: userInfo,
+                };
+
+                // If this conversation was hidden, unhide it (user is intentionally starting it)
+                const { hiddenConversations, conversations: existingConversations } = get();
+                if (hiddenConversations.has(conversation._id)) {
+                    await get().unhideConversation(conversation._id);
+                }
+
+                // Only add if conversation doesn't already exist to avoid duplicates
+                const existing = existingConversations[conversation._id];
+                if (!existing) {
+                    set({
+                        conversations: {
+                            ...existingConversations,
+                            [conversation._id]: conversationWithInfo,
+                        },
+                    });
+                } else {
+                    // Update existing conversation if needed (preserve otherParticipant)
+                    if (existing.otherParticipant !== conversationWithInfo.otherParticipant) {
+                        set({
+                            conversations: {
+                                ...existingConversations,
+                                [conversation._id]: {
+                                    ...existing,
+                                    ...conversationWithInfo,
+                                    otherParticipant:
+                                        existing.otherParticipant ||
+                                        conversationWithInfo.otherParticipant,
+                                },
+                            },
+                        });
+                    }
+                }
+
+                // Ensure socket is joined to conversation room
+                const personalUserId = get().personalUserId;
+                const currentCompanyId = get().currentCompanyId;
+                const hasUser = personalUserId
+                    ? conversation.participants.some((p) => p.id === personalUserId)
+                    : false;
+                const hasCompany = currentCompanyId
+                    ? conversation.participants.some(
+                          (p) => p.id === currentCompanyId && p.type === ParticipantType.COMPANY
+                      )
+                    : false;
+                if (hasUser) socketService.joinConversation('user', conversation._id);
+                if (hasCompany) socketService.joinConversation('company', conversation._id);
+                await get().loadMessages(conversation._id);
+
+                return conversation;
+            } catch (error) {
+                throw error;
+            }
+        },
+
+        deleteConversation: async (conversationId: string) => {
+            try {
+                const {
+                    hiddenConversations,
+                    clearedConversations,
+                    openChatWindows,
+                    messages,
+                    conversations,
+                    fullChatId,
+                } = get();
+
+                const newHidden = new Set(hiddenConversations);
+                newHidden.add(conversationId);
+
+                const newCleared = {
+                    ...clearedConversations,
+                    [conversationId]: Date.now(),
+                };
+
+                saveHiddenConversations(newHidden);
+                saveClearedConversations(newCleared);
+
+                const { [conversationId]: _, ...remainingMessages } = messages;
+                const { [conversationId]: __, ...remainingConversations } = conversations;
+
+                set({
+                    hiddenConversations: newHidden,
+                    clearedConversations: newCleared,
+                    messages: remainingMessages,
+                    conversations: remainingConversations,
+                    openChatWindows: openChatWindows.filter((id) => id !== conversationId),
+                    fullChatId: fullChatId === conversationId ? null : fullChatId,
+                });
+            } catch (error) {
+                throw error;
+            }
+        },
+
+        unhideConversation: async (conversationId: string) => {
+            const { hiddenConversations, conversations, personalUserId, currentCompanyId } = get();
+
+            const newHidden = new Set(hiddenConversations);
+            newHidden.delete(conversationId);
+
+            saveHiddenConversations(newHidden);
+
+            const conv = conversations[conversationId];
+            const hasUser = personalUserId
+                ? conv?.participants.some((p) => p.id === personalUserId)
+                : false;
+            const hasCompany = currentCompanyId
+                ? conv?.participants.some(
+                      (p) => p.id === currentCompanyId && p.type === ParticipantType.COMPANY
+                  )
+                : false;
+            if (hasUser) socketService.joinConversation('user', conversationId);
+            if (hasCompany) socketService.joinConversation('company', conversationId);
+
+            set({
+                hiddenConversations: newHidden,
+            });
+
+            // If conversation is not in store, reload to get it
+            if (!conversations[conversationId]) {
+                await get().loadConversations();
+            }
+        },
+
+        updateConversation: (conversation: Conversation) => {
+            const existing = get().conversations[conversation._id];
             set({
                 conversations: {
                     ...get().conversations,
-                    [conversation._id]: conversationWithInfo,
+                    [conversation._id]: {
+                        ...conversation,
+                        otherParticipant: existing?.otherParticipant,
+                    },
                 },
+                conversationsVersion: get().conversationsVersion + 1,
+            });
+        },
+
+        updateConversationUserInfo: (userId: string, userInfo: Partial<any>) => {
+            const conversations = get().conversations;
+            const userInfoCache = get().userInfoCache;
+            const updatedConversations: Record<string, ConversationWithUserInfo> = {};
+            let hasUpdates = false;
+
+            Object.keys(conversations).forEach((convId) => {
+                const conv = conversations[convId];
+                if (!conv) return;
+
+                if (conv.otherParticipant?.id === userId) {
+                    updatedConversations[convId] = {
+                        ...conv,
+                        otherParticipant: conv.otherParticipant
+                            ? {
+                                  ...conv.otherParticipant,
+                                  ...userInfo,
+                              }
+                            : undefined,
+                    };
+                    hasUpdates = true;
+                } else {
+                    updatedConversations[convId] = conv;
+                }
             });
 
-            socketService.joinConversation(conversation._id);
-            await get().loadMessages(conversation._id);
+            // Also update userInfoCache to keep it in sync
+            const updatedCache = userInfoCache[userId]
+                ? {
+                      ...userInfoCache,
+                      [userId]: {
+                          ...userInfoCache[userId],
+                          ...userInfo,
+                      },
+                  }
+                : userInfoCache;
 
-            return conversation;
-        } catch (error) {
-            throw error;
-        }
-    },
-
-    deleteConversation: async (conversationId: string) => {
-        try {
-            // Instead of deleting from server, just hide it locally
-            // This way the conversation remains for the other participant
-            const { hiddenConversations, clearedConversations, openChatWindows, messages } = get();
-
-            // Add to hidden conversations
-            const newHidden = new Set(hiddenConversations);
-            newHidden.add(conversationId);
-
-            // Mark as cleared to prevent loading old messages
-            const newCleared = new Set(clearedConversations);
-            newCleared.add(conversationId);
-
-            // Save to localStorage for persistence
-            saveHiddenConversations(newHidden);
-            saveClearedConversations(newCleared);
-
-            // Clear messages for this conversation locally
-            // When unhidden, user will only see new messages
-            const { [conversationId]: _, ...remainingMessages } = messages;
-
-            // DON'T leave the conversation room - keep listening for new messages
-            // This allows real-time message delivery even when conversation is hidden
-            // socketService.leaveConversation(conversationId); // ← REMOVED
-
-            // Update state
-            set({
-                hiddenConversations: newHidden,
-                clearedConversations: newCleared,
-                messages: remainingMessages,
-                openChatWindows: openChatWindows.filter((id) => id !== conversationId),
-            });
-        } catch (error) {
-            throw error;
-        }
-    },
-
-    unhideConversation: (conversationId: string, keepUnreadCount: boolean = false) => {
-        const { hiddenConversations, conversations, currentUserId } = get();
-
-        // Remove from hidden conversations
-        const newHidden = new Set(hiddenConversations);
-        newHidden.delete(conversationId);
-
-        // DON'T remove from clearedConversations - keep it to prevent loading old messages
-        // User deleted this conversation, so they should only see new messages
-        // clearedConversations will persist even after unhide
-
-        // Save to localStorage
-        saveHiddenConversations(newHidden);
-
-        // Rejoin the conversation room (already joined, but just in case)
-        socketService.joinConversation(conversationId);
-
-        // DON'T reset unread count - keep it to show badge
-        // The conversation state already has the correct unreadCount from server
-
-        set({ 
-            hiddenConversations: newHidden,
-            // Don't update clearedConversations or conversations here
-            // Let the existing state remain
-        });
-    },
-
-    updateConversation: (conversation: Conversation) => {
-        const existing = get().conversations[conversation._id];
-        set({
-            conversations: {
-                ...get().conversations,
-                [conversation._id]: {
-                    ...conversation,
-                    otherParticipant: existing?.otherParticipant,
-                },
-            },
-        });
-    },
-
-    updateConversationUserInfo: (userId: string, userInfo: Partial<any>) => {
-        const conversations = get().conversations;
-        const userInfoCache = get().userInfoCache;
-        const updatedConversations: Record<string, ConversationWithUserInfo> = {};
-        let hasUpdates = false;
-
-        Object.keys(conversations).forEach((convId) => {
-            const conv = conversations[convId];
-            if (conv?.otherParticipant?.id === userId) {
-                updatedConversations[convId] = {
-                    ...conv,
-                    otherParticipant: conv.otherParticipant
-                        ? {
-                              ...conv.otherParticipant,
-                              ...userInfo,
-                          }
-                        : undefined,
-                };
-                hasUpdates = true;
-            } else {
-                updatedConversations[convId] = conv;
+            // Only update state if there were changes
+            if (hasUpdates) {
+                set({
+                    conversations: updatedConversations,
+                    userInfoCache: updatedCache,
+                });
             }
-        });
+        },
 
-        // Also update userInfoCache to keep it in sync
-        const updatedCache = userInfoCache[userId]
-            ? {
-                  ...userInfoCache,
-                  [userId]: {
-                      ...userInfoCache[userId],
-                      ...userInfo,
-                  },
-              }
-            : userInfoCache;
+        // ==================== MESSAGES ====================
+        loadMessages: async (conversationId: string, page = 1) => {
+            try {
+                const { clearedConversations } = get();
 
-        // Only update state if there were changes
-        if (hasUpdates) {
-            set({ 
-                conversations: updatedConversations,
-                userInfoCache: updatedCache,
-            });
-        }
-    },
+                set({
+                    isLoadingMessages: {
+                        ...get().isLoadingMessages,
+                        [conversationId]: true,
+                    },
+                });
 
-    // ==================== MESSAGES ====================
-    loadMessages: async (conversationId: string, page = 1) => {
-        try {
-            const { clearedConversations } = get();
+                const response = await messageApiService.getMessages(conversationId, {
+                    page,
+                    limit: CHAT_CONSTANTS.MESSAGE_LOAD_LIMIT,
+                });
 
-            set({
-                isLoadingMessages: {
-                    ...get().isLoadingMessages,
-                    [conversationId]: true,
-                },
-            });
-
-            // Don't load old messages for cleared conversations
-            // Only new real-time messages will appear
-            if (clearedConversations.has(conversationId)) {
                 const existingMessages = get().messages[conversationId] || [];
-                
+                let fetched = sortMessagesByTime([...response.data]);
+
+                const clearedTimestamp = clearedConversations[conversationId];
+                if (clearedTimestamp) {
+                    fetched = fetched.filter((msg) => {
+                        const msgTime = new Date(msg.createdAt).getTime();
+                        return msgTime > clearedTimestamp;
+                    });
+                }
+
+                let merged: Message[] = [];
+                if (page === 1) {
+                    merged = fetched;
+                } else {
+                    merged = [...fetched, ...existingMessages];
+                }
+
                 set({
                     messages: {
                         ...get().messages,
-                        [conversationId]: existingMessages,
+                        [conversationId]: merged,
                     },
+                });
+
+                const { personalUserId, currentCompanyId, conversations } = get();
+                const conv = conversations[conversationId];
+                const hasUser = personalUserId
+                    ? conv?.participants.some((p) => p.id === personalUserId)
+                    : false;
+                const hasCompany = currentCompanyId
+                    ? conv?.participants.some(
+                          (p) => p.id === currentCompanyId && p.type === ParticipantType.COMPANY
+                      )
+                    : false;
+                if (hasUser) socketService.joinConversation('user', conversationId);
+                if (hasCompany) socketService.joinConversation('company', conversationId);
+            } catch (error) {
+            } finally {
+                set({
                     isLoadingMessages: {
                         ...get().isLoadingMessages,
                         [conversationId]: false,
                     },
                 });
-                socketService.joinConversation(conversationId);
+            }
+        },
+
+        sendMessage: async (conversationId: string, content: string) => {
+            try {
+                const {
+                    currentUserId,
+                    currentUserType,
+                    isUserSocketConnected,
+                    isCompanySocketConnected,
+                } = get();
+
+                if (!currentUserId || !currentUserType) {
+                    throw new Error('User not authenticated');
+                }
+
+                // Optimistic update
+                const tempMessage: Message = {
+                    _id: generateTempMessageId(),
+                    conversationId,
+                    sender: {
+                        id: currentUserId,
+                        type: currentUserType,
+                    },
+                    content,
+                    status: MessageStatus.SENDING,
+                    readBy: [],
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                };
+
+                get().addMessage(tempMessage);
+
+                // Send via Socket or API
+                const identity = currentUserType === ParticipantType.COMPANY ? 'company' : 'user';
+                if (
+                    (identity === 'company' && isCompanySocketConnected) ||
+                    (identity === 'user' && isUserSocketConnected)
+                ) {
+                    socketService.sendMessage(identity, conversationId, content);
+                } else {
+                    await messageApiService.sendMessage({
+                        conversationId,
+                        content,
+                    });
+                }
+
+                get().stopTyping(conversationId);
+            } catch (error) {
+                throw error;
+            }
+        },
+
+        addMessage: (message: Message) => {
+            const existingMessages = get().messages[message.conversationId] || [];
+            const { currentUserId } = get();
+
+            // Check if message already exists
+            const messageExists = existingMessages.some((m) => m._id === message._id);
+            if (messageExists) {
                 return;
             }
 
-            const response = await messageApiService.getMessages(conversationId, {
-                page,
-                limit: CHAT_CONSTANTS.MESSAGE_LOAD_LIMIT,
-            });
-
-            const existingMessages = get().messages[conversationId] || [];
-            const fetched = sortMessagesByTime([...response.data]);
-
-            let merged: Message[] = [];
-            if (page === 1) {
-                merged = fetched;
-            } else {
-                merged = [...fetched, ...existingMessages];
+            // If this is a real message from current user, remove matching temp message
+            let filteredMessages = existingMessages;
+            if (!message._id.startsWith('temp-') && message.sender.id === currentUserId) {
+                // Find and remove temp message with same content and sender
+                filteredMessages = existingMessages.filter((m) => {
+                    if (m._id.startsWith('temp-') && m.status === MessageStatus.SENDING) {
+                        // Remove temp message if content matches and created within last 10 seconds
+                        const isSameContent = m.content === message.content;
+                        const timeDiff = Math.abs(
+                            new Date(message.createdAt).getTime() - new Date(m.createdAt).getTime()
+                        );
+                        const shouldRemove = isSameContent && timeDiff < 10000;
+                        return !shouldRemove;
+                    }
+                    return true;
+                });
             }
+
+            const newList = sortMessagesByTime([...filteredMessages, message]);
 
             set({
                 messages: {
                     ...get().messages,
-                    [conversationId]: merged,
+                    [message.conversationId]: newList,
                 },
             });
+        },
 
-            socketService.joinConversation(conversationId);
-        } catch (error) {
-            // Error loading messages
-        } finally {
-            set({
-                isLoadingMessages: {
-                    ...get().isLoadingMessages,
-                    [conversationId]: false,
-                },
-            });
-        }
-    },
+        markMessagesAsRead: async (conversationId: string) => {
+            const { currentUserType, currentUserId } = get();
 
-    sendMessage: async (conversationId: string, content: string) => {
-        try {
-            const { currentUserId, currentUserType, isSocketConnected, clearedConversations } = get();
-            
-            // When user sends a message in a previously cleared conversation,
-            // remove from clearedConversations so future reloads will load full history
-            if (clearedConversations.has(conversationId)) {
-                const newCleared = new Set(clearedConversations);
-                newCleared.delete(conversationId);
-                saveClearedConversations(newCleared);
-                set({ clearedConversations: newCleared });
-            }
-
-            if (!currentUserId || !currentUserType) {
-                throw new Error('User not authenticated');
-            }
-
-            // Optimistic update
-            const tempMessage: Message = {
-                _id: generateTempMessageId(),
-                conversationId,
-                sender: {
-                    id: currentUserId,
-                    type: currentUserType,
-                },
-                content,
-                status: MessageStatus.SENDING,
-                readBy: [],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
-
-            get().addMessage(tempMessage);
-
-            // Send via Socket or API
-            if (isSocketConnected) {
-                socketService.sendMessage(conversationId, content);
-            } else {
-                await messageApiService.sendMessage({ conversationId, content });
-            }
-
-            get().stopTyping(conversationId);
-        } catch (error) {
-            throw error;
-        }
-    },
-
-    addMessage: (message: Message) => {
-        const existingMessages = get().messages[message.conversationId] || [];
-        const { currentUserId } = get();
-
-        // Check if message already exists
-        const messageExists = existingMessages.some((m) => m._id === message._id);
-        if (messageExists) {
-            return;
-        }
-
-        // If this is a real message from current user, remove matching temp message
-        let filteredMessages = existingMessages;
-        if (!message._id.startsWith('temp-') && message.sender.id === currentUserId) {
-            // Find and remove temp message with same content and sender
-            filteredMessages = existingMessages.filter((m) => {
-                if (m._id.startsWith('temp-') && m.status === MessageStatus.SENDING) {
-                    // Remove temp message if content matches and created within last 10 seconds
-                    const isSameContent = m.content === message.content;
-                    const timeDiff = Math.abs(
-                        new Date(message.createdAt).getTime() - new Date(m.createdAt).getTime()
-                    );
-                    const shouldRemove = isSameContent && timeDiff < 10000;
-                    return !shouldRemove;
-                }
-                return true;
-            });
-        }
-
-        const newList = sortMessagesByTime([...filteredMessages, message]);
-
-        set({
-            messages: {
-                ...get().messages,
-                [message.conversationId]: newList,
-            },
-        });
-    },
-
-    markMessagesAsRead: async (conversationId: string) => {
-        const { currentUserType, currentUserId, clearedConversations } = get();
-        
-        // When user reads messages in a previously cleared conversation,
-        // remove from clearedConversations so future reloads will load full history
-        if (clearedConversations.has(conversationId)) {
-            const newCleared = new Set(clearedConversations);
-            newCleared.delete(conversationId);
-            saveClearedConversations(newCleared);
-            set({ clearedConversations: newCleared });
-        }
-        
-        // Skip API call for COMPANY type to avoid 403 errors (temporary fix)
-        if (currentUserType === ParticipantType.COMPANY) {
-            // Still update local state
-            const conversation = get().conversations[conversationId];
-            const currentMessages = get().messages[conversationId] || [];
-
-            if (conversation && currentUserId) {
-                const updatedConversation = {
-                    ...conversation,
-                    unreadCount: {
-                        ...conversation.unreadCount,
-                        [currentUserId]: 0,
-                    },
-                };
-
-                set({
-                    conversations: {
-                        ...get().conversations,
-                        [conversationId]: updatedConversation,
-                    },
-                });
-            }
-            return;
-        }
-        
-        try {
-            await messageApiService.markAllMessagesAsRead(conversationId);
-
-            const conversation = get().conversations[conversationId];
-            const currentMessages = get().messages[conversationId] || [];
-
-            if (conversation && currentUserId) {
-                // Update unreadCount
-                const updatedConversation = {
-                    ...conversation,
-                    unreadCount: {
-                        ...conversation.unreadCount,
-                        [currentUserId]: 0,
-                    },
-                };
-
-                // Update all messages status to READ and add readBy
-                const updatedMessages = currentMessages.map((msg) => {
-                    // Only update messages that are not from current user and not already read
-                    if (msg.sender.id !== currentUserId && msg.status !== MessageStatus.READ) {
-                        const readByEntry = {
-                            participantId: currentUserId,
-                            readAt: new Date(),
-                        };
-
-                        // Check if already in readBy to avoid duplicates
-                        const alreadyRead = msg.readBy.some(
-                            (r) => r.participantId === currentUserId
-                        );
-
-                        return {
-                            ...msg,
-                            status: MessageStatus.READ,
-                            readBy: alreadyRead ? msg.readBy : [...msg.readBy, readByEntry],
-                        };
+            if (currentUserType === ParticipantType.COMPANY) {
+                // For company, also call API to mark as read on server
+                try {
+                    await messageApiService.markAllMessagesAsRead(conversationId);
+                } catch (error: any) {
+                    // Silently handle 403 errors (permission issues)
+                    if (error?.response?.status !== 403) {
+                        // Error marking as read
                     }
-                    return msg;
-                });
+                }
 
-                set({
-                    conversations: {
-                        ...get().conversations,
-                        [conversationId]: updatedConversation,
-                    },
-                    messages: {
-                        ...get().messages,
-                        [conversationId]: updatedMessages,
-                    },
-                });
-            }
-        } catch (error: any) {
-            // Silently handle 403 errors (permission issues)
-            if (error?.response?.status !== 403) {
-                // Re-throw other errors
-                throw error;
-            }
-        }
-    },
+                const conversation = get().conversations[conversationId];
+                const currentMessages = get().messages[conversationId] || [];
 
-    // ==================== CHAT WINDOWS ====================
-    openChat: (conversationId: string, isFullView = false) => {
-        if (isFullView) {
+                if (conversation && currentUserId) {
+                    const updatedConversation = {
+                        ...conversation,
+                        unreadCount: {
+                            ...conversation.unreadCount,
+                            [currentUserId]: 0,
+                        },
+                    };
+
+                    // Update all messages status to READ and add readBy
+                    const updatedMessages = currentMessages.map((msg) => {
+                        if (msg.sender.id !== currentUserId && msg.status !== MessageStatus.READ) {
+                            const readByEntry = {
+                                participantId: currentUserId,
+                                readAt: new Date(),
+                            };
+
+                            const alreadyRead = msg.readBy.some(
+                                (r) => r.participantId === currentUserId
+                            );
+
+                            return {
+                                ...msg,
+                                status: MessageStatus.READ,
+                                readBy: alreadyRead ? msg.readBy : [...msg.readBy, readByEntry],
+                            };
+                        }
+                        return msg;
+                    });
+
+                    set({
+                        conversations: {
+                            ...get().conversations,
+                            [conversationId]: updatedConversation,
+                        },
+                        messages: {
+                            ...get().messages,
+                            [conversationId]: updatedMessages,
+                        },
+                        conversationsVersion: get().conversationsVersion + 1,
+                    });
+                }
+                return;
+            }
+
+            try {
+                await messageApiService.markAllMessagesAsRead(conversationId);
+
+                const conversation = get().conversations[conversationId];
+                const currentMessages = get().messages[conversationId] || [];
+
+                if (conversation && currentUserId) {
+                    // Update unreadCount
+                    const updatedConversation = {
+                        ...conversation,
+                        unreadCount: {
+                            ...conversation.unreadCount,
+                            [currentUserId]: 0,
+                        },
+                    };
+
+                    // Update all messages status to READ and add readBy
+                    const updatedMessages = currentMessages.map((msg) => {
+                        // Only update messages that are not from current user and not already read
+                        if (msg.sender.id !== currentUserId && msg.status !== MessageStatus.READ) {
+                            const readByEntry = {
+                                participantId: currentUserId,
+                                readAt: new Date(),
+                            };
+
+                            // Check if already in readBy to avoid duplicates
+                            const alreadyRead = msg.readBy.some(
+                                (r) => r.participantId === currentUserId
+                            );
+
+                            return {
+                                ...msg,
+                                status: MessageStatus.READ,
+                                readBy: alreadyRead ? msg.readBy : [...msg.readBy, readByEntry],
+                            };
+                        }
+                        return msg;
+                    });
+
+                    set({
+                        conversations: {
+                            ...get().conversations,
+                            [conversationId]: updatedConversation,
+                        },
+                        messages: {
+                            ...get().messages,
+                            [conversationId]: updatedMessages,
+                        },
+                        conversationsVersion: get().conversationsVersion + 1,
+                    });
+                }
+            } catch (error: any) {
+                // Silently handle 403 errors (permission issues)
+                if (error?.response?.status !== 403) {
+                    // Re-throw other errors
+                    throw error;
+                }
+            }
+        },
+
+        // ==================== CHAT WINDOWS ====================
+        openChat: (conversationId: string, isFullView = false) => {
+            if (isFullView) {
+                set({ fullChatId: conversationId });
+            } else {
+                const { openChatWindows } = get();
+                if (!openChatWindows.includes(conversationId)) {
+                    set({
+                        openChatWindows: [...openChatWindows, conversationId],
+                    });
+                }
+            }
+
+            if (!get().messages[conversationId]) {
+                get().loadMessages(conversationId);
+            }
+        },
+
+        closeChat: (conversationId: string) => {
+            const { openChatWindows, personalUserId, currentCompanyId, conversations } = get();
+            set({
+                openChatWindows: openChatWindows.filter((id) => id !== conversationId),
+            });
+            const conv = conversations[conversationId];
+            const hasUser = personalUserId
+                ? conv?.participants.some((p) => p.id === personalUserId)
+                : false;
+            const hasCompany = currentCompanyId
+                ? conv?.participants.some(
+                      (p) => p.id === currentCompanyId && p.type === ParticipantType.COMPANY
+                  )
+                : false;
+            if (hasUser) socketService.leaveConversation('user', conversationId);
+            if (hasCompany) socketService.leaveConversation('company', conversationId);
+        },
+
+        setFullChat: (conversationId: string | null) => {
             set({ fullChatId: conversationId });
-        } else {
-            const { openChatWindows } = get();
-            if (!openChatWindows.includes(conversationId)) {
-                set({
-                    openChatWindows: [...openChatWindows, conversationId],
-                });
+
+            if (conversationId && !get().messages[conversationId]) {
+                get().loadMessages(conversationId);
             }
-        }
+        },
 
-        if (!get().messages[conversationId]) {
-            get().loadMessages(conversationId);
-        }
-    },
+        // ==================== TYPING ====================
+        startTyping: (conversationId: string) => {
+            const { currentUserType } = get();
+            const identity = currentUserType === ParticipantType.COMPANY ? 'company' : 'user';
+            socketService.startTyping(identity, conversationId);
+        },
 
-    closeChat: (conversationId: string) => {
-        const { openChatWindows } = get();
-        set({
-            openChatWindows: openChatWindows.filter((id) => id !== conversationId),
-        });
-        socketService.leaveConversation(conversationId);
-    },
+        stopTyping: (conversationId: string) => {
+            const { currentUserType } = get();
+            const identity = currentUserType === ParticipantType.COMPANY ? 'company' : 'user';
+            socketService.stopTyping(identity, conversationId);
+        },
 
-    setFullChat: (conversationId: string | null) => {
-        set({ fullChatId: conversationId });
+        setUserTyping: (conversationId: string, userId: string, isTyping: boolean) => {
+            const { typingUsers, currentUserId } = get();
 
-        if (conversationId && !get().messages[conversationId]) {
-            get().loadMessages(conversationId);
-        }
-    },
+            if (userId === currentUserId) return;
 
-    // ==================== TYPING ====================
-    startTyping: (conversationId: string) => {
-        socketService.startTyping(conversationId);
-    },
+            const conversationTypingUsers = typingUsers[conversationId] || [];
 
-    stopTyping: (conversationId: string) => {
-        socketService.stopTyping(conversationId);
-    },
-
-    setUserTyping: (conversationId: string, userId: string, isTyping: boolean) => {
-        const { typingUsers, currentUserId } = get();
-
-        if (userId === currentUserId) return;
-
-        const conversationTypingUsers = typingUsers[conversationId] || [];
-
-        if (isTyping) {
-            if (!conversationTypingUsers.includes(userId)) {
+            if (isTyping) {
+                if (!conversationTypingUsers.includes(userId)) {
+                    set({
+                        typingUsers: {
+                            ...typingUsers,
+                            [conversationId]: [...conversationTypingUsers, userId],
+                        },
+                    });
+                }
+            } else {
                 set({
                     typingUsers: {
                         ...typingUsers,
-                        [conversationId]: [...conversationTypingUsers, userId],
+                        [conversationId]: conversationTypingUsers.filter((id) => id !== userId),
                     },
                 });
             }
-        } else {
-            set({
-                typingUsers: {
-                    ...typingUsers,
-                    [conversationId]: conversationTypingUsers.filter((id) => id !== userId),
-                },
-            });
-        }
-    },
+        },
 
-    // ==================== USER INFO ====================
-    fetchParticipantInfo: async (participantId: string, participantType: ParticipantType) => {
-        try {
-            // Check cache first
-            const cached = get().userInfoCache[participantId];
+        // ==================== USER INFO ====================
+        fetchParticipantInfo: async (participantId: string, participantType: ParticipantType) => {
+            try {
+                // Check cache first
+                const cached = get().userInfoCache[participantId];
 
-            if (cached) {
-                return cached;
+                if (cached) {
+                    return cached;
+                }
+
+                // Fetch from API
+                const profile = await userApiService.getParticipantInfo(
+                    participantId,
+                    participantType
+                );
+                if (!profile) return null;
+
+                // Check if we have previous online status from cache (in case of refresh)
+                const existingCached = get().userInfoCache[participantId];
+                const isOnline = existingCached?.isOnline ?? false;
+
+                const userInfo = convertParticipantProfileToUserInfo(
+                    profile,
+                    participantType,
+                    isOnline
+                );
+
+                // Cache it
+                set({
+                    userInfoCache: {
+                        ...get().userInfoCache,
+                        [participantId]: userInfo,
+                    },
+                });
+
+                return userInfo;
+            } catch (error) {
+                return null;
             }
+        },
 
-            // Fetch from API
-            const profile = await userApiService.getParticipantInfo(participantId, participantType);
-            if (!profile) return null;
-            
-            // Check if we have previous online status from cache (in case of refresh)
-            const existingCached = get().userInfoCache[participantId];
-            const isOnline = existingCached?.isOnline ?? false;
-            
-            const userInfo = convertParticipantProfileToUserInfo(profile, participantType, isOnline);
+        getUserInfo: (participantId: string) => {
+            return get().userInfoCache[participantId];
+        },
 
-            // Cache it
-            set({
-                userInfoCache: {
-                    ...get().userInfoCache,
-                    [participantId]: userInfo,
-                },
-            });
+        // ==================== HELPERS ====================
+        getConversation: (conversationId: string) => {
+            return get().conversations[conversationId];
+        },
 
-            return userInfo;
-        } catch (error) {
-            return null;
-        }
-    },
+        getMessages: (conversationId: string) => {
+            return get().messages[conversationId] || [];
+        },
 
-    getUserInfo: (participantId: string) => {
-        return get().userInfoCache[participantId];
-    },
+        getUnreadCount: (conversationId: string) => {
+            const { conversations, currentUserId } = get();
+            const conversation = conversations[conversationId];
 
-    // ==================== HELPERS ====================
-    getConversation: (conversationId: string) => {
-        return get().conversations[conversationId];
-    },
+            if (!conversation || !currentUserId) return 0;
 
-    getMessages: (conversationId: string) => {
-        return get().messages[conversationId] || [];
-    },
+            return conversation.unreadCount[currentUserId] || 0;
+        },
 
-    getUnreadCount: (conversationId: string) => {
-        const { conversations, currentUserId } = get();
-        const conversation = conversations[conversationId];
-
-        if (!conversation || !currentUserId) return 0;
-
-        return conversation.unreadCount[currentUserId] || 0;
-    },
-
-    isTyping: (conversationId: string) => {
-        const typingUsers = get().typingUsers[conversationId] || [];
-        return typingUsers.length > 0;
-    },
-}});
+        isTyping: (conversationId: string) => {
+            const typingUsers = get().typingUsers[conversationId] || [];
+            return typingUsers.length > 0;
+        },
+    };
+});
