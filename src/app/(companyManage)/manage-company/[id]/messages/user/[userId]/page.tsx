@@ -38,8 +38,9 @@ export default function CompanyUserChatPage() {
         const handleStartConversation = async () => {
             try {
                 const { data } = await userApiService.getUserById(userId);
-                if (!data) {
-                    toast.error('Không tìm thấy người dùng');
+                if (!data || data.user?.isDeleted) {
+                    // User không tồn tại hoặc đã bị xóa → redirect về messages list
+                    toast.error('Tài khoản không tồn tại');
                     router.push(`/manage-company/${companyId}/messages`);
                     return;
                 }
@@ -49,6 +50,12 @@ export default function CompanyUserChatPage() {
                 loadedUserRef.current = userId;
             } catch (err: any) {
                 console.error('Error starting conversation:', err);
+                // Nếu lỗi 404 (user không tồn tại), redirect về messages list
+                if (err?.response?.status === 404) {
+                    toast.error('Tài khoản không tồn tại');
+                    router.push(`/manage-company/${companyId}/messages`);
+                    return;
+                }
                 toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
             } finally {
                 setIsLoading(false);
@@ -74,12 +81,20 @@ export default function CompanyUserChatPage() {
 
     const handleDeleteConversation = async (conversationId: string) => {
         try {
+            const conversation = conversations.find((c) => c._id === conversationId);
+            const isHardDelete = conversation?.otherParticipant?.isDeleted || false;
+            
             await deleteConversation(conversationId);
             setFullChat(null);
             loadedUserRef.current = null;
+            
+            // Luôn redirect về messages list sau khi xóa
+            // Đặc biệt quan trọng với hard delete để tránh tạo lại conversation
             router.push(`/manage-company/${companyId}/messages`);
         } catch (error) {
             console.error('Error deleting conversation:', error);
+            // Vẫn redirect về messages list ngay cả khi có lỗi
+            router.push(`/manage-company/${companyId}/messages`);
         }
     };
 

@@ -41,7 +41,6 @@ export default function ChatUserPage() {
 
         const token = localStorage.getItem(TOKEN_KEY);
         if (!token) {
-            console.error('No token found');
             return;
         }
 
@@ -55,23 +54,23 @@ export default function ChatUserPage() {
         const handleStartConversation = async () => {
             try {
                 const { data } = await getUserById(userId);
-                if (!data) {
-                    toast.error('Không tìm thấy người dùng.');
+                if (!data || data.user?.isDeleted) {
+                    toast.error('Không tìm thấy người dùng hoặc tài khoản đã bị xóa.');
+                    router.push('/chat');
                     return;
                 }
 
                 setIsLoading(true);
                 await startConversation(userId, ParticipantType.USER, true);
                 loadedUserRef.current = userId;
-
-                if (data.user?.isDeleted) {
-                    toast.info(
-                        'Tài khoản này không còn tồn tại. Bạn có thể xem lịch sử tin nhắn nhưng không thể gửi tin nhắn mới.'
-                    );
-                }
             } catch (err: any) {
-                console.error('Error starting conversation:', err);
-                toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
+                // If user not found or deleted, redirect to /chat
+                if (err.response?.status === 404 || err.message?.includes('not found')) {
+                    toast.error('Không tìm thấy người dùng.');
+                    router.push('/chat');
+                } else {
+                    toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -99,7 +98,7 @@ export default function ChatUserPage() {
             loadedUserRef.current = null;
             router.push('/chat');
         } catch (error) {
-            console.error('Error deleting conversation:', error);
+            // Error handled silently
         }
     };
 
