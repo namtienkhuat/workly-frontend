@@ -30,7 +30,7 @@ export default function ChatPage() {
         try {
             await deleteConversation(conversationId);
         } catch (error) {
-            console.error('Error deleting conversation:', error);
+            // Error handled silently
         }
     };
 

@@ -207,21 +207,29 @@ export const useChatStore = create<ChatStore>((set, get) => {
                     const isFromOther = data.message.sender.id !== personalUserId;
                     const isHidden = hiddenConversations.has(data.conversationId);
                     const shouldUnhide = isHidden && isFromOther;
+
+                    get().addMessage(data.message);
+
                     if (shouldUnhide) {
                         await get().unhideConversation(data.conversationId);
+                        // After unhide, conversation will be reloaded with correct unreadCount from server
+                        // Don't increment here to avoid double counting
+                        return;
                     }
-                    get().addMessage(data.message);
+
                     let conversation = get().conversations[data.conversationId];
                     if (conversation) {
                         const updatedUnreadCount = { ...conversation.unreadCount };
-                        conversation.participants.forEach((participant) => {
-                            if (participant.id !== data.message.sender.id) {
-                                updatedUnreadCount[participant.id] =
-                                    (updatedUnreadCount[participant.id] || 0) + 1;
-                            } else {
-                                updatedUnreadCount[participant.id] = 0;
-                            }
-                        });
+                        // Only update unreadCount for the current user (personalUserId) in user socket
+                        // This prevents double counting when both user and company sockets receive the same message
+                        if (personalUserId && personalUserId !== data.message.sender.id) {
+                            updatedUnreadCount[personalUserId] =
+                                (updatedUnreadCount[personalUserId] || 0) + 1;
+                        }
+                        // Reset unreadCount for sender
+                        if (data.message.sender.id) {
+                            updatedUnreadCount[data.message.sender.id] = 0;
+                        }
                         const updatedConv = {
                             ...conversation,
                             lastMessage: data.message,
@@ -230,6 +238,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
                         };
                         get().updateConversation(updatedConv);
                     } else {
+                        // Conversation not in store - might be a new conversation
+                        // Load conversations to get the new conversation with correct unreadCount
                         await new Promise((resolve) => setTimeout(resolve, 100));
                         conversation = get().conversations[data.conversationId];
                         if (!conversation) {
@@ -250,6 +260,16 @@ export const useChatStore = create<ChatStore>((set, get) => {
                                 });
                             } else {
                                 await get().loadConversations();
+                            }
+                            // After loading, update conversation with new message
+                            conversation = get().conversations[data.conversationId];
+                            if (conversation) {
+                                const updatedConv = {
+                                    ...conversation,
+                                    lastMessage: data.message,
+                                    lastMessageAt: data.message.createdAt,
+                                };
+                                get().updateConversation(updatedConv);
                             }
                         }
                     }
@@ -312,25 +332,33 @@ export const useChatStore = create<ChatStore>((set, get) => {
 
             const register = () => {
                 socketService.onNewMessage('company', async (data: NewMessageData) => {
-                    const { hiddenConversations, currentUserId } = get();
+                    const { hiddenConversations, currentUserId, currentCompanyId } = get();
                     const isFromOther = data.message.sender.id !== currentUserId;
                     const isHidden = hiddenConversations.has(data.conversationId);
                     const shouldUnhide = isHidden && isFromOther;
+
+                    get().addMessage(data.message);
+
                     if (shouldUnhide) {
                         await get().unhideConversation(data.conversationId);
+                        // After unhide, conversation will be reloaded with correct unreadCount from server
+                        // Don't increment here to avoid double counting
+                        return;
                     }
-                    get().addMessage(data.message);
+
                     let conversation = get().conversations[data.conversationId];
                     if (conversation) {
                         const updatedUnreadCount = { ...conversation.unreadCount };
-                        conversation.participants.forEach((participant) => {
-                            if (participant.id !== data.message.sender.id) {
-                                updatedUnreadCount[participant.id] =
-                                    (updatedUnreadCount[participant.id] || 0) + 1;
-                            } else {
-                                updatedUnreadCount[participant.id] = 0;
-                            }
-                        });
+                        // Only update unreadCount for the current company (currentCompanyId) in company socket
+                        // This prevents double counting when both user and company sockets receive the same message
+                        if (currentCompanyId && currentCompanyId !== data.message.sender.id) {
+                            updatedUnreadCount[currentCompanyId] =
+                                (updatedUnreadCount[currentCompanyId] || 0) + 1;
+                        }
+                        // Reset unreadCount for sender
+                        if (data.message.sender.id) {
+                            updatedUnreadCount[data.message.sender.id] = 0;
+                        }
                         const updatedConv = {
                             ...conversation,
                             lastMessage: data.message,
@@ -339,10 +367,22 @@ export const useChatStore = create<ChatStore>((set, get) => {
                         };
                         get().updateConversation(updatedConv);
                     } else {
+                        // Conversation not in store - might be a new conversation
+                        // Load conversations to get the new conversation with correct unreadCount
                         await new Promise((resolve) => setTimeout(resolve, 100));
                         conversation = get().conversations[data.conversationId];
                         if (!conversation) {
                             await get().loadConversations();
+                            // After loading, update conversation with new message
+                            conversation = get().conversations[data.conversationId];
+                            if (conversation) {
+                                const updatedConv = {
+                                    ...conversation,
+                                    lastMessage: data.message,
+                                    lastMessageAt: data.message.createdAt,
+                                };
+                                get().updateConversation(updatedConv);
+                            }
                         }
                     }
                 });
@@ -421,20 +461,49 @@ export const useChatStore = create<ChatStore>((set, get) => {
                 // Fetch all participant info in parallel
                 await Promise.all(
                     response.data.map(async (conv) => {
+                        const { currentUserId, currentUserType } = get();
+                        // Find the participant that is NOT the current user
+                        // Must check both id AND type to correctly identify the other participant
                         const otherParticipant = conv.participants.find(
-                            (p) => p.id !== get().currentUserId
+                            (p) => !(p.id === currentUserId && p.type === currentUserType)
                         );
 
                         if (otherParticipant) {
-                            const userInfo = await get().fetchParticipantInfo(
-                                otherParticipant.id,
-                                otherParticipant.type
-                            );
+                            // Check if participant is deleted from conversation's deletedParticipants
+                            // MongoDB Map serializes to object: { "userId": "2024-01-15T10:30:00.000Z" }
+                            const deletedParticipantsObj = conv.deletedParticipants || {};
+                            const isDeletedFromConversation =
+                                deletedParticipantsObj[otherParticipant.id] !== undefined;
 
-                            conversationsMap[conv._id] = {
-                                ...conv,
-                                otherParticipant: userInfo || undefined,
-                            };
+                            // If marked as deleted in conversation, create placeholder without fetching
+                            if (isDeletedFromConversation) {
+                                conversationsMap[conv._id] = {
+                                    ...conv,
+                                    otherParticipant: {
+                                        id: otherParticipant.id,
+                                        type: otherParticipant.type,
+                                        name:
+                                            otherParticipant.type === ParticipantType.COMPANY
+                                                ? 'Công ty không tồn tại'
+                                                : 'Tài khoản không tồn tại',
+                                        email: '',
+                                        avatar: '',
+                                        isOnline: false,
+                                        isDeleted: true,
+                                    },
+                                };
+                            } else {
+                                // Fetch participant info normally
+                                const userInfo = await get().fetchParticipantInfo(
+                                    otherParticipant.id,
+                                    otherParticipant.type
+                                );
+
+                                conversationsMap[conv._id] = {
+                                    ...conv,
+                                    otherParticipant: userInfo || undefined,
+                                };
+                            }
                         } else {
                             conversationsMap[conv._id] = {
                                 ...conv,
@@ -471,15 +540,19 @@ export const useChatStore = create<ChatStore>((set, get) => {
                     // Merge with existing conversation if exists, otherwise add new
                     const existing = mergedConversations[id];
                     if (existing) {
-                        // Update existing conversation, merge unreadCount and preserve otherParticipant if exists
+                        // Update existing conversation
+                        // Always use newConv.otherParticipant as it's calculated based on current currentUserId/currentUserType
+                        // Don't preserve existing.otherParticipant as it might be from a different perspective (user vs company)
+                        // This ensures correct otherParticipant when switching between user and company views
+                        // Always use newConv.unreadCount from server to avoid double counting
+                        // (socket handler already updates unreadCount, so merging would cause duplication)
                         mergedConversations[id] = {
                             ...existing,
                             ...newConv,
-                            otherParticipant: existing.otherParticipant || newConv.otherParticipant,
-                            unreadCount: {
-                                ...existing.unreadCount,
-                                ...newConv.unreadCount,
-                            },
+                            // Prioritize newConv.otherParticipant (calculated from current perspective)
+                            otherParticipant: newConv.otherParticipant ?? existing.otherParticipant,
+                            // Use server's unreadCount (authoritative source) to avoid double counting
+                            unreadCount: newConv.unreadCount || existing.unreadCount,
                         };
                     } else {
                         // Add new conversation
@@ -529,18 +602,41 @@ export const useChatStore = create<ChatStore>((set, get) => {
                 });
 
                 const conversation = response.data;
+                const { currentUserId, currentUserType } = get();
+                // Find the participant that is NOT the current user
+                // Must check both id AND type to correctly identify the other participant
                 const otherParticipant = conversation.participants.find(
-                    (p) => p.id !== get().currentUserId
+                    (p) => !(p.id === currentUserId && p.type === currentUserType)
                 );
 
                 // Fetch real user info
                 let userInfo: UserInfo | undefined;
                 if (otherParticipant) {
-                    const fetchedInfo = await get().fetchParticipantInfo(
-                        otherParticipant.id,
-                        otherParticipant.type
-                    );
-                    userInfo = fetchedInfo || undefined;
+                    // Check if participant is deleted from conversation's deletedParticipants
+                    const isDeletedFromConversation =
+                        conversation.deletedParticipants?.[otherParticipant.id];
+
+                    if (isDeletedFromConversation) {
+                        // Create placeholder for deleted participant
+                        userInfo = {
+                            id: otherParticipant.id,
+                            type: otherParticipant.type,
+                            name:
+                                otherParticipant.type === ParticipantType.COMPANY
+                                    ? 'Công ty không tồn tại'
+                                    : 'Tài khoản không tồn tại',
+                            email: '',
+                            avatar: '',
+                            isOnline: false,
+                            isDeleted: true,
+                        };
+                    } else {
+                        const fetchedInfo = await get().fetchParticipantInfo(
+                            otherParticipant.id,
+                            otherParticipant.type
+                        );
+                        userInfo = fetchedInfo || undefined;
+                    }
                 }
 
                 const conversationWithInfo: ConversationWithUserInfo = {
@@ -564,7 +660,9 @@ export const useChatStore = create<ChatStore>((set, get) => {
                         },
                     });
                 } else {
-                    // Update existing conversation if needed (preserve otherParticipant)
+                    // Update existing conversation if needed
+                    // Always use conversationWithInfo.otherParticipant as it's calculated based on current currentUserId/currentUserType
+                    // Don't preserve existing.otherParticipant as it might be from a different perspective (user vs company)
                     if (existing.otherParticipant !== conversationWithInfo.otherParticipant) {
                         set({
                             conversations: {
@@ -573,8 +671,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
                                     ...existing,
                                     ...conversationWithInfo,
                                     otherParticipant:
-                                        existing.otherParticipant ||
-                                        conversationWithInfo.otherParticipant,
+                                        conversationWithInfo.otherParticipant ||
+                                        existing.otherParticipant,
                                 },
                             },
                         });
@@ -613,6 +711,60 @@ export const useChatStore = create<ChatStore>((set, get) => {
                     fullChatId,
                 } = get();
 
+                const conversation = conversations[conversationId];
+
+                if (!conversation) {
+                    return;
+                }
+
+                // Kiểm tra xem có participant nào đã bị xóa không
+                // Check cả otherParticipant.isDeleted và deletedParticipants từ conversation
+                const otherParticipantId = conversation?.otherParticipant?.id;
+                const isDeletedFromParticipant = conversation?.otherParticipant?.isDeleted || false;
+
+                // Check deletedParticipants map from conversation
+                const deletedParticipantsObj = conversation?.deletedParticipants || {};
+                const isDeletedFromConversation = otherParticipantId
+                    ? deletedParticipantsObj[otherParticipantId] !== undefined
+                    : false;
+
+                // Also check all participants in the conversation for deleted status
+                const hasDeletedParticipantInParticipants =
+                    conversation?.participants.some((p) => {
+                        return deletedParticipantsObj[p.id] !== undefined;
+                    }) || false;
+
+                const hasDeletedParticipant =
+                    isDeletedFromParticipant ||
+                    isDeletedFromConversation ||
+                    hasDeletedParticipantInParticipants;
+
+                // TRƯỜNG HỢP 1: Có participant đã bị xóa → HARD DELETE
+                if (hasDeletedParticipant) {
+                    try {
+                        await conversationApiService.deleteConversation(
+                            conversationId,
+                            hasDeletedParticipant
+                        );
+
+                        // Sau khi hard delete thành công, xóa khỏi store
+                        const { [conversationId]: _, ...remainingMessages } = messages;
+                        const { [conversationId]: __, ...remainingConversations } = conversations;
+
+                        set({
+                            messages: remainingMessages,
+                            conversations: remainingConversations,
+                            openChatWindows: openChatWindows.filter((id) => id !== conversationId),
+                            fullChatId: fullChatId === conversationId ? null : fullChatId,
+                        });
+                        return; // Không làm soft delete nữa
+                    } catch (error) {
+                        // Nếu API call fail, fallback về soft delete
+                    }
+                }
+
+                // TRƯỜNG HỢP 2: Cả hai đều còn tồn tại → SOFT DELETE (ẩn ở client)
+
                 const newHidden = new Set(hiddenConversations);
                 newHidden.add(conversationId);
 
@@ -641,7 +793,14 @@ export const useChatStore = create<ChatStore>((set, get) => {
         },
 
         unhideConversation: async (conversationId: string) => {
-            const { hiddenConversations, conversations, personalUserId, currentCompanyId } = get();
+            const {
+                hiddenConversations,
+                conversations,
+                personalUserId,
+                currentCompanyId,
+                currentUserId,
+                currentUserType,
+            } = get();
 
             const newHidden = new Set(hiddenConversations);
             newHidden.delete(conversationId);
@@ -664,8 +823,9 @@ export const useChatStore = create<ChatStore>((set, get) => {
                 hiddenConversations: newHidden,
             });
 
-            // If conversation is not in store, reload to get it
-            if (!conversations[conversationId]) {
+            // Always reload conversation to get correct unreadCount from server
+            // This ensures unreadCount is accurate after unhide
+            if (currentUserId && currentUserType) {
                 await get().loadConversations();
             }
         },
@@ -694,7 +854,12 @@ export const useChatStore = create<ChatStore>((set, get) => {
                 const conv = conversations[convId];
                 if (!conv) return;
 
-                if (conv.otherParticipant?.id === userId) {
+                // Check if userId is in participants and matches otherParticipant
+                const isParticipant = conv.participants.some((p) => p.id === userId);
+                const isOtherParticipant = conv.otherParticipant?.id === userId;
+
+                if (isParticipant && isOtherParticipant) {
+                    // Update otherParticipant if it matches
                     updatedConversations[convId] = {
                         ...conv,
                         otherParticipant: conv.otherParticipant
@@ -705,6 +870,22 @@ export const useChatStore = create<ChatStore>((set, get) => {
                             : undefined,
                     };
                     hasUpdates = true;
+                } else if (isParticipant && !conv.otherParticipant) {
+                    // If participant exists but otherParticipant is not loaded yet,
+                    // try to update from cache or create placeholder
+                    const cachedInfo = userInfoCache[userId];
+                    if (cachedInfo) {
+                        updatedConversations[convId] = {
+                            ...conv,
+                            otherParticipant: {
+                                ...cachedInfo,
+                                ...userInfo,
+                            },
+                        };
+                        hasUpdates = true;
+                    } else {
+                        updatedConversations[convId] = conv;
+                    }
                 } else {
                     updatedConversations[convId] = conv;
                 }
@@ -721,10 +902,15 @@ export const useChatStore = create<ChatStore>((set, get) => {
                   }
                 : userInfoCache;
 
-            // Only update state if there were changes
+            // Always update cache, and update conversations if there were changes
             if (hasUpdates) {
                 set({
                     conversations: updatedConversations,
+                    userInfoCache: updatedCache,
+                });
+            } else {
+                // Even if no conversation updates, update cache
+                set({
                     userInfoCache: updatedCache,
                 });
             }

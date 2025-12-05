@@ -40,7 +40,6 @@ export default function ChatCompanyPage() {
 
         const token = localStorage.getItem(TOKEN_KEY);
         if (!token) {
-            console.error('No token found');
             return;
         }
 
@@ -58,7 +57,6 @@ export default function ChatCompanyPage() {
                 loadedCompanyRef.current = companyId;
             })
             .catch((err) => {
-                console.error('Error starting conversation:', err);
                 toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
             })
             .finally(() => {
@@ -85,7 +83,7 @@ export default function ChatCompanyPage() {
             loadedCompanyRef.current = null;
             router.push('/chat');
         } catch (error) {
-            console.error('Error deleting conversation:', error);
+            // Error handled silently
         }
     };
 
