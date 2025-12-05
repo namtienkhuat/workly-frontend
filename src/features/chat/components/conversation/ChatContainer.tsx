@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ConversationHeader } from './ConversationHeader';
 import { MessageList, MessageInput } from '../message';
 import { useConversation, useMessages } from '../../hooks';
@@ -28,11 +28,31 @@ export function ChatContainer({
     const startTyping = useChatStore((state) => state.startTyping);
     const stopTyping = useChatStore((state) => state.stopTyping);
     const isTyping = useChatStore((state) => state.isTyping(conversationId));
+    
+    const [isInputFocused, setIsInputFocused] = useState(false);
+    const [shouldAutoFocus, setShouldAutoFocus] = useState(true);
+    const prevMessagesLengthRef = useRef(messages.length);
+    const prevConversationIdRef = useRef(conversationId);
 
-    // Mark messages as read when viewing
     useEffect(() => {
-        markAsRead();
-    }, [markAsRead]);
+        if (prevConversationIdRef.current !== conversationId) {
+            setShouldAutoFocus(true);
+            prevConversationIdRef.current = conversationId;
+        }
+    }, [conversationId]);
+
+    useEffect(() => {
+        if (isInputFocused) {
+            markAsRead();
+        }
+    }, [isInputFocused, markAsRead]);
+
+    useEffect(() => {
+        if (messages.length > prevMessagesLengthRef.current && isInputFocused) {
+            markAsRead();
+        }
+        prevMessagesLengthRef.current = messages.length;
+    }, [messages.length, isInputFocused, markAsRead]);
 
     if (!otherParticipant) {
         return (
@@ -81,6 +101,12 @@ export function ChatContainer({
                         onSend={send}
                         onTypingStart={() => startTyping(conversationId)}
                         onTypingStop={() => stopTyping(conversationId)}
+                        onFocus={() => {
+                            setIsInputFocused(true);
+                            setShouldAutoFocus(false);
+                        }}
+                        onBlur={() => setIsInputFocused(false)}
+                        autoFocus={shouldAutoFocus}
                     />
                 )}
             </div>

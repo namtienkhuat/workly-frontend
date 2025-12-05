@@ -9,18 +9,25 @@ interface MessageInputProps {
     onSend: (content: string) => void;
     onTypingStart?: () => void;
     onTypingStop?: () => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
     placeholder?: string;
     disabled?: boolean;
+    autoFocus?: boolean;
 }
 
 export function MessageInput({
     onSend,
     onTypingStart,
     onTypingStop,
+    onFocus,
+    onBlur,
     placeholder = 'Nhập tin nhắn...',
     disabled = false,
+    autoFocus = false,
 }: MessageInputProps) {
     const [messageInput, setMessageInput] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isTypingRef = useRef(false);
 
@@ -64,7 +71,12 @@ export function MessageInput({
         setMessageInput('');
     };
 
-    // Cleanup on unmount
+    useEffect(() => {
+        if (autoFocus && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [autoFocus]);
+
     useEffect(() => {
         return () => {
             if (typingTimeoutRef.current) {
@@ -86,11 +98,14 @@ export function MessageInput({
     return (
         <div className="flex gap-2">
             <Input
+                ref={inputRef}
                 type="text"
                 placeholder={placeholder}
                 value={messageInput}
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
+                onFocus={onFocus}
+                onBlur={onBlur}
                 disabled={disabled}
                 className="flex-1"
             />

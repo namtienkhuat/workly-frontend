@@ -5,14 +5,14 @@ import { formatUnreadCount } from '../../utils';
 
 interface UnreadBadgeProps {
     className?: string;
+    forPersonalUser?: boolean;
 }
 
-/**
- * Badge component to show total unread message count
- * Use this in Navbar or anywhere to show notification
- */
-export function UnreadBadge({ className = '' }: UnreadBadgeProps) {
-    const { totalUnreadCount, hasUnread } = useUnreadCount();
+export function UnreadBadge({ 
+    className = '',
+    forPersonalUser = true,
+}: UnreadBadgeProps) {
+    const { totalUnreadCount, hasUnread } = useUnreadCount(forPersonalUser);
 
     if (!hasUnread) return null;
 
