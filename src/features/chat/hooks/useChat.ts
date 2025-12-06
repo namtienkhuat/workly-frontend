@@ -7,16 +7,17 @@ export function useChat() {
     // Subscribe to specific slices for better reactivity
     const currentUserId = useChatStore((state) => state.currentUserId);
     const currentUserType = useChatStore((state) => state.currentUserType);
-    const isSocketConnected = useChatStore((state) => state.isSocketConnected);
+    const isUserSocketConnected = useChatStore((state) => state.isUserSocketConnected);
     const conversations = useChatStore((state) => state.conversations);
     const hiddenConversations = useChatStore((state) => state.hiddenConversations);
+    const personalUserId = useChatStore((state) => state.personalUserId);
     const isLoadingConversations = useChatStore((state) => state.isLoadingConversations);
     const fullChatId = useChatStore((state) => state.fullChatId);
     const openChatWindows = useChatStore((state) => state.openChatWindows);
 
     // Actions
     const setCurrentUser = useChatStore((state) => state.setCurrentUser);
-    const initializeSocket = useChatStore((state) => state.initializeSocket);
+    const initializeUserSocket = useChatStore((state) => state.initializeUserSocket);
     const disconnectSocket = useChatStore((state) => state.disconnectSocket);
     const loadConversations = useChatStore((state) => state.loadConversations);
     const createOrGetConversation = useChatStore((state) => state.createOrGetConversation);
@@ -29,9 +30,9 @@ export function useChat() {
     const initialize = useCallback(
         (userId: string, userType: ParticipantType, token: string) => {
             setCurrentUser(userId, userType);
-            initializeSocket(userId, userType, token);
+            initializeUserSocket(userId, token);
         },
-        [setCurrentUser, initializeSocket]
+        [setCurrentUser, initializeUserSocket]
     );
 
     // Start conversation stable
@@ -44,20 +45,30 @@ export function useChat() {
         [createOrGetConversation, openChat]
     );
 
-    // Filter out hidden conversations - recompute when conversations or hiddenConversations change
+    // Filter out hidden conversations and only show user's personal conversations (not company conversations)
     const visibleConversations = useMemo(() => {
-        const visible = Object.values(conversations).filter(
-            (conv) => !hiddenConversations.has(conv._id)
-        );
+        const visible = Object.values(conversations).filter((conv) => {
+            if (hiddenConversations.has(conv._id)) return false;
+
+            // Only show conversations where personalUserId is a participant with type USER
+            if (personalUserId) {
+                const hasUser = conv.participants.some(
+                    (p) => p.id === personalUserId && p.type === ParticipantType.USER
+                );
+                return hasUser;
+            }
+
+            return false;
+        });
 
         return visible;
-    }, [conversations, hiddenConversations]);
+    }, [conversations, hiddenConversations, personalUserId]);
 
     return {
         // State
         currentUserId,
         currentUserType,
-        isSocketConnected,
+        isUserSocketConnected,
         conversations: visibleConversations,
         isLoadingConversations,
         fullChatId,

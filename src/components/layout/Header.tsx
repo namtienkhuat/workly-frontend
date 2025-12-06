@@ -5,19 +5,31 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
     Search,
     Home,
-    Users,
     Briefcase,
     MessageCircle,
     Building2,
     User,
     Settings,
     LogIn,
+    Edit,
+    Shield,
+    LogOut,
+    UserPlus,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { UnreadBadge } from '@/features/chat/components/ui/UnreadBadge';
 import { AuthRequiredModal } from '@/components/auth/AuthRequiredModal';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface NavItem {
     name: string;
@@ -31,15 +43,10 @@ interface NavItem {
 
 export const Header = () => {
     const pathname = usePathname();
-    const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
     const { user, isAuthenticated } = useAuth();
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [restrictedFeature, setRestrictedFeature] = useState<string>('');
-
-    // Define which routes require authentication
-    const restrictedRoutes = ['/chat', '/settings', '/manage-companies', '/profile'];
-    const publicRoutes = ['/home', '/jobs', '/my-network'];
 
     const allNavItems: NavItem[] = useMemo(
         () => [
@@ -182,6 +189,18 @@ export const Header = () => {
                             const Icon = item.icon;
                             const active = isActive(item);
 
+                            // Special handling for "Me" item - show dropdown menu
+                            if (item.name === 'me' && isAuthenticated) {
+                                return (
+                                    <MeDropdownMenu
+                                        key={item.name}
+                                        item={item}
+                                        active={active}
+                                        userId={user?.userId}
+                                    />
+                                );
+                            }
+
                             return (
                                 <Link
                                     key={item.name}
@@ -202,7 +221,10 @@ export const Header = () => {
                                         strokeWidth={active ? 2.5 : 2}
                                     />
                                     {item.name === 'messaging' && isAuthenticated && (
-                                        <UnreadBadge className="absolute top-1.5 right-2 bg-red-500 px-1.5" />
+                                        <UnreadBadge
+                                            className="absolute top-1.5 right-2 bg-red-500 px-1.5"
+                                            forPersonalUser={true}
+                                        />
                                     )}
                                     <span className="text-[10px] md:text-xs font-medium leading-tight">
                                         {item.label}
@@ -214,41 +236,8 @@ export const Header = () => {
                             );
                         })}
 
-                        {/* Sign In/Sign Up Button - Only show when not authenticated */}
-                        {!isAuthenticated && (
-                            <Link
-                                href="/signin"
-                                className={cn(
-                                    'relative flex flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-3 py-2 rounded-md transition-all hover:bg-accent min-w-[50px] md:min-w-[65px]',
-                                    pathname?.startsWith('/signin') ||
-                                        pathname?.startsWith('/signup')
-                                        ? 'text-primary'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                )}
-                            >
-                                <LogIn
-                                    className={cn(
-                                        'h-5 w-5 md:h-6 md:w-6 transition-all',
-                                        (pathname?.startsWith('/signin') ||
-                                            pathname?.startsWith('/signup')) &&
-                                            'stroke-primary stroke-[2.5]'
-                                    )}
-                                    strokeWidth={
-                                        pathname?.startsWith('/signin') ||
-                                        pathname?.startsWith('/signup')
-                                            ? 2.5
-                                            : 2
-                                    }
-                                />
-                                <span className="text-[10px] md:text-xs font-medium leading-tight">
-                                    Sign In
-                                </span>
-                                {(pathname?.startsWith('/signin') ||
-                                    pathname?.startsWith('/signup')) && (
-                                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-full" />
-                                )}
-                            </Link>
-                        )}
+                        {/* Sign In/Sign Up Dropdown - Only show when not authenticated */}
+                        {!isAuthenticated && <AuthDropdownMenu />}
                     </nav>
 
                     {/* Auth Required Modal */}
@@ -260,5 +249,233 @@ export const Header = () => {
                 </div>
             </div>
         </header>
+    );
+};
+
+// Me Dropdown Menu Component
+const MeDropdownMenu = ({
+    item,
+    active,
+    userId,
+}: {
+    item: NavItem;
+    active: boolean;
+    userId?: string;
+}) => {
+    const router = useRouter();
+    const { logout } = useAuth();
+    const [isSigningOut, setIsSigningOut] = useState(false);
+
+    const profileHref = userId ? `/profile/${userId}` : '/profile';
+    const editHref = '/profile/edit';
+    const changePasswordHref = '/settings/change-password';
+
+    const handleSignOut = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsSigningOut(true);
+        try {
+            await logout();
+            toast.success('Signed out successfully');
+            router.push('/home');
+        } catch (error) {
+            toast.error('Failed to sign out');
+        } finally {
+            setIsSigningOut(false);
+        }
+    };
+
+    const Icon = item.icon;
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    className={cn(
+                        'relative flex flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-3 py-2 rounded-md transition-all hover:bg-accent min-w-[50px] md:min-w-[65px]',
+                        active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                    )}
+                >
+                    <Icon
+                        className={cn(
+                            'h-5 w-5 md:h-6 md:w-6 transition-all',
+                            active && 'stroke-primary stroke-[2.5]'
+                        )}
+                        strokeWidth={active ? 2.5 : 2}
+                    />
+                    <span className="text-[10px] md:text-xs font-medium leading-tight">
+                        {item.label}
+                    </span>
+                    {active && (
+                        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-full" />
+                    )}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 p-2 shadow-lg border-2">
+                {/* Section 1: Profile Actions */}
+                <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Profile
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                    asChild
+                    className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-accent transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                >
+                    <Link href={profileHref} className="flex items-center gap-3">
+                        <div className="p-1.5 rounded-md bg-primary/10">
+                            <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-medium text-sm">View Profile</div>
+                            <div className="text-xs text-muted-foreground">
+                                See your public profile
+                            </div>
+                        </div>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    asChild
+                    className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-accent transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                >
+                    <Link href={editHref} className="flex items-center gap-3">
+                        <div className="p-1.5 rounded-md bg-blue-500/10">
+                            <Edit className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-medium text-sm">Edit Profile</div>
+                            <div className="text-xs text-muted-foreground">
+                                Update your information
+                            </div>
+                        </div>
+                    </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-2" />
+
+                {/* Section 2: Security */}
+                <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Security
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                    asChild
+                    className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-accent transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                >
+                    <Link href={changePasswordHref} className="flex items-center gap-3">
+                        <div className="p-1.5 rounded-md bg-green-500/10">
+                            <Shield className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-medium text-sm">Change Password</div>
+                            <div className="text-xs text-muted-foreground">
+                                Update your password
+                            </div>
+                        </div>
+                    </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-2" />
+
+                {/* Section 3: Sign Out */}
+                <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Account
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                    asChild
+                    className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                >
+                    <button
+                        onClick={handleSignOut}
+                        disabled={isSigningOut}
+                        className="flex items-center gap-3 w-full text-left"
+                    >
+                        <div className="p-1.5 rounded-md bg-red-500/10">
+                            <LogOut className="h-4 w-4 text-red-600" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-medium text-sm">
+                                {isSigningOut ? 'Signing out...' : 'Sign Out'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                                Sign out from this device
+                            </div>
+                        </div>
+                    </button>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+};
+
+// Auth Dropdown Menu Component (for Sign In/Sign Up)
+const AuthDropdownMenu = () => {
+    const pathname = usePathname();
+    const signInHref = '/signin';
+    const signUpHref = '/signup';
+
+    const isActive = pathname?.startsWith('/signin') || pathname?.startsWith('/signup');
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    className={cn(
+                        'relative flex flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-3 py-2 rounded-md transition-all hover:bg-accent min-w-[50px] md:min-w-[65px]',
+                        isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                    )}
+                >
+                    <User
+                        className={cn(
+                            'h-5 w-5 md:h-6 md:w-6 transition-all',
+                            isActive && 'stroke-primary stroke-[2.5]'
+                        )}
+                        strokeWidth={isActive ? 2.5 : 2}
+                    />
+                    <span className="text-[10px] md:text-xs font-medium leading-tight">
+                        Account
+                    </span>
+                    {isActive && (
+                        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-full" />
+                    )}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 p-2 shadow-lg border-2">
+                {/* Section 1: Sign In */}
+                <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Account Access
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                    asChild
+                    className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-primary/10 transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                >
+                    <Link href={signInHref} className="flex items-center gap-3">
+                        <div className="p-1.5 rounded-md bg-primary/10">
+                            <LogIn className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-medium text-sm">Sign In</div>
+                            <div className="text-xs text-muted-foreground">
+                                Access your existing account
+                            </div>
+                        </div>
+                    </Link>
+                </DropdownMenuItem>
+
+                {/* Section 2: Sign Up */}
+                <DropdownMenuItem
+                    asChild
+                    className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-blue-500/10 transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                >
+                    <Link href={signUpHref} className="flex items-center gap-3">
+                        <div className="p-1.5 rounded-md bg-blue-500/10">
+                            <UserPlus className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-medium text-sm">Sign Up</div>
+                            <div className="text-xs text-muted-foreground">
+                                Create a new account
+                            </div>
+                        </div>
+                    </Link>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 };

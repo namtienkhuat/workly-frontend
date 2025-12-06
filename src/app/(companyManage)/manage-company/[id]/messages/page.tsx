@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import { MessageCircle } from 'lucide-react';
 
 import { ConversationList } from '@/features/chat/components';
@@ -12,13 +12,14 @@ import { ParticipantType } from '@/features/chat/types';
 
 export default function CompanyMessagesPage() {
     const router = useRouter();
+    const pathname = usePathname();
     const { id: companyId } = useParams<{ id: string }>();
     const { isLoading } = useAuth();
     const {
         conversations,
         currentUserId,
         isLoadingConversations,
-        isSocketConnected,
+        isCompanySocketConnected,
         deleteConversation,
     } = useCompanyChat(companyId);
     const handleSelectConversation = (conversationId: string) => {
@@ -34,9 +35,23 @@ export default function CompanyMessagesPage() {
 
     const handleDeleteConversation = async (conversationId: string) => {
         try {
+            const conversation = conversations.find((c) => c._id === conversationId);
+            const isHardDelete = conversation?.otherParticipant?.isDeleted || false;
+
             await deleteConversation(conversationId);
+
+            // Nếu là hard delete (user đã bị xóa), redirect về messages list
+            // Để tránh tạo lại conversation với user đã xóa
+            // Hoặc nếu đang ở user detail page, cũng redirect về messages list
+            if (isHardDelete || pathname?.includes('/messages/user/')) {
+                router.push(`/manage-company/${companyId}/messages`);
+            }
         } catch (error) {
             console.error('Error deleting conversation:', error);
+            // Vẫn redirect về messages list ngay cả khi có lỗi
+            if (pathname?.includes('/messages/user/')) {
+                router.push(`/manage-company/${companyId}/messages`);
+            }
         }
     };
 
@@ -100,7 +115,7 @@ export default function CompanyMessagesPage() {
                             </h2>
 
                             <p className="text-muted-foreground text-base mb-2">
-                                {isSocketConnected
+                                {isCompanySocketConnected
                                     ? 'Chọn một cuộc trò chuyện từ danh sách bên trái'
                                     : 'Đang kết nối...'}
                             </p>
@@ -114,7 +129,7 @@ export default function CompanyMessagesPage() {
                             )}
 
                             {/* Status indicator */}
-                            {isSocketConnected && (
+                            {isCompanySocketConnected && (
                                 <div className="flex items-center justify-center gap-2 mt-6">
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                                     <span className="text-xs text-muted-foreground">

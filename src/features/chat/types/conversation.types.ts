@@ -7,6 +7,7 @@ export interface Conversation {
     lastMessage?: Message;
     lastMessageAt?: Date;
     unreadCount: Record<string, number>;
+    deletedParticipants?: Record<string, string>; // participantId -> deletedAt timestamp (ISO string)
     createdAt: Date;
     updatedAt: Date;
 }
