@@ -87,7 +87,7 @@ export default function HomePage() {
                 <PostCard
                     key={post._id}
                     post={post}
-                    reload={() => {}}
+                    reload={() => { }}
                     type="USER"
                     authorId={post.author.userId}
                 />

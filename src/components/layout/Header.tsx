@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { UnreadBadge } from '@/features/chat/components/ui/UnreadBadge';
+import { useRouter } from 'next/navigation';
 
 interface NavItem {
     name: string;
@@ -28,6 +29,8 @@ export const Header = () => {
     const pathname = usePathname();
     const [searchQuery, setSearchQuery] = useState('');
     const { user } = useAuth();
+    const router = useRouter();
+
 
     const navItems: NavItem[] = useMemo(
         () => [
@@ -120,14 +123,22 @@ export const Header = () => {
                     {/* Search Bar */}
                     <div className="flex-1 max-w-xs md:max-w-md">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <Input
-                                type="text"
-                                placeholder="Tìm kiếm..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 h-9 bg-muted/50 dark:bg-muted/20 border-none focus-visible:ring-1 focus-visible:ring-primary/20 hover:bg-muted dark:hover:bg-muted/40 transition-colors"
-                            />
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const query = encodeURIComponent(searchQuery);
+                                    router.push(`/search?keyword=${query}`)
+                                }}
+                            >
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                <Input
+                                    type="text"
+                                    placeholder="Company, User, Job, Post..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-10 h-9 bg-muted/50 dark:bg-muted/20 border-none focus-visible:ring-1 focus-visible:ring-primary/20 hover:bg-muted dark:hover:bg-muted/40 transition-colors"
+                                />
+                            </form>
                         </div>
                     </div>
 
@@ -170,6 +181,6 @@ export const Header = () => {
                     </nav>
                 </div>
             </div>
-        </header>
+        </header >
     );
 };

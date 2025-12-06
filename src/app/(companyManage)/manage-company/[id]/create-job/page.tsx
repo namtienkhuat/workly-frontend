@@ -132,7 +132,9 @@ const CreateJobPage = () => {
                         salaryMax = parseInt(salaryMatch[2]);
                     }
                 }
-
+                const formattedEndDate = jobData.endDate
+                    ? new Date(jobData.endDate).toISOString().split('T')[0]
+                    : '';
                 reset({
                     title: jobData.title || '',
                     description: jobData.content || '',
@@ -141,7 +143,9 @@ const CreateJobPage = () => {
                     salaryMin: salaryMin,
                     salaryMax: salaryMax,
                     skills: jobData.skills || [],
+                    experienceLevel: jobData.level || [],
                     industry: jobData.industry || 'it',
+                    endDate: formattedEndDate
                 } as CreateJobFormData);
             } catch (error: any) {
                 toast.error('Failed to load job data', {

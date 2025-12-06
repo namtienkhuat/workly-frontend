@@ -27,6 +27,7 @@ export const apiPaths = {
     getCompanyJobDetail: '/jobs/detail',
     getJobByStatus: '/jobs/status',
     getCandidateByStatus: '/jobs/candidates',
+    getGlobalSearch: '/search/globalSearch',
     feedBackCandidate: '/jobs/feedback',
     applyJob: 'jobs/apply',
     updateCompanyJob: '/jobs/update',

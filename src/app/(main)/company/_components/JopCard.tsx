@@ -18,8 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
-import profileService from "@/services/profile/profileService";
-import commentService from "@/services/comment/commentService";
 import commonService from "@/services/common/commonService";
 import { apiPaths } from "@/configs/route";
 
@@ -69,10 +67,8 @@ const JobCard: React.FC<Job & { onReload: any, canUploadCompany: boolean }> = ({
     const {
         register,
         handleSubmit,
-        control,
         formState: { errors },
         reset,
-        watch
     } = useForm<ApplyJobFormData>({
         resolver: zodResolver(applyJobSchema),
     });

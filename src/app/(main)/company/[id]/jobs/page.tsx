@@ -147,7 +147,6 @@ const CompanyJobs = () => {
                 setJobs(prevJobs => [...prevJobs, ...response.data]);
                 setCurrentPage(nextPage);
 
-                // Fix: Dùng pagination.totalPages
                 const totalPages = response.pagination?.totalPages || 0;
                 setHasMore(nextPage < totalPages);
             } else {

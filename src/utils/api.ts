@@ -43,7 +43,7 @@ api.interceptors.response.use(
         return response;
     },
     (error: AxiosError) => {
-        console.log(error.response);
+        console.log(error);
 
         // Handle different error scenarios
         if (error.response) {
