@@ -97,9 +97,6 @@ export default function HomePage() {
                         </div>
                     ) : null
                 }
-            // endMessage={
-            //     <p className="text-center py-4 text-gray-400">Không còn bài viết nào nữa.</p>
-            // }
             >
                 <div className="flex flex-col gap-6">
                     {posts.map((post) => (
