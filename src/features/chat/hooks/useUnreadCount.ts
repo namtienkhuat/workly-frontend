@@ -1,25 +1,32 @@
-import { useMemo } from 'react';
 import { useChatStore } from '../store';
 
-/**
- * Hook to get total unread message count across all conversations
- * @param forPersonalUser - If true, always uses personalUserId (for Header badge). Default: true
- */
 export function useUnreadCount(forPersonalUser: boolean = true) {
-    const { conversations, currentUserId, personalUserId } = useChatStore();
+    const personalUserId = useChatStore((state) => state.personalUserId);
+    const currentUserId = useChatStore((state) => state.currentUserId);
 
-    // Use personalUserId for Header badge (always shows user's personal unread count)
-    // Use currentUserId for context-specific unread count (user or company)
     const userId = forPersonalUser ? personalUserId : currentUserId;
 
-    const totalUnreadCount = useMemo(() => {
+    // Subscribe to conversationsVersion to force re-render when conversations are updated
+    const conversationsVersion = useChatStore((state) => state.conversationsVersion);
+
+    // Subscribe to a computed value directly in the selector
+    // This ensures re-render when any conversation's unreadCount changes
+    const totalUnreadCount = useChatStore((state) => {
         if (!userId) return 0;
 
+        const { conversations, hiddenConversations } = state;
+
+        // Calculate total - this will re-run whenever conversations object reference changes
         return Object.values(conversations).reduce((total, conversation) => {
+            if (hiddenConversations.has(conversation._id)) return total;
             const unreadForUser = conversation.unreadCount[userId] || 0;
             return total + unreadForUser;
         }, 0);
-    }, [conversations, userId]);
+    });
+
+    // Use conversationsVersion to ensure re-render (even if computed value is the same)
+    // This is a workaround for Zustand's shallow comparison
+    const _ = conversationsVersion;
 
     const hasUnread = totalUnreadCount > 0;
 
@@ -28,4 +35,3 @@ export function useUnreadCount(forPersonalUser: boolean = true) {
         hasUnread,
     };
 }
-

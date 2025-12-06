@@ -43,14 +43,16 @@ api.interceptors.response.use(
         return response;
     },
     (error: AxiosError) => {
-        console.log(error);
-
         // Handle different error scenarios
         if (error.response) {
             // Server responded with error status
             const message =
                 (error.response.data as { message?: string })?.message || 'An error occurred';
-            return Promise.reject(new Error(message));
+
+            // Create custom error that preserves response info
+            const customError: any = new Error(message);
+            customError.response = error.response;
+            return Promise.reject(customError);
         } else if (error.request) {
             // Request made but no response received
             return Promise.reject(
@@ -131,11 +133,7 @@ export async function postFormList<D, R>({
     timeout,
     onUploadProgress,
 }: RequestBodyType<D>): Promise<ResponseList<R>> {
-    console.log('response', url, data);
-
     const reponse = await api.postForm(url, data, { timeout, onUploadProgress });
-    console.log('response', reponse, url, data);
-
     return reponse.data as ResponseList<R>;
 }
 

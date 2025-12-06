@@ -35,7 +35,7 @@ export function useData<T>(
     queryFn: QueryFn<{ data: T; status: number }>,
     enabled: boolean = true,
     refetchOnWindowFocus: boolean = true,
-    retry: any = 3,
+    retry: any = false,
     gcTime: number = 10 * 60 * 1000, // Default 5 minutes
     staleTime: number = 10 * 60 * 1000, // Default 0
     retryDelay: number = 3000
@@ -69,6 +69,10 @@ export function useData<T>(
 
 export function useGetCompanyProfile(id: string) {
     return useData([`/companies/${id}`, {}], getDataWithStatus);
+}
+
+export function useGetCompanyAccess(id: string) {
+    return useData([`/companies/${id}/check-access`, {}], getDataWithStatus);
 }
 
 export function useGetIndustry(queryParams: Record<string, any> = {}) {
@@ -111,6 +115,14 @@ export function useGetUserProfile(id: string) {
 
 export function useGetAllIndustries(queryParams: Record<string, any> = {}) {
     return useData([`/industries`, queryParams], getDataWithStatus);
+}
+
+export function useGetFeedJobs(queryParams: Record<string, any> = {}) {
+    return useData(['/feed/job', queryParams], getDataWithStatus);
+}
+
+export function useGetJobById(id: string) {
+    return useData([`/jobs/${id}`, {}], getDataWithStatus);
 }
 
 // Mutation functions
@@ -165,4 +177,12 @@ export function useGetMyCompanies(queryParams: Record<string, any> = {}) {
 
 export function useGetCompanyAdmins(companyId: string) {
     return useData([`/companies/${companyId}/admins`, {}], getDataWithStatus);
+}
+
+export function useGetRecommendedUsers(queryParams: Record<string, any> = {}) {
+    return useData(['/recommend/users', queryParams], getDataWithStatus);
+}
+
+export function useGetRecommendedCompanies(queryParams: Record<string, any> = {}) {
+    return useData(['/recommend/companies', queryParams], getDataWithStatus);
 }

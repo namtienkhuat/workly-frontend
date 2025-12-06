@@ -11,6 +11,8 @@ import ProfileSkeleton from './_components/ProfileSkeleton';
 import { toast } from 'sonner';
 import EditImageDialog from '@/components/Avatar/EditImageDialog';
 import { patchUserMedia } from '@/services/apiServices';
+import { SetSidebar } from '@/components/layout/SetSideBar';
+import RightSidebar from '../_components/RightSidebar';
 
 const UserSettingsLayout = ({ children }: { children: React.ReactNode }) => {
     const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
@@ -75,43 +77,49 @@ const UserSettingsLayout = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <div className="flex flex-col">
-            <div>
-                <Card className="mx-auto max-w-5xl">
-                    <ProfleHeader
-                        userProfile={userInfo}
-                        isEditable={true}
-                        handleBgCoverClick={() => setIsBgCoverDialogOpen(true)}
-                        handleAvatarClick={() => setIsAvatarDialogOpen(true)}
-                    />
+        <>
+            <SetSidebar position="right">
+                <RightSidebar />
+            </SetSidebar>
 
-                    <CardFooter className="px-2 py-1">
-                        <ProfileTabNav isOwner={true} userId={userInfo.userId} />
-                    </CardFooter>
-                </Card>
+            <div className="flex flex-col">
+                <div>
+                    <Card className="mx-auto max-w-5xl">
+                        <ProfleHeader
+                            userProfile={userInfo}
+                            isEditable={true}
+                            handleBgCoverClick={() => setIsBgCoverDialogOpen(true)}
+                            handleAvatarClick={() => setIsAvatarDialogOpen(true)}
+                        />
+
+                        <CardFooter className="px-2 py-1">
+                            <ProfileTabNav isOwner={true} userId={userInfo.userId} />
+                        </CardFooter>
+                    </Card>
+                </div>
+
+                <div className="mt-4">
+                    <div className="mx-auto max-w-5xl">{children}</div>
+                </div>
+
+                {/* DIALOG */}
+                <EditImageDialog
+                    open={isAvatarDialogOpen}
+                    onOpenChange={setIsAvatarDialogOpen}
+                    initialImageUrl={userProfile?.avatarUrl ? userProfile.avatarUrl : undefined}
+                    onCropComplete={handleAvatarCropComplete}
+                    isSubmitting={isSubmitting}
+                />
+                <EditImageDialog
+                    open={isBgCoverDialogOpen}
+                    onOpenChange={setIsBgCoverDialogOpen}
+                    initialImageUrl={userProfile?.bgCoverUrl ? userProfile.bgCoverUrl : undefined}
+                    onCropComplete={handleBgCoverCropComplete}
+                    isSubmitting={isSubmitting}
+                    aspectRatio={4 / 1}
+                />
             </div>
-
-            <div className="mt-4">
-                <div className="mx-auto max-w-5xl">{children}</div>
-            </div>
-
-            {/* DIALOG */}
-            <EditImageDialog
-                open={isAvatarDialogOpen}
-                onOpenChange={setIsAvatarDialogOpen}
-                initialImageUrl={userProfile?.avatarUrl ? userProfile.avatarUrl : undefined}
-                onCropComplete={handleAvatarCropComplete}
-                isSubmitting={isSubmitting}
-            />
-            <EditImageDialog
-                open={isBgCoverDialogOpen}
-                onOpenChange={setIsBgCoverDialogOpen}
-                initialImageUrl={userProfile?.bgCoverUrl ? userProfile.bgCoverUrl : undefined}
-                onCropComplete={handleBgCoverCropComplete}
-                isSubmitting={isSubmitting}
-                aspectRatio={4 / 1}
-            />
-        </div>
+        </>
     );
 };
 

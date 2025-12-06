@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { ChatView, ConversationList } from '@/features/chat/components';
@@ -27,55 +27,57 @@ export default function ChatUserPage() {
         conversations,
         isLoadingConversations,
         currentUserId,
-        isSocketConnected,
+        isUserSocketConnected,
         initialize,
         loadConversations,
         deleteConversation,
     } = useChat();
 
     const [isLoading, setIsLoading] = useState(false);
+    const loadedUserRef = useRef<string | null>(null);
 
-    // Initialize socket and load conversations
     useEffect(() => {
         if (!user?.userId) return;
 
         const token = localStorage.getItem(TOKEN_KEY);
         if (!token) {
-            console.error('No token found');
             return;
         }
 
-        // Initialize socket connection
         initialize(user.userId, ParticipantType.USER, token);
-
-        // Load conversations
         loadConversations();
     }, [user?.userId, initialize, loadConversations]);
 
-    // Create or get conversation with user
     useEffect(() => {
-        if (!userId || !isSocketConnected) return;
+        if (!userId || !isUserSocketConnected || loadedUserRef.current === userId) return;
 
         const handleStartConversation = async () => {
             try {
                 const { data } = await getUserById(userId);
-                if (!data) {
-                    toast.error('Không tìm thấy người dùng.');
+                if (!data || data.user?.isDeleted) {
+                    toast.error('Không tìm thấy người dùng hoặc tài khoản đã bị xóa.');
+                    router.push('/chat');
                     return;
                 }
 
                 setIsLoading(true);
                 await startConversation(userId, ParticipantType.USER, true);
+                loadedUserRef.current = userId;
             } catch (err: any) {
-                console.error('Error starting conversation:', err);
-                toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
+                // If user not found or deleted, redirect to /chat
+                if (err.response?.status === 404 || err.message?.includes('not found')) {
+                    toast.error('Không tìm thấy người dùng.');
+                    router.push('/chat');
+                } else {
+                    toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
+                }
             } finally {
                 setIsLoading(false);
             }
         };
 
         handleStartConversation();
-    }, [userId, isSocketConnected]);
+    }, [userId, isUserSocketConnected, startConversation]);
 
     const handleSelectConversation = (conversationId: string) => {
         const conversation = conversations.find((c) => c._id === conversationId);
@@ -92,12 +94,11 @@ export default function ChatUserPage() {
     const handleDeleteConversation = async (conversationId: string) => {
         try {
             await deleteConversation(conversationId);
-            // If deleted conversation is the current one, go back to chat list
-            if (conversationId === fullChatId) {
-                router.push('/chat');
-            }
+            setFullChat(null);
+            loadedUserRef.current = null;
+            router.push('/chat');
         } catch (error) {
-            console.error('Error deleting conversation:', error);
+            // Error handled silently
         }
     };
 
@@ -146,12 +147,22 @@ export default function ChatUserPage() {
                         {/* Animated background */}
                         <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 via-transparent to-destructive/5 opacity-50" />
                         <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-destructive/10 rounded-full blur-3xl" />
-                        
+
                         <div className="text-center px-6 relative z-10 animate-in fade-in duration-500">
                             <div className="mb-6 flex justify-center">
                                 <div className="rounded-full bg-destructive/10 p-6 border-2 border-destructive/20">
-                                    <svg className="w-16 h-16 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    <svg
+                                        className="w-16 h-16 text-destructive"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={1.5}
+                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                        />
                                     </svg>
                                 </div>
                             </div>

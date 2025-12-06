@@ -8,6 +8,7 @@ export const paths = {
     testPost: '/test',
     // Example of a dynamic route
     postDetail: (id: string) => `/posts/${id}`,
+    jobDetail: (id: string) => `/jobs/${id}`,
 };
 
 export const apiPaths = {

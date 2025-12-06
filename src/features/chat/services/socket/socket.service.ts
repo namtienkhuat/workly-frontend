@@ -8,27 +8,28 @@ import {
     ConversationJoinLeaveData,
 } from '../../types';
 
-class SocketService {
-    private socket: Socket | null = null;
-    private reconnectAttempts = 0;
+export type SocketIdentity = 'user' | 'company';
 
-    /**
-     * Connect to socket server
-     */
-    connect(token: string, userId?: string, userType?: string): Socket {
-        if (this.socket?.connected) {
-            return this.socket;
+class MultiSocketService {
+    private sockets: Record<SocketIdentity, Socket | null> = { user: null, company: null };
+    private reconnectAttempts: Record<SocketIdentity, number> = { user: 0, company: 0 };
+
+    connect(identity: SocketIdentity, token: string, userId?: string, userType?: string): Socket {
+        const existing = this.sockets[identity];
+        if (existing) {
+            existing.io.opts.reconnection = false;
+            existing.disconnect();
+            existing.removeAllListeners();
+            this.sockets[identity] = null;
         }
 
         const auth: any = { token };
-        
-        // Add identity override if provided (for company chat)
         if (userId && userType) {
             auth.userId = userId;
             auth.userType = userType;
         }
 
-        this.socket = io(CHAT_CONSTANTS.SOCKET_URL, {
+        const socket = io(CHAT_CONSTANTS.SOCKET_URL, {
             auth,
             reconnection: true,
             reconnectionDelay: CHAT_CONSTANTS.RECONNECT_DELAY,
@@ -36,208 +37,138 @@ class SocketService {
             reconnectionAttempts: CHAT_CONSTANTS.MAX_RECONNECT_ATTEMPTS,
         });
 
-        this.setupConnectionHandlers();
-        return this.socket;
+        this.sockets[identity] = socket;
+        this.setupConnectionHandlers(identity);
+        return socket;
     }
 
-    /**
-     * Setup connection event handlers
-     */
-    private setupConnectionHandlers(): void {
-        if (!this.socket) return;
+    private setupConnectionHandlers(identity: SocketIdentity): void {
+        const socket = this.sockets[identity];
+        if (!socket) return;
 
-        this.socket.on(SOCKET_EVENTS.CONNECT, () => {
-            console.log('Socket connected:', this.socket?.id);
-            this.reconnectAttempts = 0;
+        socket.on(SOCKET_EVENTS.CONNECT, () => {
+            this.reconnectAttempts[identity] = 0;
         });
 
-        this.socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
-            console.log('Socket disconnected:', reason);
+        socket.on(SOCKET_EVENTS.DISCONNECT, () => {});
+
+        socket.on(SOCKET_EVENTS.CONNECT_ERROR, () => {
+            this.reconnectAttempts[identity]++;
         });
 
-        this.socket.on(SOCKET_EVENTS.CONNECT_ERROR, (error) => {
-            console.error('Socket connection error:', error);
-            this.reconnectAttempts++;
-        });
-
-        this.socket.on(SOCKET_EVENTS.ERROR, (error) => {
-            console.error('Socket error:', error);
-        });
+        socket.on(SOCKET_EVENTS.ERROR, () => {});
     }
 
-    /**
-     * Disconnect from socket server
-     */
-    disconnect(): void {
-        if (this.socket) {
-            this.socket.disconnect();
-            this.socket = null;
+    disconnect(identity: SocketIdentity): void {
+        const socket = this.sockets[identity];
+        if (socket) {
+            socket.disconnect();
+            this.sockets[identity] = null;
         }
     }
 
-    /**
-     * Check if socket is connected
-     */
-    isConnected(): boolean {
-        return this.socket?.connected || false;
+    isConnected(identity: SocketIdentity): boolean {
+        return this.sockets[identity]?.connected || false;
     }
 
-    /**
-     * Get socket instance
-     */
-    getSocket(): Socket | null {
-        return this.socket;
+    getSocket(identity: SocketIdentity): Socket | null {
+        return this.sockets[identity];
     }
 
-    // ==================== CONVERSATION EVENTS ====================
-
-    /**
-     * Join a conversation room
-     */
-    joinConversation(conversationId: string): void {
-        this.socket?.emit(SOCKET_EVENTS.JOIN_CONVERSATION, { conversationId });
+    joinConversation(identity: SocketIdentity, conversationId: string): void {
+        this.sockets[identity]?.emit(SOCKET_EVENTS.JOIN_CONVERSATION, { conversationId });
     }
 
-    /**
-     * Leave a conversation room
-     */
-    leaveConversation(conversationId: string): void {
-        this.socket?.emit(SOCKET_EVENTS.LEAVE_CONVERSATION, { conversationId });
+    leaveConversation(identity: SocketIdentity, conversationId: string): void {
+        this.sockets[identity]?.emit(SOCKET_EVENTS.LEAVE_CONVERSATION, { conversationId });
     }
 
-    /**
-     * Listen for user joined conversation
-     */
-    onUserJoinedConversation(callback: (data: ConversationJoinLeaveData) => void): void {
-        this.socket?.on(SOCKET_EVENTS.USER_JOINED_CONVERSATION, callback);
+    onUserJoinedConversation(
+        identity: SocketIdentity,
+        callback: (data: ConversationJoinLeaveData) => void
+    ): void {
+        this.sockets[identity]?.on(SOCKET_EVENTS.USER_JOINED_CONVERSATION, callback);
     }
 
-    /**
-     * Listen for user left conversation
-     */
-    onUserLeftConversation(callback: (data: ConversationJoinLeaveData) => void): void {
-        this.socket?.on(SOCKET_EVENTS.USER_LEFT_CONVERSATION, callback);
+    onUserLeftConversation(
+        identity: SocketIdentity,
+        callback: (data: ConversationJoinLeaveData) => void
+    ): void {
+        this.sockets[identity]?.on(SOCKET_EVENTS.USER_LEFT_CONVERSATION, callback);
     }
 
-    /**
-     * Remove user joined conversation listener
-     */
-    offUserJoinedConversation(callback?: (data: ConversationJoinLeaveData) => void): void {
-        this.socket?.off(SOCKET_EVENTS.USER_JOINED_CONVERSATION, callback);
+    offUserJoinedConversation(
+        identity: SocketIdentity,
+        callback?: (data: ConversationJoinLeaveData) => void
+    ): void {
+        this.sockets[identity]?.off(SOCKET_EVENTS.USER_JOINED_CONVERSATION, callback);
     }
 
-    /**
-     * Remove user left conversation listener
-     */
-    offUserLeftConversation(callback?: (data: ConversationJoinLeaveData) => void): void {
-        this.socket?.off(SOCKET_EVENTS.USER_LEFT_CONVERSATION, callback);
+    offUserLeftConversation(
+        identity: SocketIdentity,
+        callback?: (data: ConversationJoinLeaveData) => void
+    ): void {
+        this.sockets[identity]?.off(SOCKET_EVENTS.USER_LEFT_CONVERSATION, callback);
     }
 
-    // ==================== MESSAGE EVENTS ====================
-
-    /**
-     * Send a message
-     */
-    sendMessage(conversationId: string, content: string): void {
-        this.socket?.emit(SOCKET_EVENTS.SEND_MESSAGE, { conversationId, content });
+    sendMessage(identity: SocketIdentity, conversationId: string, content: string): void {
+        this.sockets[identity]?.emit(SOCKET_EVENTS.SEND_MESSAGE, { conversationId, content });
     }
 
-    /**
-     * Listen for new messages
-     */
-    onNewMessage(callback: (data: NewMessageData) => void): void {
-        this.socket?.on(SOCKET_EVENTS.NEW_MESSAGE, callback);
+    onNewMessage(identity: SocketIdentity, callback: (data: NewMessageData) => void): void {
+        this.sockets[identity]?.on(SOCKET_EVENTS.NEW_MESSAGE, callback);
     }
 
-    /**
-     * Remove new message listener
-     */
-    offNewMessage(callback?: (data: NewMessageData) => void): void {
-        this.socket?.off(SOCKET_EVENTS.NEW_MESSAGE, callback);
+    offNewMessage(identity: SocketIdentity, callback?: (data: NewMessageData) => void): void {
+        this.sockets[identity]?.off(SOCKET_EVENTS.NEW_MESSAGE, callback);
     }
 
-    /**
-     * Mark message as read
-     */
-    markMessageRead(conversationId: string, messageId: string): void {
-        this.socket?.emit(SOCKET_EVENTS.MARK_MESSAGE_READ, { conversationId, messageId });
+    markMessageRead(identity: SocketIdentity, conversationId: string, messageId: string): void {
+        this.sockets[identity]?.emit(SOCKET_EVENTS.MARK_MESSAGE_READ, {
+            conversationId,
+            messageId,
+        });
     }
 
-    /**
-     * Listen for message read events
-     */
-    onMessageRead(callback: (data: MessageReadData) => void): void {
-        this.socket?.on(SOCKET_EVENTS.MESSAGE_READ, callback);
+    onMessageRead(identity: SocketIdentity, callback: (data: MessageReadData) => void): void {
+        this.sockets[identity]?.on(SOCKET_EVENTS.MESSAGE_READ, callback);
     }
 
-    /**
-     * Remove message read listener
-     */
-    offMessageRead(callback?: (data: MessageReadData) => void): void {
-        this.socket?.off(SOCKET_EVENTS.MESSAGE_READ, callback);
+    offMessageRead(identity: SocketIdentity, callback?: (data: MessageReadData) => void): void {
+        this.sockets[identity]?.off(SOCKET_EVENTS.MESSAGE_READ, callback);
     }
 
-    // ==================== TYPING EVENTS ====================
-
-    /**
-     * Start typing indicator
-     */
-    startTyping(conversationId: string): void {
-        this.socket?.emit(SOCKET_EVENTS.TYPING, { conversationId });
+    startTyping(identity: SocketIdentity, conversationId: string): void {
+        this.sockets[identity]?.emit(SOCKET_EVENTS.TYPING, { conversationId });
     }
 
-    /**
-     * Stop typing indicator
-     */
-    stopTyping(conversationId: string): void {
-        this.socket?.emit(SOCKET_EVENTS.STOP_TYPING, { conversationId });
+    stopTyping(identity: SocketIdentity, conversationId: string): void {
+        this.sockets[identity]?.emit(SOCKET_EVENTS.STOP_TYPING, { conversationId });
     }
 
-    /**
-     * Listen for user typing
-     */
-    onUserTyping(callback: (data: TypingData) => void): void {
-        this.socket?.on(SOCKET_EVENTS.USER_TYPING, callback);
+    onUserTyping(identity: SocketIdentity, callback: (data: TypingData) => void): void {
+        this.sockets[identity]?.on(SOCKET_EVENTS.USER_TYPING, callback);
     }
 
-    /**
-     * Remove user typing listener
-     */
-    offUserTyping(callback?: (data: TypingData) => void): void {
-        this.socket?.off(SOCKET_EVENTS.USER_TYPING, callback);
+    offUserTyping(identity: SocketIdentity, callback?: (data: TypingData) => void): void {
+        this.sockets[identity]?.off(SOCKET_EVENTS.USER_TYPING, callback);
     }
 
-    // ==================== USER STATUS EVENTS ====================
-
-    /**
-     * Listen for user online status
-     */
-    onUserOnline(callback: (data: UserStatusData) => void): void {
-        this.socket?.on(SOCKET_EVENTS.USER_ONLINE, callback);
+    onUserOnline(identity: SocketIdentity, callback: (data: UserStatusData) => void): void {
+        this.sockets[identity]?.on(SOCKET_EVENTS.USER_ONLINE, callback);
     }
 
-    /**
-     * Listen for user offline status
-     */
-    onUserOffline(callback: (data: UserStatusData) => void): void {
-        this.socket?.on(SOCKET_EVENTS.USER_OFFLINE, callback);
+    onUserOffline(identity: SocketIdentity, callback: (data: UserStatusData) => void): void {
+        this.sockets[identity]?.on(SOCKET_EVENTS.USER_OFFLINE, callback);
     }
 
-    /**
-     * Remove user online listener
-     */
-    offUserOnline(callback?: (data: UserStatusData) => void): void {
-        this.socket?.off(SOCKET_EVENTS.USER_ONLINE, callback);
+    offUserOnline(identity: SocketIdentity, callback?: (data: UserStatusData) => void): void {
+        this.sockets[identity]?.off(SOCKET_EVENTS.USER_ONLINE, callback);
     }
 
-    /**
-     * Remove user offline listener
-     */
-    offUserOffline(callback?: (data: UserStatusData) => void): void {
-        this.socket?.off(SOCKET_EVENTS.USER_OFFLINE, callback);
+    offUserOffline(identity: SocketIdentity, callback?: (data: UserStatusData) => void): void {
+        this.sockets[identity]?.off(SOCKET_EVENTS.USER_OFFLINE, callback);
     }
 }
 
-// Export singleton instance
-export const socketService = new SocketService();
-
+export const socketService = new MultiSocketService();

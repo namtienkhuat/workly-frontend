@@ -12,6 +12,7 @@ import CompanyTabNav from '@/components/company/CompanyTabNav';
 import CompanySkeletonHeader from '@/components/company/CompanySkeletonHeader';
 import EditImageDialog from '@/components/Avatar/EditImageDialog';
 import { CompanyChatInitializer } from '@/features/chat/components/CompanyChatInitializer';
+import { CompanyRoleGuard } from '@/components/auth/CompanyRoleGuard';
 
 const ManageCompanyLayout = ({ children }: { children: React.ReactNode }) => {
     const { id } = useParams<{ id: string }>();
@@ -65,6 +66,10 @@ const ManageCompanyLayout = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
+    // Check if user has ADMIN or OWNER role
+    const userRole = companyProfileData?.data?.company?.role;
+    const hasAccess = userRole && ['ADMIN', 'OWNER'].includes(userRole);
+
     if (isLoading) {
         return (
             <div className="flex flex-col mt-5 mb-20">
@@ -73,52 +78,55 @@ const ManageCompanyLayout = ({ children }: { children: React.ReactNode }) => {
         );
     }
 
-    if (!companyProfile) return <div>Company not found</div>;
-
+    // Use CompanyRoleGuard to check access
     return (
-        <>
-            {/* Initialize company chat for unread count badge */}
-            <CompanyChatInitializer companyId={id} />
-            
-            <div className="flex flex-col mt-5 mb-20">
-                <div>
-                    <Card className="mx-auto max-w-5xl">
-                    <CompanyHeader
-                        companyProfile={companyProfile}
-                        isEditable={true}
-                        handleBannerClick={() => setIsBannerDialogOpen(true)}
-                        handleLogoClick={() => setIsAvatarDialogOpen(true)}
-                    />
+        <CompanyRoleGuard>
+            {companyProfile ? (
+                <>
+                    {/* Initialize company chat for unread count badge */}
+                    <CompanyChatInitializer companyId={id} />
+                    
+                    <div className="flex flex-col mt-5 mb-20">
+                        <div>
+                            <Card className="mx-auto max-w-5xl">
+                                <CompanyHeader
+                                    companyProfile={companyProfile}
+                                    isEditable={hasAccess}
+                                    handleBannerClick={() => setIsBannerDialogOpen(true)}
+                                    handleLogoClick={() => setIsAvatarDialogOpen(true)}
+                                />
 
-                    <CardFooter className="px-2 py-1">
-                        <CompanyTabNav isAdmin={true} companyId={id} />
-                    </CardFooter>
-                </Card>
-            </div>
+                                <CardFooter className="px-2 py-1">
+                                    <CompanyTabNav isAdmin={hasAccess} companyId={id} />
+                                </CardFooter>
+                            </Card>
+                        </div>
 
-            {/* Page content */}
-            <div className="mt-4">
-                <div className="mx-auto max-w-5xl">{children}</div>
-            </div>
+                        {/* Page content */}
+                        <div className="mt-4">
+                            <div className="mx-auto max-w-5xl">{children}</div>
+                        </div>
 
-            {/* Avatar Cropper Dialog */}
-            <EditImageDialog
-                open={isAvatarDialogOpen}
-                onOpenChange={setIsAvatarDialogOpen}
-                initialImageUrl={companyProfile?.logoUrl ? companyProfile.logoUrl : undefined}
-                onCropComplete={handleLogoCropComplete}
-                isSubmitting={isSubmitting}
-            />
-            <EditImageDialog
-                open={isBannerDialogOpen}
-                onOpenChange={setIsBannerDialogOpen}
-                initialImageUrl={companyProfile?.bannerUrl ? companyProfile.bannerUrl : undefined}
-                aspectRatio={4 / 1}
-                onCropComplete={handleBannerCropComplete}
-                isSubmitting={isSubmitting}
-            />
-            </div>
-        </>
+                        {/* Avatar Cropper Dialog */}
+                        <EditImageDialog
+                            open={isAvatarDialogOpen}
+                            onOpenChange={setIsAvatarDialogOpen}
+                            initialImageUrl={companyProfile?.logoUrl ? companyProfile.logoUrl : undefined}
+                            onCropComplete={handleLogoCropComplete}
+                            isSubmitting={isSubmitting}
+                        />
+                        <EditImageDialog
+                            open={isBannerDialogOpen}
+                            onOpenChange={setIsBannerDialogOpen}
+                            initialImageUrl={companyProfile?.bannerUrl ? companyProfile.bannerUrl : undefined}
+                            aspectRatio={4 / 1}
+                            onCropComplete={handleBannerCropComplete}
+                            isSubmitting={isSubmitting}
+                        />
+                    </div>
+                </>
+            ) : null}
+        </CompanyRoleGuard>
     );
 };
 

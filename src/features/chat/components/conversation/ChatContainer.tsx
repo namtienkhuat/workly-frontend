@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ConversationHeader } from './ConversationHeader';
 import { MessageList, MessageInput } from '../message';
 import { useConversation, useMessages } from '../../hooks';
@@ -25,11 +25,34 @@ export function ChatContainer({
     const { otherParticipant } = useConversation(conversationId);
     const { messages, isLoading, send, markAsRead } = useMessages(conversationId);
     const currentUserId = useChatStore((state) => state.currentUserId);
+    const startTyping = useChatStore((state) => state.startTyping);
+    const stopTyping = useChatStore((state) => state.stopTyping);
+    const isTyping = useChatStore((state) => state.isTyping(conversationId));
+    
+    const [isInputFocused, setIsInputFocused] = useState(false);
+    const [shouldAutoFocus, setShouldAutoFocus] = useState(true);
+    const prevMessagesLengthRef = useRef(messages.length);
+    const prevConversationIdRef = useRef(conversationId);
 
-    // Mark messages as read when viewing
     useEffect(() => {
-        markAsRead();
-    }, [markAsRead]);
+        if (prevConversationIdRef.current !== conversationId) {
+            setShouldAutoFocus(true);
+            prevConversationIdRef.current = conversationId;
+        }
+    }, [conversationId]);
+
+    useEffect(() => {
+        if (isInputFocused) {
+            markAsRead();
+        }
+    }, [isInputFocused, markAsRead]);
+
+    useEffect(() => {
+        if (messages.length > prevMessagesLengthRef.current && isInputFocused) {
+            markAsRead();
+        }
+        prevMessagesLengthRef.current = messages.length;
+    }, [messages.length, isInputFocused, markAsRead]);
 
     if (!otherParticipant) {
         return (
@@ -41,6 +64,8 @@ export function ChatContainer({
             </div>
         );
     }
+
+    const isDeleted = otherParticipant?.isDeleted || false;
 
     return (
         <div className={`flex flex-col ${className}`}>
@@ -58,14 +83,32 @@ export function ChatContainer({
                     messages={messages}
                     currentUserId={currentUserId}
                     isLoading={isLoading}
-                    isTyping={false}
+                    isTyping={isTyping}
                     emptyMessage={`Bắt đầu cuộc trò chuyện với ${otherParticipant.name}`}
                 />
             </div>
 
             {/* Input */}
             <div className="border-t p-4">
-                <MessageInput onSend={send} />
+                {isDeleted ? (
+                    <div className="flex items-center justify-center gap-2 p-4 bg-muted/50 rounded-lg border border-muted">
+                        <span className="text-sm text-muted-foreground italic">
+                            Không thể gửi tin nhắn. {otherParticipant.type === 'COMPANY' ? 'Công ty' : 'Tài khoản'} này không còn tồn tại.
+                        </span>
+                    </div>
+                ) : (
+                    <MessageInput 
+                        onSend={send}
+                        onTypingStart={() => startTyping(conversationId)}
+                        onTypingStop={() => stopTyping(conversationId)}
+                        onFocus={() => {
+                            setIsInputFocused(true);
+                            setShouldAutoFocus(false);
+                        }}
+                        onBlur={() => setIsInputFocused(false)}
+                        autoFocus={shouldAutoFocus}
+                    />
+                )}
             </div>
         </div>
     );

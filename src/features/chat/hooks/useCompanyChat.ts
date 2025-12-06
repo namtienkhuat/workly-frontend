@@ -9,66 +9,35 @@ import { ParticipantType } from '../types';
  * @param companyId - The ID of the company
  */
 export function useCompanyChat(companyId: string) {
-    const store = useChatStore();
+    // Subscribe to each state individually for proper re-renders
+    const currentUserType = useChatStore((state) => state.currentUserType);
+    const isCompanySocketConnected = useChatStore((state) => state.isCompanySocketConnected);
+    const conversations = useChatStore((state) => state.conversations);
+    const hiddenConversations = useChatStore((state) => state.hiddenConversations);
+    const isLoadingConversations = useChatStore((state) => state.isLoadingConversations);
+    const fullChatId = useChatStore((state) => state.fullChatId);
+    const openChatWindows = useChatStore((state) => state.openChatWindows);
 
-    const {
-        currentUserType,
-        isSocketConnected,
-        conversations,
-        isLoadingConversations,
-        fullChatId,
-        openChatWindows,
+    const createOrGetConversation = useChatStore((state) => state.createOrGetConversation);
+    const deleteConversation = useChatStore((state) => state.deleteConversation);
+    const openChat = useChatStore((state) => state.openChat);
+    const closeChat = useChatStore((state) => state.closeChat);
+    const setFullChat = useChatStore((state) => state.setFullChat);
 
-        // actions
-        createOrGetConversation,
-        deleteConversation,
-        openChat,
-        closeChat,
-        setFullChat,
-    } = store;
-
-    // Filter conversations that belong to this company
     const companyConversations = useMemo(() => {
-        console.log('🔍 [useCompanyChat] RAW store state:', {
-            companyId,
-            conversationsObjectType: typeof conversations,
-            conversationsObjectKeys: Object.keys(conversations),
-            conversationsObjectKeysLength: Object.keys(conversations).length,
-        });
-
         const allConversations = Object.values(conversations);
 
-        console.log('🔍 [useCompanyChat] After Object.values():', {
-            allConversationsLength: allConversations.length,
-            allConversationsSample: allConversations.slice(0, 2), // First 2 conversations
-        });
-
-        console.log('🔍 Filter Debug:', {
-            companyId,
-            totalConversations: allConversations.length,
-            participantsList: allConversations.map((c) => ({
-                convId: c._id,
-                participants: c.participants,
-                hasTargetCompanyId: c.participants.some((p) => p.id === companyId),
-                hasTargetCompanyType: c.participants.some(
-                    (p) => p.id === companyId && p.type === ParticipantType.COMPANY
-                ),
-            })),
-        });
-
         const filtered = allConversations.filter((conv) => {
-            // Check if this company is a participant in the conversation
             const hasCompany = conv.participants.some(
                 (p) => p.id === companyId && p.type === ParticipantType.COMPANY
             );
+            const isHidden = hiddenConversations.has(conv._id);
 
-            return hasCompany;
+            return hasCompany && !isHidden;
         });
 
-        console.log('🔍 Filtered result:', filtered.length, 'conversations for company', companyId);
-
         return filtered;
-    }, [conversations, companyId]);
+    }, [conversations, hiddenConversations, companyId]);
 
     // Start conversation with a user (from company perspective)
     const startConversation = useCallback(
@@ -84,7 +53,7 @@ export function useCompanyChat(companyId: string) {
         // State
         currentUserId: companyId, // Company acts as currentUser
         currentUserType,
-        isSocketConnected,
+        isCompanySocketConnected,
         conversations: companyConversations, // Only this company's conversations
         isLoadingConversations,
         fullChatId,

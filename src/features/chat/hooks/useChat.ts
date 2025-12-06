@@ -1,40 +1,38 @@
 // useChat.ts
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useChatStore } from '../store';
 import { ParticipantType } from '../types';
 
 export function useChat() {
-    // Lấy toàn bộ store 1 lần để tránh re-render thừa
-    const store = useChatStore();
+    // Subscribe to specific slices for better reactivity
+    const currentUserId = useChatStore((state) => state.currentUserId);
+    const currentUserType = useChatStore((state) => state.currentUserType);
+    const isUserSocketConnected = useChatStore((state) => state.isUserSocketConnected);
+    const conversations = useChatStore((state) => state.conversations);
+    const hiddenConversations = useChatStore((state) => state.hiddenConversations);
+    const personalUserId = useChatStore((state) => state.personalUserId);
+    const isLoadingConversations = useChatStore((state) => state.isLoadingConversations);
+    const fullChatId = useChatStore((state) => state.fullChatId);
+    const openChatWindows = useChatStore((state) => state.openChatWindows);
 
-    const {
-        currentUserId,
-        currentUserType,
-        isSocketConnected,
-        conversations,
-        isLoadingConversations,
-        fullChatId,
-        openChatWindows,
-
-        // actions
-        setCurrentUser,
-        initializeSocket,
-        disconnectSocket,
-        loadConversations,
-        createOrGetConversation,
-        deleteConversation,
-        openChat,
-        closeChat,
-        setFullChat,
-    } = store;
+    // Actions
+    const setCurrentUser = useChatStore((state) => state.setCurrentUser);
+    const initializeUserSocket = useChatStore((state) => state.initializeUserSocket);
+    const disconnectSocket = useChatStore((state) => state.disconnectSocket);
+    const loadConversations = useChatStore((state) => state.loadConversations);
+    const createOrGetConversation = useChatStore((state) => state.createOrGetConversation);
+    const deleteConversation = useChatStore((state) => state.deleteConversation);
+    const openChat = useChatStore((state) => state.openChat);
+    const closeChat = useChatStore((state) => state.closeChat);
+    const setFullChat = useChatStore((state) => state.setFullChat);
 
     // Initialize socket one time
     const initialize = useCallback(
         (userId: string, userType: ParticipantType, token: string) => {
             setCurrentUser(userId, userType);
-            initializeSocket(userId, userType, token);
+            initializeUserSocket(userId, token);
         },
-        [] // Zustand guarantees stable functions ⇒ safe to remove deps
+        [setCurrentUser, initializeUserSocket]
     );
 
     // Start conversation stable
@@ -44,21 +42,33 @@ export function useChat() {
             openChat(conversation._id, isFullView);
             return conversation;
         },
-        [] // stable vì action từ Zustand luôn stable
+        [createOrGetConversation, openChat]
     );
 
-    const hiddenConversations = store.hiddenConversations;
+    // Filter out hidden conversations and only show user's personal conversations (not company conversations)
+    const visibleConversations = useMemo(() => {
+        const visible = Object.values(conversations).filter((conv) => {
+            if (hiddenConversations.has(conv._id)) return false;
 
-    // Filter out hidden conversations
-    const visibleConversations = Object.values(conversations).filter(
-        (conv) => !hiddenConversations.has(conv._id)
-    );
+            // Only show conversations where personalUserId is a participant with type USER
+            if (personalUserId) {
+                const hasUser = conv.participants.some(
+                    (p) => p.id === personalUserId && p.type === ParticipantType.USER
+                );
+                return hasUser;
+            }
+
+            return false;
+        });
+
+        return visible;
+    }, [conversations, hiddenConversations, personalUserId]);
 
     return {
         // State
         currentUserId,
         currentUserType,
-        isSocketConnected,
+        isUserSocketConnected,
         conversations: visibleConversations,
         isLoadingConversations,
         fullChatId,

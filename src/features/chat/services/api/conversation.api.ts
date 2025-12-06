@@ -47,11 +47,6 @@ conversationApi.interceptors.request.use(
         if (identity) {
             config.headers['x-user-id'] = identity.userId;
             config.headers['x-user-type'] = identity.userType;
-
-            console.log('🔄 Adding identity headers:', {
-                userId: identity.userId,
-                userType: identity.userType,
-            });
         }
 
         return config;
@@ -101,9 +96,13 @@ export const conversationApiService = {
     /**
      * Delete conversation
      */
-    async deleteConversation(conversationId: string): Promise<ApiResponse<null>> {
+    async deleteConversation(
+        conversationId: string,
+        hasDeletedParticipant?: boolean
+    ): Promise<ApiResponse<null>> {
         const response = await conversationApi.delete<ApiResponse<null>>(
-            API_ENDPOINTS.CONVERSATION_BY_ID(conversationId)
+            API_ENDPOINTS.CONVERSATION_BY_ID(conversationId),
+            hasDeletedParticipant !== undefined ? { data: { hasDeletedParticipant } } : undefined
         );
         return response.data;
     },

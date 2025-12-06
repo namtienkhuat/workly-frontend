@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import { MessageCircle } from 'lucide-react';
 
 import { ConversationList } from '@/features/chat/components';
@@ -12,16 +12,16 @@ import { ParticipantType } from '@/features/chat/types';
 
 export default function CompanyMessagesPage() {
     const router = useRouter();
+    const pathname = usePathname();
     const { id: companyId } = useParams<{ id: string }>();
     const { isLoading } = useAuth();
-    const { 
-        conversations, 
-        currentUserId, 
-        isLoadingConversations, 
-        isSocketConnected,
-        deleteConversation 
+    const {
+        conversations,
+        currentUserId,
+        isLoadingConversations,
+        isCompanySocketConnected,
+        deleteConversation,
     } = useCompanyChat(companyId);
-    console.log('conversations11111111', conversations);
     const handleSelectConversation = (conversationId: string) => {
         const conversation = conversations.find((c) => c._id === conversationId);
 
@@ -35,9 +35,23 @@ export default function CompanyMessagesPage() {
 
     const handleDeleteConversation = async (conversationId: string) => {
         try {
+            const conversation = conversations.find((c) => c._id === conversationId);
+            const isHardDelete = conversation?.otherParticipant?.isDeleted || false;
+
             await deleteConversation(conversationId);
+
+            // Nếu là hard delete (user đã bị xóa), redirect về messages list
+            // Để tránh tạo lại conversation với user đã xóa
+            // Hoặc nếu đang ở user detail page, cũng redirect về messages list
+            if (isHardDelete || pathname?.includes('/messages/user/')) {
+                router.push(`/manage-company/${companyId}/messages`);
+            }
         } catch (error) {
             console.error('Error deleting conversation:', error);
+            // Vẫn redirect về messages list ngay cả khi có lỗi
+            if (pathname?.includes('/messages/user/')) {
+                router.push(`/manage-company/${companyId}/messages`);
+            }
         }
     };
 
@@ -79,30 +93,33 @@ export default function CompanyMessagesPage() {
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-60" />
                         <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
                         <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse delay-1000" />
-                        
+
                         <div className="text-center px-6 relative z-10 animate-in fade-in duration-700">
                             <div className="mb-8 flex justify-center">
                                 <div className="relative">
                                     {/* Animated glow */}
                                     <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10 rounded-full blur-2xl animate-pulse" />
-                                    
+
                                     {/* Icon container with gradient border */}
                                     <div className="relative rounded-full bg-gradient-to-br from-primary/20 via-primary/10 to-background p-8 border-2 border-primary/20 shadow-2xl backdrop-blur-sm">
-                                        <MessageCircle className="h-20 w-20 text-primary" strokeWidth={1.5} />
+                                        <MessageCircle
+                                            className="h-20 w-20 text-primary"
+                                            strokeWidth={1.5}
+                                        />
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <h2 className="mb-3 text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                                 Tin nhắn của công ty
                             </h2>
-                            
+
                             <p className="text-muted-foreground text-base mb-2">
-                                {isSocketConnected
+                                {isCompanySocketConnected
                                     ? 'Chọn một cuộc trò chuyện từ danh sách bên trái'
                                     : 'Đang kết nối...'}
                             </p>
-                            
+
                             {conversations.length === 0 && !isLoadingConversations && (
                                 <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/10 backdrop-blur-sm">
                                     <p className="text-sm text-muted-foreground">
@@ -110,12 +127,14 @@ export default function CompanyMessagesPage() {
                                     </p>
                                 </div>
                             )}
-                            
+
                             {/* Status indicator */}
-                            {isSocketConnected && (
+                            {isCompanySocketConnected && (
                                 <div className="flex items-center justify-center gap-2 mt-6">
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                    <span className="text-xs text-muted-foreground">Đã kết nối</span>
+                                    <span className="text-xs text-muted-foreground">
+                                        Đã kết nối
+                                    </span>
                                 </div>
                             )}
                         </div>

@@ -1,73 +1,84 @@
 'use client';
-import React from 'react';
-import { Briefcase, MapPin, Clock } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+
+import React, { useEffect, useState } from 'react';
+import InfiniteScroll from 'react-infinite-scroll-component';
+import JobCard from '@/components/jobs/JobCard';
+import JobCardSkeleton from '@/components/jobs/JobCardSkeleton';
+import { useGetFeedJobs } from '@/hooks/useQueryData';
+import { Job } from '@/models/jobModel';
 
 export default function JobsPage() {
-    return (
-        <div className="space-y-6">
-            {/* Header Section */}
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
-                <h1 className="text-2xl font-bold mb-2">Tìm việc làm</h1>
-                <p className="text-muted-foreground mb-4">
-                    Khám phá các cơ hội nghề nghiệp phù hợp với bạn
-                </p>
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [params, setParams] = useState({
+        page: 1,
+        size: 2,
+    });
+    const [hasMore, setHasMore] = useState(true);
 
-                <div className="flex gap-2">
-                    <Input
-                        placeholder="Tìm kiếm công việc..."
-                        className="flex-1"
-                    />
-                    <Button>Tìm kiếm</Button>
-                </div>
-            </div>
+    const { data: jobData, isLoading, isFetching } = useGetFeedJobs(params);
 
-            {/* Job Listings */}
-            <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Việc làm được đề xuất</h2>
+    // Only show full page skeleton on initial load (page 1)
+    const isInitialLoading = isLoading && params.page === 1;
 
-                {[1, 2, 3].map((item) => (
-                    <div
-                        key={item}
-                        className="rounded-lg border bg-card p-6 shadow-sm hover:shadow-md transition-shadow"
-                    >
-                        <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                <Briefcase className="h-6 w-6 text-primary" />
-                            </div>
+    useEffect(() => {
+        if (jobData?.data) {
+            const newJobs = jobData.data;
 
-                            <div className="flex-1 space-y-2">
-                                <h3 className="text-lg font-semibold hover:text-primary cursor-pointer">
-                                    Senior Frontend Developer
-                                </h3>
-                                <p className="text-muted-foreground">
-                                    Tech Company Inc.
-                                </p>
+            if (params.page === 1) {
+                setJobs(newJobs);
+            } else {
+                setJobs((prev) => {
+                    return [...prev, ...newJobs];
+                });
+            }
 
-                                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-1">
-                                        <MapPin className="h-4 w-4" />
-                                        <span>Hà Nội, Việt Nam</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="h-4 w-4" />
-                                        <span>2 ngày trước</span>
-                                    </div>
-                                </div>
+            if (newJobs.length < params.size || newJobs.length === 0) {
+                setHasMore(false);
+            }
+        }
+    }, [jobData, params.page, params.size]);
 
-                                <div className="flex gap-2 pt-2">
-                                    <Button size="sm">Ứng tuyển</Button>
-                                    <Button size="sm" variant="outline">
-                                        Lưu
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    const fetchMoreData = () => {
+        if (!isFetching && hasMore) {
+            setParams((prev) => ({
+                ...prev,
+                page: prev.page + 1,
+            }));
+        }
+    };
+
+    if (isInitialLoading) {
+        return (
+            <div className="space-y-4 p-4">
+                {[...Array(3)].map((_, index) => (
+                    <JobCardSkeleton key={index} />
                 ))}
             </div>
-        </div>
+        );
+    }
+
+    return (
+        <InfiniteScroll
+            dataLength={jobs.length}
+            next={fetchMoreData}
+            hasMore={hasMore && !isFetching}
+            loader={
+                <div className="space-y-4 p-4">
+                    {[...Array(2)].map((_, index) => (
+                        <JobCardSkeleton key={`loader-${index}`} />
+                    ))}
+                </div>
+            }
+            endMessage={
+                <p className="text-center text-gray-500 py-4">
+                    {jobs.length === 0 ? 'No jobs available' : 'No more jobs to load'}
+                </p>
+            }
+            className="space-y-4 p-4"
+        >
+            {jobs.map((job) => (
+                <JobCard key={job._id} job={job} />
+            ))}
+        </InfiniteScroll>
     );
 }
-

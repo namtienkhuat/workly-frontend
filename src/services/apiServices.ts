@@ -295,10 +295,16 @@ export const deleteMyAccount = async () => {
             data: data.message,
         };
     } catch (error: any) {
+        // Extract error message from response if available
+        const errorMessage =
+            error?.response?.data?.message ||
+            error?.message ||
+            'Failed to delete account. Please try again.';
+
         return {
             status: 'error',
             success: false,
-            message: error?.message || 'Unknown error',
+            message: errorMessage,
         };
     }
 };
@@ -372,7 +378,7 @@ export const getLocations = async (search?: string) => {
         const params = new URLSearchParams();
         if (search) params.append('search', search);
         params.append('limit', '100');
-        
+
         const { data } = await api.get(`/locations?${params.toString()}`);
 
         return {
