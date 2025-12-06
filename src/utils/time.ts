@@ -27,3 +27,53 @@ export const formatRelativeTime = (isoDate: string) => {
 
     return rtf.format(Math.round(relative), unit);
 };
+
+export const formatDate = (dateString: string) => {
+    try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInMs = now.getTime() - date.getTime();
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+        if (diffInDays > 0) {
+            return `${diffInDays} ngày trước`;
+        } else if (diffInHours > 0) {
+            return `${diffInHours} giờ trước`;
+        } else if (diffInMinutes > 0) {
+            return `${diffInMinutes} phút trước`;
+        } else {
+            return 'Vừa xong';
+        }
+    } catch {
+        return dateString;
+    }
+};
+
+export const formatEndDate = (dateString?: string) => {
+    if (!dateString) return null;
+    try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInMs = date.getTime() - now.getTime();
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+        if (diffInDays < 0) {
+            return { text: 'Đã hết hạn', isExpired: true };
+        } else if (diffInDays === 0) {
+            return { text: 'Hết hạn hôm nay', isExpired: false, isUrgent: true };
+        } else if (diffInDays <= 7) {
+            return { text: `Còn ${diffInDays} ngày`, isExpired: false, isUrgent: true };
+        } else {
+            const formattedDate = date.toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+            });
+            return { text: `Hết hạn: ${formattedDate}`, isExpired: false, isUrgent: false };
+        }
+    } catch {
+        return null;
+    }
+};

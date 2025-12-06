@@ -9,7 +9,13 @@ export interface Job {
     skills: string[];
     endDate: string;
     level: string[];
-    isExpired: boolean
+    isExpired: boolean;
+    company: {
+        id: string;
+        name: string;
+        imageUrl?: string;
+    };
+    createdAt: string;
 }
 
 export interface Candidate {
