@@ -60,18 +60,18 @@ export const formatEndDate = (dateString?: string) => {
         const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
         if (diffInDays < 0) {
-            return { text: 'Đã hết hạn', isExpired: true };
+            return { text: 'Expired', isExpired: true };
         } else if (diffInDays === 0) {
-            return { text: 'Hết hạn hôm nay', isExpired: false, isUrgent: true };
+            return { text: 'Expired today', isExpired: false, isUrgent: true };
         } else if (diffInDays <= 7) {
-            return { text: `Còn ${diffInDays} ngày`, isExpired: false, isUrgent: true };
+            return { text: `Remaining ${diffInDays} days`, isExpired: false, isUrgent: true };
         } else {
             const formattedDate = date.toLocaleDateString('vi-VN', {
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric',
             });
-            return { text: `Hết hạn: ${formattedDate}`, isExpired: false, isUrgent: false };
+            return { text: `Expired: ${formattedDate}`, isExpired: false, isUrgent: false };
         }
     } catch {
         return null;

@@ -11,7 +11,7 @@ export default function JobsPage() {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [params, setParams] = useState({
         page: 1,
-        size: 2,
+        size: 10,
     });
     const [hasMore, setHasMore] = useState(true);
 
@@ -58,27 +58,30 @@ export default function JobsPage() {
     }
 
     return (
-        <InfiniteScroll
-            dataLength={jobs.length}
-            next={fetchMoreData}
-            hasMore={hasMore && !isFetching}
-            loader={
-                <div className="space-y-4 p-4">
-                    {[...Array(2)].map((_, index) => (
-                        <JobCardSkeleton key={`loader-${index}`} />
-                    ))}
-                </div>
-            }
-            endMessage={
-                <p className="text-center text-gray-500 py-4">
-                    {jobs.length === 0 ? 'No jobs available' : 'No more jobs to load'}
-                </p>
-            }
-            className="space-y-4 p-4"
-        >
-            {jobs.map((job) => (
-                <JobCard key={job._id} job={job} />
-            ))}
-        </InfiniteScroll>
+        <div>
+            <h1 className="text-2xl font-bold px-4">Jobs Feed</h1>
+            <InfiniteScroll
+                dataLength={jobs.length}
+                next={fetchMoreData}
+                hasMore={hasMore && !isFetching}
+                loader={
+                    <div className="space-y-4 p-4">
+                        {[...Array(2)].map((_, index) => (
+                            <JobCardSkeleton key={`loader-${index}`} />
+                        ))}
+                    </div>
+                }
+                endMessage={
+                    <p className="text-center text-gray-500 py-4">
+                        {jobs.length === 0 ? 'No jobs available' : 'No more jobs to load'}
+                    </p>
+                }
+                className="space-y-4 p-4"
+            >
+                {jobs.map((job) => (
+                    <JobCard key={job._id} job={job} />
+                ))}
+            </InfiniteScroll>
+        </div>
     );
 }

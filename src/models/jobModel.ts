@@ -16,6 +16,7 @@ export interface Job {
         imageUrl?: string;
     };
     createdAt: string;
+    isApplied?: boolean;
 }
 
 export interface Candidate {

@@ -1,15 +1,16 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
-import JobCard from "../../_components/JopCard";
+// import JobCard from "../../_components/JopCard";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { Job } from "@/models/jobModel";
 import JobService from "@/services/job/jobService";
 import { useParams } from "next/navigation";
-import { useGetAllIndustries, useGetAllSkills } from "@/hooks/useQueryData";
+import { useGetAllIndustries, useGetAllSkills, useGetCompanyProfile } from "@/hooks/useQueryData";
 import ProfileService from "@/services/profile/profileService";
+import JobCard from "@/components/jobs/JobCard";
 
 interface OptionType {
     value: string;
@@ -48,11 +49,21 @@ const CompanyJobs = () => {
     const { data: industriesData } = useGetAllIndustries();
     const { data: skillData } = useGetAllSkills();
 
+    // get profile for UI display
+    const [companyProfile, setCompanyProfile] = useState();
+    const { data: companyData } = useGetCompanyProfile(params.id as string);
+
+    useEffect(() => {
+        if (companyData?.data?.company) {
+            setCompanyProfile(companyData?.data?.company);
+        }
+    }, [companyData]);
+
     useEffect(() => {
         const checkAccess = async () => {
             try {
                 const canAccess = await ProfileService.checkAccessCompany(params.id as string);
-                setCanUploadCompany(canAccess);
+                setCanUploadCompany(canAccess?.data?.isAccess || false);
             } catch (error) {
                 console.error('Check access error:', error);
                 setCanUploadCompany(false);
@@ -178,7 +189,7 @@ const CompanyJobs = () => {
     };
 
     return (
-        <div className="p-4 max-w-4xl mx-auto space-y-6">
+        <div className="py-4 mx-auto space-y-6">
             {/* Input text + search type */}
             <div className="flex gap-2">
                 <input
@@ -291,13 +302,21 @@ const CompanyJobs = () => {
                         }
                         scrollThreshold={0.9}
                     >
-                        <div className="flex flex-col gap-6 p-4">
-                            {jobs.map((job, idx) => (
-                                <JobCard
-                                    key={idx}
-                                    {...job}
-                                    onReload={fetchInitialJobs}
-                                    canUploadCompany={canUploadCompany}
+                        <div className="flex flex-col gap-6">
+                            {jobs.map((job) => (
+                                // <JobCard
+                                //     key={idx}
+                                //     {...job}
+                                //     onReload={fetchInitialJobs}
+                                //     canUploadCompany={canUploadCompany}
+                                // />
+                                <JobCard 
+                                    key={job._id} 
+                                    job={job} 
+                                    isCompanyPage={true}
+                                    canEdit={canUploadCompany} 
+                                    onReload={fetchInitialJobs} 
+                                    companyProfile={companyProfile}
                                 />
                             ))}
                         </div>
