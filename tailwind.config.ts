@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import tailwindcssAnimate from 'tailwindcss-animate';
 
 const config: Config = {
     darkMode: ['class'],
@@ -78,8 +79,9 @@ const config: Config = {
         },
     },
     plugins: [
+        tailwindcssAnimate,
         // Custom scrollbar plugin
-        function({ addUtilities }: any) {
+        function ({ addUtilities }: any) {
             const newUtilities = {
                 '.scrollbar-thin': {
                     'scrollbar-width': 'thin',

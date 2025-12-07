@@ -24,6 +24,9 @@ import Link from 'next/link';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { UserFollowerModal } from './UserFollowerModal';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthRequiredModal } from '@/components/auth/AuthRequiredModal';
+import { useRouter } from 'next/navigation';
 
 interface ProfleHeaderProps {
     userProfile: UserProfile;
@@ -44,9 +47,12 @@ const ProfleHeader = ({
     const [isLogoError, setIsLogoError] = useState(false);
     const [isFollowing, setIsFollowing] = useState<boolean>(false);
     const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
+    const [authModalOpen, setAuthModalOpen] = useState(false);
 
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const pendingActionRef = useRef<'follow' | 'unfollow' | null>(null);
+    const { user: currentUser } = useAuth();
+    const router = useRouter();
 
     const followMutation = useFollowUser({
         onSuccess: () => {
@@ -107,10 +113,24 @@ const ProfleHeader = ({
     }, [followMutation, unfollowMutation, userProfile.userId]);
 
     const handleFollowToggle = () => {
+        if (!currentUser?.userId) {
+            setAuthModalOpen(true);
+            return;
+        }
+
         setIsFollowing((prev) => !prev);
 
         pendingActionRef.current = isFollowing ? 'unfollow' : 'follow';
         debouncedFollowAction();
+    };
+
+    const handleMessageClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!currentUser?.userId) {
+            setAuthModalOpen(true);
+            return;
+        }
+        router.push(`/chat/user/${userProfile.userId}`);
     };
 
     return (
@@ -174,7 +194,7 @@ const ProfleHeader = ({
                         />
                     ) : (
                         <Avatar className="h-36 w-36 rounded-full border-muted bg-white text-2xl">
-                            <AvatarFallback className="text-2xl bg-white">
+                            <AvatarFallback className="text-5xl bg-white">
                                 {getInitials(userProfile.name)}
                             </AvatarFallback>
                         </Avatar>
@@ -231,11 +251,9 @@ const ProfleHeader = ({
                             </Button>
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" asChild>
-                                    <Link href={`/chat/user/${userProfile.userId}`}>
-                                        <MessageSquareIcon className="w-4 h-4" />
-                                        Message
-                                    </Link>
+                                <Button variant="outline" onClick={handleMessageClick}>
+                                    <MessageSquareIcon className="w-4 h-4" />
+                                    Message
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -269,6 +287,8 @@ const ProfleHeader = ({
                 onOpenChange={setIsFollowerModalOpen}
                 followersCount={userProfile.followersCount || 0}
             />
+
+            <AuthRequiredModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
         </>
     );
 };

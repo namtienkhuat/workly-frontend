@@ -83,6 +83,7 @@ export interface UserProfile {
     location?: Location;
     locationId?: string;
     followersCount?: number;
+    followingCount?: number;
     relationships?: {
         educations?: Education[];
         workExperiences?: WorkExperience[];

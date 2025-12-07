@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { toast } from 'sonner';
 
 import PostCard from '@/components/posts/PostCard';
 import PostSkeleton from '@/components/posts/PostSkeleton';
@@ -40,7 +39,7 @@ export default function HomePage() {
             setHasMore((newPosts?.length ?? 0) === pageSize);
         } catch (error) {
             console.error(error);
-            toast.error('Không thể tải bảng tin');
+            // toast.error('Không thể tải bảng tin');
         } finally {
             if (isFirstPage) {
                 setLoading(false);

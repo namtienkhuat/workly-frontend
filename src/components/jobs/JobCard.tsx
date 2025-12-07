@@ -136,7 +136,7 @@ const JobCard = ({
 
     const handleCompanyClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        router.push(`/company/${company?.id}`);
+        router.push(`/company/${company?.id || ''}`);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

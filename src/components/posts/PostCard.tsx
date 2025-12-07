@@ -19,6 +19,7 @@ import likeService from '@/services/like/likeService';
 import ProfileService from '@/services/profile/profileService';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { AuthRequiredModal } from '@/components/auth/AuthRequiredModal';
 
 interface PostCardProps {
     post: PostResponse;
@@ -44,6 +45,7 @@ const PostCard = ({
     const [totalComment, setTotalComment] = useState(0);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [totalLikes, setTotalLikes] = useState<string[]>(post.totalLikes.map((l) => l.authorId));
+    const [authModalOpen, setAuthModalOpen] = useState(false);
     const { user: currentUser } = useAuth();
 
     useEffect(() => {
@@ -73,7 +75,7 @@ const PostCard = ({
     };
     const handleLike = async () => {
         if (!currentUser?.userId) {
-            alert('Bạn cần đăng nhập');
+            setAuthModalOpen(true);
             return;
         }
 
@@ -94,6 +96,14 @@ const PostCard = ({
                 })
                 .catch(() => toast.error('like error'));
         }
+    };
+
+    const handleCommentClick = () => {
+        if (!currentUser?.userId) {
+            setAuthModalOpen(true);
+            return;
+        }
+        setCommentOpen((prev) => !prev);
     };
 
     const handleDelete = async () => {
@@ -125,11 +135,8 @@ const PostCard = ({
                         {post.author?.imageUrl && (
                             <AvatarImage src={post.author.imageUrl} alt={post.author.name} />
                         )}
-                        <AvatarFallback
-                            style={{ backgroundColor: StringUtil.getRandomColor() }}
-                            className="text-white"
-                        >
-                            {getInitials(post.author?.name)}
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {getInitials(post.author?.name || '?')}
                         </AvatarFallback>
                     </Avatar>
 
@@ -256,7 +263,7 @@ const PostCard = ({
                     <Button
                         variant="outline"
                         className="flex items-center justify-center gap-2 rounded-full"
-                        onClick={() => setCommentOpen((prev) => !prev)}
+                        onClick={handleCommentClick}
                     >
                         <MessageCircle className="h-4 w-4" />
                         <span>{totalComment} Comments</span>
@@ -280,6 +287,8 @@ const PostCard = ({
                     />
                 </div>
             )}
+
+            <AuthRequiredModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
         </article>
     );
 };

@@ -3,30 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { CompanyProfile } from '@/types/global';
 import { useGetRecommendedCompanies } from '@/hooks/useQueryData';
 import CompanyInfo from '@/components/company/CompanyInfo';
-
-const FollowButton = () => {
-    const [isFollowing, setIsFollowing] = useState(false);
-
-    const handleFollow = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsFollowing(!isFollowing);
-    };
-
-    return (
-        <Button
-            size="sm"
-            variant={isFollowing ? 'outline' : 'default'}
-            className="h-8 px-3 text-xs"
-            onClick={handleFollow}
-        >
-            {isFollowing ? 'Following' : 'Follow'}
-        </Button>
-    );
-};
+import FollowButton from '@/components/FollowButton';
 
 const RightSidebar = () => {
     const router = useRouter();
@@ -69,7 +49,13 @@ const RightSidebar = () => {
                                 avatarUrl={company.logoUrl}
                                 showHover
                                 onClick={() => router.push(`/company/${company.companyId}`)}
-                                actionButton={<FollowButton />}
+                                actionButton={
+                                    <FollowButton
+                                        id={company.companyId}
+                                        isFollowing={false}
+                                        type="company"
+                                    />
+                                }
                             />
                         ))}
                     </CardContent>

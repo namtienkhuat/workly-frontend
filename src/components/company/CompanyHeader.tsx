@@ -1,5 +1,6 @@
 'use client';
 import { CompanyProfile } from '@/types/global';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Image from 'next/image';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { CardContent, CardDescription, CardTitle } from '../ui/card';
@@ -15,6 +16,10 @@ import {
     useFollowCompany,
     useUnfollowCompany,
 } from '@/services/follow/followService';
+import { getInitials } from '@/utils/helpers';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthRequiredModal } from '../auth/AuthRequiredModal';
+import { useRouter } from 'next/navigation';
 
 interface CompanyHeaderProps {
     isEditable?: boolean;
@@ -33,8 +38,11 @@ const CompanyHeader = ({
     const [isLogoError, setIsLogoError] = useState(false);
     const [isFollowing, setIsFollowing] = useState<boolean>(false);
     const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
+    const [authModalOpen, setAuthModalOpen] = useState(false);
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const pendingActionRef = useRef<'follow' | 'unfollow' | null>(null);
+    const { user: currentUser } = useAuth();
+    const router = useRouter();
 
     const followMutation = useFollowCompany({
         onSuccess: () => {
@@ -95,11 +103,25 @@ const CompanyHeader = ({
     }, [followMutation, unfollowMutation, companyProfile.companyId]);
 
     const handleFollowToggle = () => {
+        if (!currentUser?.userId) {
+            setAuthModalOpen(true);
+            return;
+        }
+
         setIsFollowing((prev) => !prev);
 
         pendingActionRef.current = isFollowing ? 'unfollow' : 'follow';
 
         debouncedFollowAction();
+    };
+
+    const handleMessageClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!currentUser?.userId) {
+            setAuthModalOpen(true);
+            return;
+        }
+        router.push(`/chat/company/${companyProfile.companyId}`);
     };
 
     return (
@@ -162,7 +184,11 @@ const CompanyHeader = ({
                             onError={() => setIsLogoError(true)}
                         />
                     ) : (
-                        <div className="relative h-36 w-36 rounded-full border-muted bg-white" />
+                        <Avatar className="h-36 w-36 rounded-full border-muted bg-white text-2xl">
+                            <AvatarFallback className="text-5xl bg-white">
+                                {getInitials(companyProfile.name)}
+                            </AvatarFallback>
+                        </Avatar>
                     )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                         <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
@@ -176,7 +202,9 @@ const CompanyHeader = ({
                         <CardTitle className="text-3xl">{companyProfile.name}</CardTitle>
 
                         <CardDescription className="flex gap-2 mt-2">
-                            <Badge variant="outline">{companyProfile.industry.name}</Badge>
+                            {companyProfile.industry && (
+                                <Badge variant="outline">{companyProfile.industry.name}</Badge>
+                            )}
                             <Badge variant="outline">Employees: {companyProfile.size}</Badge>
                             {(companyProfile.followersCount || 0) > 0 && (
                                 <Badge
@@ -201,11 +229,9 @@ const CompanyHeader = ({
                             </Button>
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" asChild>
-                                    <Link href={`/chat/company/${companyProfile.companyId}`}>
-                                        <MessageSquareIcon className="w-4 h-4" />
-                                        Message
-                                    </Link>
+                                <Button variant="outline" onClick={handleMessageClick}>
+                                    <MessageSquareIcon className="w-4 h-4" />
+                                    Message
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -239,6 +265,8 @@ const CompanyHeader = ({
                 onOpenChange={setIsFollowerModalOpen}
                 followersCount={companyProfile.followersCount || 0}
             />
+
+            <AuthRequiredModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
         </>
     );
 };

@@ -22,9 +22,10 @@ export const getInitials = (name: string | undefined | null) => {
     if (!name || typeof name !== 'string') {
         return '';
     }
-    
+
     return name
         .split(' ')
+        .slice(0, 2)
         .map((n) => n[0])
         .join('')
         .toUpperCase();
@@ -38,8 +39,7 @@ export const getCVUrl = (fileName: string): string => {
     console.log(`${STORAGE_URL}${fileName}`);
 
     return `${STORAGE_URL}${fileName}`;
-
-}
+};
 export const getMimeType = (type: 'IMAGE' | 'VIDEO', filename: string): string => {
     if (type === 'VIDEO') {
         // Video MIME types

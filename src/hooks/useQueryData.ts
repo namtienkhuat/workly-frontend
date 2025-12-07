@@ -172,9 +172,25 @@ export function useGetCompanyAdmins(companyId: string) {
 }
 
 export function useGetRecommendedUsers(queryParams: Record<string, any> = {}) {
-    return useData(['/recommend/users', queryParams], getDataWithStatus);
+    return useData(
+        ['/recommend/users', queryParams],
+        getDataWithStatus,
+        true, // enabled
+        true, // refetchOnWindowFocus
+        false, // retry
+        0, // gcTime - no cache
+        0 // staleTime - always fetch fresh data
+    );
 }
 
 export function useGetRecommendedCompanies(queryParams: Record<string, any> = {}) {
-    return useData(['/recommend/companies', queryParams], getDataWithStatus);
+    return useData(
+        ['/recommend/companies', queryParams],
+        getDataWithStatus,
+        true, // enabled
+        true, // refetchOnWindowFocus
+        false, // retry
+        0, // gcTime - no cache
+        0 // staleTime - always fetch fresh data
+    );
 }

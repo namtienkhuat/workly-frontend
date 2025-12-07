@@ -3,32 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import UserInfo from '@/components/user/UserInfo';
 import CompanyInfo from '@/components/company/CompanyInfo';
 import { useGetRecommendedCompanies, useGetRecommendedUsers } from '@/hooks/useQueryData';
 import { CompanyProfile, UserProfile } from '@/types/global';
-
-// TODO:
-const FollowButton = () => {
-    const [isFollowing, setIsFollowing] = useState(false);
-
-    const handleFollow = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsFollowing(!isFollowing);
-    };
-
-    return (
-        <Button
-            size="sm"
-            variant={isFollowing ? 'outline' : 'default'}
-            className="h-8 px-3 text-xs"
-            onClick={handleFollow}
-        >
-            {isFollowing ? 'Following' : 'Follow'}
-        </Button>
-    );
-};
+import FollowButton from '@/components/FollowButton';
 
 const RightSidebarHome = () => {
     const router = useRouter();
@@ -76,7 +55,13 @@ const RightSidebarHome = () => {
                                 avatarUrl={user.avatarUrl}
                                 showHover
                                 onClick={() => router.push(`/profile/${user.userId}`)}
-                                actionButton={<FollowButton />}
+                                actionButton={
+                                    <FollowButton
+                                        id={user.userId}
+                                        isFollowing={false}
+                                        type="user"
+                                    />
+                                }
                             />
                         ))}
                     </CardContent>
@@ -100,7 +85,13 @@ const RightSidebarHome = () => {
                                 avatarUrl={company.logoUrl}
                                 showHover
                                 onClick={() => router.push(`/company/${company.companyId}`)}
-                                actionButton={<FollowButton />}
+                                actionButton={
+                                    <FollowButton
+                                        id={company.companyId}
+                                        isFollowing={false}
+                                        type="company"
+                                    />
+                                }
                             />
                         ))}
                     </CardContent>
