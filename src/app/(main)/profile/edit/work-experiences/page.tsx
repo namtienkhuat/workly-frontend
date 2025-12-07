@@ -16,6 +16,7 @@ import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGetMe } from '@/hooks/useQueryData';
 import { UserProfile } from '@/types/global';
 import { patchUserWorkExperiences } from '@/services/apiServices';
@@ -40,6 +41,7 @@ const convertISOToYear = (value?: string | null): string => {
 const EditWorkExperiencesPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [initialValuesLoaded, setInitialValuesLoaded] = useState(false);
+    const queryClient = useQueryClient();
 
     const {
         data: userProfileData,
@@ -61,13 +63,13 @@ const EditWorkExperiencesPage = () => {
 
     useEffect(() => {
         if (userProfile && !initialValuesLoaded) {
-            const initialWorkExperiences = (
-                userProfile?.relationships?.workExperiences || []
-            ).map((exp: any) => ({
-                ...exp,
-                startDate: convertISOToYear(exp.startDate),
-                endDate: convertISOToYear(exp.endDate),
-            }));
+            const initialWorkExperiences = (userProfile?.relationships?.workExperiences || []).map(
+                (exp: any) => ({
+                    ...exp,
+                    startDate: convertISOToYear(exp.startDate),
+                    endDate: convertISOToYear(exp.endDate),
+                })
+            );
 
             reset({ workExperiences: initialWorkExperiences });
             setInitialValuesLoaded(true);
@@ -83,7 +85,7 @@ const EditWorkExperiencesPage = () => {
         setIsLoading(true);
 
         const convertYearToISO = (value?: string) => {
-            if (!value) return '';
+            if (!value || value.trim() === '') return null;
             if (/^\d{4}$/.test(value)) {
                 return `${value}-01-01T00:00:00.000Z`;
             }
@@ -91,11 +93,28 @@ const EditWorkExperiencesPage = () => {
         };
 
         const payload = {
-            workExperiences: (formData.workExperiences ?? []).map((exp) => ({
-                ...exp,
-                startDate: convertYearToISO(exp.startDate),
-                endDate: convertYearToISO(exp.endDate),
-            })),
+            workExperiences: (formData.workExperiences ?? []).map((exp) => {
+                const experience: any = {
+                    companyId: exp.companyId,
+                    title: exp.title,
+                    startDate: convertYearToISO(exp.startDate),
+                };
+
+                if (exp.companyName?.trim()) {
+                    experience.companyName = exp.companyName;
+                }
+
+                const endDateValue = convertYearToISO(exp.endDate);
+                if (endDateValue !== null) {
+                    experience.endDate = endDateValue;
+                }
+
+                if (exp.description?.trim()) {
+                    experience.description = exp.description;
+                }
+
+                return experience;
+            }),
         };
 
         const { success, message } = await patchUserWorkExperiences(payload);
@@ -104,6 +123,16 @@ const EditWorkExperiencesPage = () => {
         if (success) {
             toast.success('Work experiences updated successfully!');
             await refetchUserProfile();
+            // Invalidate all user profile queries to update profile pages
+            await queryClient.invalidateQueries({
+                predicate: (query) => {
+                    const key = query.queryKey[0] as string;
+                    return (
+                        (typeof key === 'string' && key.startsWith('/me')) ||
+                        (typeof key === 'string' && key.startsWith('/users/'))
+                    );
+                },
+            });
         } else {
             toast.error('Failed to update work experiences', {
                 description: message,
@@ -384,4 +413,3 @@ const EditWorkExperiencesPage = () => {
 };
 
 export default EditWorkExperiencesPage;
-

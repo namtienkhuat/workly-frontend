@@ -19,7 +19,14 @@ const navItems: NavItem[] = [
         href: '/settings/account',
         icon: User,
         label: 'Account',
-        description: 'Password and account management',
+        description: 'Account management',
+    },
+    {
+        name: 'change-password',
+        href: '/settings/change-password',
+        icon: Shield,
+        label: 'Change Password',
+        description: 'Update your password',
     },
     {
         name: 'appearance',
@@ -86,7 +93,7 @@ export const SettingsSidebar = () => {
                 <nav className="space-y-1">
                     {navItems.map((item) => {
                         const Icon = item.icon;
-                        const isActive = pathname === item.href;
+                        const isActive = pathname === item.href || pathname?.startsWith(item.href);
 
                         return (
                             <Link

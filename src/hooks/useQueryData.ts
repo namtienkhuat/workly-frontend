@@ -86,16 +86,8 @@ export function useGetMe() {
     );
 }
 
-export function useGetSkills(queryParams: Record<string, any> = {}) {
-    return useData([`/skills`, queryParams], getDataWithStatus);
-}
-
 export function useGetAllSkills(queryParams: Record<string, any> = {}) {
     return useData(['/skills', queryParams], getDataWithStatus);
-}
-
-export function useGetSchools(queryParams: Record<string, any> = {}) {
-    return useData([`/schools`, queryParams], getDataWithStatus);
 }
 
 export function useGetAllSchools(queryParams: Record<string, any> = {}) {

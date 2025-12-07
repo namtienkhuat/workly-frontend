@@ -15,6 +15,9 @@ import {
     Shield,
     LogOut,
     UserPlus,
+    Palette,
+    ChevronRight,
+    ChevronDown,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -95,15 +98,6 @@ export const Header = () => {
                 featureName: 'hồ sơ cá nhân',
                 hideWhenNotAuthenticated: true, // Hide completely when not authenticated
             },
-            {
-                name: 'settings',
-                href: '/settings',
-                icon: Settings,
-                label: 'Settings',
-                requiresAuth: true,
-                featureName: 'cài đặt',
-                hideWhenNotAuthenticated: true, // Hide completely when not authenticated
-            },
         ],
         [user?.userId]
     );
@@ -134,9 +128,11 @@ export const Header = () => {
             // For profile, check if we're on:
             // 1. Any profile page with the current user's ID (/profile/{userId})
             // 2. Profile edit pages (/profile/edit/*)
+            // 3. Settings pages (/settings/*)
             return (
                 (pathname?.startsWith('/profile') && pathname?.includes(user?.userId || '')) ||
-                pathname?.startsWith('/profile/edit')
+                pathname?.startsWith('/profile/edit') ||
+                pathname?.startsWith('/settings')
             );
         }
         if (item.name === 'companies') {
@@ -263,12 +259,24 @@ const MeDropdownMenu = ({
     userId?: string;
 }) => {
     const router = useRouter();
+    const pathname = usePathname();
     const { logout } = useAuth();
     const [isSigningOut, setIsSigningOut] = useState(false);
 
     const profileHref = userId ? `/profile/${userId}` : '/profile';
     const editHref = '/profile/edit';
+    const accountHref = '/settings/account';
+    const appearanceHref = '/settings/appearance';
     const changePasswordHref = '/settings/change-password';
+
+    const isSettingsActive = pathname?.startsWith('/settings');
+    const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    // Reset settings menu when dropdown opens/closes
+    React.useEffect(() => {
+        setShowSettingsMenu(false);
+    }, [isDropdownOpen]);
 
     const handleSignOut = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -287,7 +295,7 @@ const MeDropdownMenu = ({
     const Icon = item.icon;
 
     return (
-        <DropdownMenu>
+        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <DropdownMenuTrigger asChild>
                 <button
                     className={cn(
@@ -350,26 +358,119 @@ const MeDropdownMenu = ({
 
                 <DropdownMenuSeparator className="my-2" />
 
-                {/* Section 2: Security */}
+                {/* Section 2: Settings */}
                 <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Security
+                    Settings
                 </DropdownMenuLabel>
                 <DropdownMenuItem
-                    asChild
-                    className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-accent transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setShowSettingsMenu(!showSettingsMenu);
+                    }}
+                    className={cn(
+                        'cursor-pointer rounded-md px-3 py-2.5 hover:bg-accent transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0',
+                        isSettingsActive && 'bg-accent'
+                    )}
                 >
-                    <Link href={changePasswordHref} className="flex items-center gap-3">
-                        <div className="p-1.5 rounded-md bg-green-500/10">
-                            <Shield className="h-4 w-4 text-green-600" />
+                    <div className="p-1.5 rounded-md bg-purple-500/10">
+                        <Settings className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1 ml-3">
+                        <div className="font-medium text-sm">Settings</div>
+                        <div className="text-xs text-muted-foreground">
+                            Manage your account settings
                         </div>
-                        <div className="flex-1">
-                            <div className="font-medium text-sm">Change Password</div>
-                            <div className="text-xs text-muted-foreground">
-                                Update your password
-                            </div>
-                        </div>
-                    </Link>
+                    </div>
+                    {showSettingsMenu ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground ml-2" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground ml-2" />
+                    )}
                 </DropdownMenuItem>
+
+                <div
+                    className={cn(
+                        'overflow-hidden transition-all duration-300 ease-in-out',
+                        showSettingsMenu
+                            ? 'max-h-96 opacity-100'
+                            : 'max-h-0 opacity-0 pointer-events-none'
+                    )}
+                >
+                    <div className="pl-4 ml-2 border-l-2 border-muted/50 space-y-1 pt-1">
+                        <DropdownMenuItem
+                            asChild
+                            className={cn(
+                                'cursor-pointer rounded-md px-3 py-2.5 hover:bg-accent transition-all duration-200 ease-out focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0',
+                                showSettingsMenu
+                                    ? 'opacity-100 translate-x-0'
+                                    : 'opacity-0 -translate-x-2'
+                            )}
+                            style={{
+                                transitionDelay: showSettingsMenu ? '75ms' : '125ms',
+                            }}
+                        >
+                            <Link href={accountHref} className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-md bg-primary/10">
+                                    <User className="h-4 w-4 text-primary" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="font-medium text-sm">Account</div>
+                                    <div className="text-xs text-muted-foreground">
+                                        Account management
+                                    </div>
+                                </div>
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            asChild
+                            className={cn(
+                                'cursor-pointer rounded-md px-3 py-2.5 hover:bg-accent transition-all duration-200 ease-out focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0',
+                                showSettingsMenu
+                                    ? 'opacity-100 translate-x-0'
+                                    : 'opacity-0 -translate-x-2'
+                            )}
+                            style={{
+                                transitionDelay: showSettingsMenu ? '100ms' : '75ms',
+                            }}
+                        >
+                            <Link href={changePasswordHref} className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-md bg-green-500/10">
+                                    <Shield className="h-4 w-4 text-green-600" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="font-medium text-sm">Change Password</div>
+                                    <div className="text-xs text-muted-foreground">
+                                        Update your password
+                                    </div>
+                                </div>
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            asChild
+                            className={cn(
+                                'cursor-pointer rounded-md px-3 py-2.5 hover:bg-accent transition-all duration-200 ease-out focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0',
+                                showSettingsMenu
+                                    ? 'opacity-100 translate-x-0'
+                                    : 'opacity-0 -translate-x-2'
+                            )}
+                            style={{
+                                transitionDelay: showSettingsMenu ? '125ms' : '0ms',
+                            }}
+                        >
+                            <Link href={appearanceHref} className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-md bg-indigo-500/10">
+                                    <Palette className="h-4 w-4 text-indigo-600" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="font-medium text-sm">Appearance</div>
+                                    <div className="text-xs text-muted-foreground">
+                                        Theme preferences
+                                    </div>
+                                </div>
+                            </Link>
+                        </DropdownMenuItem>
+                    </div>
+                </div>
 
                 <DropdownMenuSeparator className="my-2" />
 

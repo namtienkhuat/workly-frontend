@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Monitor, Moon, Sun } from 'lucide-react';
+import { Monitor, Moon, Sun, Palette } from 'lucide-react';
 import { useGetMe } from '@/hooks/useQueryData';
 import {
     getAppearanceSettings,
@@ -105,8 +105,13 @@ const AppearanceSettingsPage = () => {
         return (
             <div className="space-y-6">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Appearance</h2>
-                    <p className="text-muted-foreground mt-1">
+                    <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-indigo-500/10">
+                            <Palette className="h-6 w-6 text-indigo-600" />
+                        </div>
+                        Appearance Settings
+                    </h2>
+                    <p className="text-muted-foreground mt-2">
                         Please login to customize your appearance settings.
                     </p>
                 </div>
@@ -117,18 +122,30 @@ const AppearanceSettingsPage = () => {
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Appearance</h2>
-                <p className="text-muted-foreground mt-1">
-                    Customize how Workly looks on your device.
+                <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-indigo-500/10">
+                        <Palette className="h-6 w-6 text-indigo-600" />
+                    </div>
+                    Appearance Settings
+                </h2>
+                <p className="text-muted-foreground mt-2">
+                    Customize how Workly looks on your device. Adjust theme, font size, and color preferences.
                 </p>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Theme</CardTitle>
-                    <CardDescription>
-                        Select your preferred theme or use system settings.
-                    </CardDescription>
+            <Card className="border-2 shadow-lg">
+                <CardHeader className="space-y-1 pb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                            <Monitor className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-2xl">Theme</CardTitle>
+                            <CardDescription>
+                                Select your preferred theme or use system settings.
+                            </CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <RadioGroup value={currentTheme} onValueChange={handleThemeChange}>
@@ -181,10 +198,17 @@ const AppearanceSettingsPage = () => {
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Display Preferences</CardTitle>
-                    <CardDescription>Adjust font size and color scheme.</CardDescription>
+            <Card className="border-2 shadow-lg">
+                <CardHeader className="space-y-1 pb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                            <Palette className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-2xl">Display Preferences</CardTitle>
+                            <CardDescription>Adjust font size and color scheme.</CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
@@ -216,7 +240,7 @@ const AppearanceSettingsPage = () => {
                         </Select>
                     </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex justify-end gap-3 bg-muted/30 pt-6">
                     <Button onClick={handleSaveChanges}>Save Changes</Button>
                 </CardFooter>
             </Card>
