@@ -28,7 +28,8 @@ import Select from "react-select";
 import { toast } from 'sonner';
 import z from 'zod';
 import jobService from '@/services/job/jobService';
-import { useGetAllIndustries, useGetAllSkills } from '@/hooks/useQueryData';
+import SelectSkills from '@/app/(main)/profile/edit/_components/SelectSkills';
+import SelectIndustry from '@/app/(main)/company/new/_components/SelectIndustry';
 interface OptionType {
     value: string;
     label: string;
@@ -50,7 +51,7 @@ const experienceLevelOptions = [
     { value: 'intern', label: 'Intern' },
     { value: 'fresher', label: 'Fresher' },
     { value: 'junior', label: 'Junior' },
-    { value: 'mid-level', label: 'Mid-Level' },
+    { value: 'mid_level', label: 'Mid-Level' },
     { value: 'senior', label: 'Senior' },
     { value: 'lead', label: 'Lead/Manager' }
 ];
@@ -74,9 +75,6 @@ const CreateJobPage = () => {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [isFetching, setIsFetching] = useState(false);
-    const [skillOptions, setSkillOptions] = useState<OptionType[]>([])
-    const [industryOptions, setIndustryOptions] = useState<OptionType[]>([])
-
 
     const jobId = searchParams.get('jobId');
     const isEditMode = !!jobId;
@@ -90,30 +88,6 @@ const CreateJobPage = () => {
     } = useForm<CreateJobFormData>({
         resolver: zodResolver(createJobSchema),
     });
-    const { data: industriesData } = useGetAllIndustries();
-    const { data: skillData } = useGetAllSkills();
-
-    useEffect(() => {
-        console.log(skillData);
-
-        if (skillData && skillData.data && Array.isArray(skillData.data)) {
-            setSkillOptions(skillData.data.map((s: any) => {
-                return {
-                    value: s.skillId.toLowerCase(),
-                    label: s.name
-                }
-            }));
-        }
-        if (industriesData && industriesData.data && Array.isArray(industriesData.data)) {
-            setIndustryOptions(industriesData.data.map((i: any) => {
-                return {
-                    value: i.industryId.toLowerCase(),
-                    label: i.name
-                }
-            }));
-        }
-    }, [industriesData, skillData]);
-
     useEffect(() => {
         const fetchJobData = async () => {
 
@@ -332,14 +306,9 @@ const CreateJobPage = () => {
                                 control={control}
                                 render={({ field }) => (
                                     <div className="space-y-1">
-                                        <Select
-                                            isMulti
-                                            value={skillOptions.filter(opt => field.value?.includes(opt.value))}
-                                            onChange={(options) => {
-                                                field.onChange((options as OptionType[]).map(opt => opt.value));
-                                            }}
-                                            options={skillOptions}
-                                            className="text-sm"
+                                        <SelectSkills
+                                            value={field.value}
+                                            onChange={field.onChange}
                                         />
                                         <FieldError
                                             className="text-xs text-red-500"
@@ -359,13 +328,9 @@ const CreateJobPage = () => {
                                 control={control}
                                 render={({ field }) => (
                                     <div className="space-y-1">
-                                        <Select
-                                            value={industryOptions.find(opt => opt.value === field.value)}
-                                            onChange={(option) => {
-                                                field.onChange(option?.value);
-                                            }}
-                                            options={industryOptions}
-                                            className="text-sm"
+                                        <SelectIndustry
+                                            value={field.value}
+                                            onChange={field.onChange}
                                         />
                                         <FieldError
                                             className="text-xs text-red-500"

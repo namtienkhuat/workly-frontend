@@ -8,7 +8,7 @@ export interface PagingResponse<T> extends Response {
 	totalPage: number;
 	pagination: any;
 	page: number;
-	data: T[];
+	data: any;
 	statistic?: T;
 }
 export interface ResponseData<T> extends Response {

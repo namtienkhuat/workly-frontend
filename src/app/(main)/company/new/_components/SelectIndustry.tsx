@@ -74,7 +74,7 @@ const SelectIndustry = ({ defaultValue, value, onChange }: SelectIndustryProps) 
                 >
                     {currentValue
                         ? industryList.find((industry) => industry.industryId === currentValue)
-                              ?.name || 'Choose industry'
+                            ?.name || 'Choose industry'
                         : 'Choose industry'}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
