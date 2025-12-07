@@ -1,7 +1,8 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
 import {
     Search,
     Home,
@@ -46,10 +47,16 @@ interface NavItem {
 
 export const Header = () => {
     const pathname = usePathname();
-    const [searchQuery, setSearchQuery] = useState('');
     const { user, isAuthenticated } = useAuth();
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [restrictedFeature, setRestrictedFeature] = useState<string>('');
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [input, setInput] = useState(searchParams.get('keyword') ?? '');
+
+    useEffect(() => {
+        setInput(searchParams.get('keyword') ?? '');
+    }, [searchParams]);
 
     const allNavItems: NavItem[] = useMemo(
         () => [
@@ -168,14 +175,27 @@ export const Header = () => {
                     {/* Search Bar */}
                     <div className="flex-1 max-w-xs md:max-w-md">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <Input
-                                type="text"
-                                placeholder="Tìm kiếm..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 h-9 bg-muted/50 dark:bg-muted/20 border-none focus-visible:ring-1 focus-visible:ring-primary/20 hover:bg-muted dark:hover:bg-muted/40 transition-colors"
-                            />
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const query = encodeURIComponent(input);
+                                    console.log("pathname", pathname);
+                                    if (pathname.includes('search')) {
+                                        router.replace(`${pathname}?keyword=${query}`);
+                                    } else {
+                                        router.push(`/search?keyword=${query}`);
+                                    }
+                                }}
+                            >
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                <Input
+                                    type="text"
+                                    placeholder="Company, User, Job, Post..."
+                                    value={input}
+                                    onChange={e => setInput(e.target.value)}
+                                    className="pl-10 h-9 bg-muted/50 dark:bg-muted/20 border-none focus-visible:ring-1 focus-visible:ring-primary/20 hover:bg-muted dark:hover:bg-muted/40 transition-colors"
+                                />
+                            </form>
                         </div>
                     </div>
 
@@ -244,7 +264,7 @@ export const Header = () => {
                     />
                 </div>
             </div>
-        </header>
+        </header >
     );
 };
 

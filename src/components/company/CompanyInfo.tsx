@@ -8,7 +8,6 @@ interface CompanyInfoProps {
     name: string;
     description?: string;
     avatarUrl?: string;
-    // Optional props for enhanced functionality
     onClick?: () => void;
     showHover?: boolean;
     actionButton?: React.ReactNode;

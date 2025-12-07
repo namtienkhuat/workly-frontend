@@ -1,26 +1,28 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
-// import JobCard from "../../_components/JopCard";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { Job } from "@/models/jobModel";
 import JobService from "@/services/job/jobService";
 import { useParams } from "next/navigation";
-import { useGetAllIndustries, useGetAllSkills, useGetCompanyProfile } from "@/hooks/useQueryData";
+import { useGetCompanyProfile } from "@/hooks/useQueryData";
 import ProfileService from "@/services/profile/profileService";
 import JobCard from "@/components/jobs/JobCard";
+import SelectSkills from "@/app/(main)/profile/edit/_components/SelectSkills";
+import SelectIndustries from "@/app/(main)/profile/edit/_components/selectIndustries";
+import {
+    Select as SelectSingle,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 interface OptionType {
     value: string;
     label: string;
 }
-
-const timeOptions: OptionType[] = [
-    { value: "partime", label: "Part-time" },
-    { value: "fulltime", label: "Full-time" },
-];
 
 const searchTypeOptions: OptionType[] = [
     { value: "title", label: "Job Title" },
@@ -30,14 +32,10 @@ const searchTypeOptions: OptionType[] = [
 const CompanyJobs = () => {
     const [searchText, setSearchText] = useState("");
     const [searchType, setSearchType] = useState<OptionType | null>(searchTypeOptions[0] ?? null);
-    const [startTime, setStartTime] = useState<Date | null>(null);
-    const [endTime, setEndTime] = useState<Date | null>(null);
     const [canUploadCompany, setCanUploadCompany] = useState(false);
-    const [skillOptions, setSkillOptions] = useState<OptionType[]>([])
-    const [industryOptions, setIndustryOptions] = useState<OptionType[]>([])
-    const [selectedSkills, setSelectedSkills] = useState<OptionType[]>([]);
-    const [selectedIndustries, setSelectedIndustries] = useState<OptionType[]>([]);
-    const [selectedTimesOption, setSelectedTimesOption] = useState<OptionType[]>([]);
+    const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+    const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
+    const [selectedTimesOption, setSelectedTimesOption] = useState<string>('');
     const params = useParams();
 
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -46,8 +44,8 @@ const CompanyJobs = () => {
     const [hasMore, setHasMore] = useState(true);
     const [pageSize] = useState(10);
     const [searchParams, setSearchParams] = useState<any>({});
-    const { data: industriesData } = useGetAllIndustries();
-    const { data: skillData } = useGetAllSkills();
+    const [shouldFetch, setShouldFetch] = useState(false);
+
 
     // get profile for UI display
     const [companyProfile, setCompanyProfile] = useState();
@@ -76,25 +74,6 @@ const CompanyJobs = () => {
     }, [params.id]);
 
     useEffect(() => {
-        if (skillData && skillData.data && Array.isArray(skillData.data)) {
-            setSkillOptions(skillData.data.map((s: any) => {
-                return {
-                    value: s.skillId.toLowerCase(),
-                    label: s.name
-                }
-            }));
-        }
-        if (industriesData && industriesData.data && Array.isArray(industriesData.data)) {
-            setIndustryOptions(industriesData.data.map((i: any) => {
-                return {
-                    value: i.industryId.toLowerCase(),
-                    label: i.name
-                }
-            }));
-        }
-    }, [industriesData, skillData]);
-
-    useEffect(() => {
         fetchInitialJobs();
     }, []);
 
@@ -103,11 +82,9 @@ const CompanyJobs = () => {
             companyId: params.id,
             search: searchText || "",
             searchType: searchType?.value || "",
-            skills: selectedSkills.map(s => s.value).join(","),
-            industries: selectedIndustries.map(i => i.value).join(","),
-            jobType: selectedTimesOption.map(t => t.value).join(","),
-            startAt: startTime ? startTime.toISOString() : "",
-            endAt: endTime ? endTime.toISOString() : "",
+            skills: selectedSkills,
+            industries: selectedIndustries,
+            jobType: selectedTimesOption,
         };
     };
 
@@ -158,7 +135,6 @@ const CompanyJobs = () => {
                 setJobs(prevJobs => [...prevJobs, ...response.data]);
                 setCurrentPage(nextPage);
 
-                // Fix: Dùng pagination.totalPages
                 const totalPages = response.pagination?.totalPages || 0;
                 setHasMore(nextPage < totalPages);
             } else {
@@ -169,33 +145,44 @@ const CompanyJobs = () => {
             setHasMore(false);
         }
     };
+    useEffect(() => {
+        if (!shouldFetch) return;
 
+        fetchInitialJobs();
+        setShouldFetch(false);
+    }, [
+        searchText,
+        searchType,
+        selectedSkills,
+        selectedIndustries,
+        selectedTimesOption,
+        currentPage,
+        hasMore,
+        shouldFetch
+    ]);
     const handleSearch = () => {
         setCurrentPage(1);
         setHasMore(true);
-        fetchInitialJobs();
+        setShouldFetch(true);
     };
 
     const handleReset = () => {
         setSearchText("");
         setSearchType(searchTypeOptions[0] ?? null);
-        setStartTime(null);
-        setEndTime(null);
         setSelectedSkills([]);
         setSelectedIndustries([]);
-        setSelectedTimesOption([]);
+        setSelectedTimesOption('');
         setCurrentPage(1);
         setHasMore(true);
-        fetchInitialJobs();
+        setShouldFetch(true);
     };
 
     return (
         <div className="py-4 mx-auto space-y-6">
-            {/* Input text + search type */}
             <div className="flex gap-2">
                 <input
                     type="text"
-                    className="flex-1 border rounded px-3 py-2"
+                    className="flex-1 border rounded px-3 py-1.5"
                     placeholder="Enter search..."
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
@@ -208,70 +195,34 @@ const CompanyJobs = () => {
                     className="w-48"
                 />
             </div>
-
-            {/* Multi-select filters */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Select
-                    isMulti
-                    isSearchable={true}
-                    options={skillOptions}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                <SelectSkills
                     value={selectedSkills}
-                    onChange={(options) => setSelectedSkills(options as OptionType[])}
-                    placeholder="Select Skills..."
+                    onChange={setSelectedSkills}
                 />
-                <Select
-                    isMulti
-                    isSearchable={true}
-                    options={industryOptions}
+                <SelectIndustries
                     value={selectedIndustries}
-                    onChange={(options) => setSelectedIndustries(options as OptionType[])}
-                    placeholder="Select Industries..."
+                    onChange={setSelectedIndustries}
                 />
-                <Select
-                    isMulti
-                    options={timeOptions}
-                    value={selectedTimesOption}
-                    onChange={(options) => setSelectedTimesOption(options as OptionType[])}
-                    placeholder="Select Job type..."
-                />
-            </div>
+                <SelectSingle value={selectedTimesOption} onValueChange={setSelectedTimesOption}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select employment type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="full-time">Full-time</SelectItem>
+                        <SelectItem value="part-time">Part-time</SelectItem>
+                    </SelectContent>
+                </SelectSingle>
 
-            {/* Date filters and buttons */}
-            <div className="flex items-center justify-between">
-                <div className="flex">
-                    <div className="mr-10">
-                        <label className="mr-2">Start Time</label>
-                        <DatePicker
-                            selected={startTime}
-                            onChange={(date) => setStartTime(date)}
-                            showTimeSelect
-                            dateFormat="yyyy-MM-dd"
-                            placeholderText="Select start time"
-                            className="border px-2 py-1 rounded w-full"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mr-2">End Time</label>
-                        <DatePicker
-                            selected={endTime}
-                            onChange={(date) => setEndTime(date)}
-                            showTimeSelect
-                            dateFormat="yyyy-MM-dd"
-                            placeholderText="Select end time"
-                            className="border px-2 py-1 rounded w-full"
-                        />
-                    </div>
-                </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3 ml-6">
                     <button
-                        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                        className="px-6 py-1.5 bg-gray-500 text-white rounded hover:bg-gray-600"
                         onClick={handleReset}
                     >
                         Reset
                     </button>
                     <button
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        className="px-6 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700"
                         onClick={handleSearch}
                         disabled={loading}
                     >
@@ -279,8 +230,6 @@ const CompanyJobs = () => {
                     </button>
                 </div>
             </div>
-
-            {/* Results with Infinite Scroll */}
             <div className="mt-6">
                 {loading && jobs.length === 0 ? (
                     <div className="text-center py-8">
@@ -305,18 +254,12 @@ const CompanyJobs = () => {
                     >
                         <div className="flex flex-col gap-6">
                             {jobs.map((job) => (
-                                // <JobCard
-                                //     key={idx}
-                                //     {...job}
-                                //     onReload={fetchInitialJobs}
-                                //     canUploadCompany={canUploadCompany}
-                                // />
-                                <JobCard 
-                                    key={job._id} 
-                                    job={job} 
+                                <JobCard
+                                    key={job._id}
+                                    job={job}
                                     isCompanyPage={true}
-                                    canEdit={canUploadCompany} 
-                                    onReload={fetchInitialJobs} 
+                                    canEdit={canUploadCompany}
+                                    onReload={fetchInitialJobs}
                                     companyProfile={companyProfile}
                                 />
                             ))}
