@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGetMe } from '@/hooks/useQueryData';
 import { patchUserSkills } from '@/services/apiServices';
 import { EditUserSkillsFormData, editUserSkillsSchema } from '@/lib/validations/user';
@@ -26,6 +27,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const EditSkillsPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [initialValuesLoaded, setInitialValuesLoaded] = useState(false);
+    const queryClient = useQueryClient();
 
     const {
         data: userProfileData,
@@ -66,6 +68,16 @@ const EditSkillsPage = () => {
             toast.success('Skills updated successfully!');
             reset({ skillIds: formData.skillIds }, { keepDirty: false });
             await refetchUserProfile();
+            // Invalidate all user profile queries to update profile pages
+            await queryClient.invalidateQueries({
+                predicate: (query) => {
+                    const key = query.queryKey[0] as string;
+                    return (
+                        (typeof key === 'string' && key.startsWith('/me')) ||
+                        (typeof key === 'string' && key.startsWith('/users/'))
+                    );
+                },
+            });
         } else {
             toast.error('Failed to update skills', { description: message });
         }

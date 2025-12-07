@@ -16,18 +16,13 @@ import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGetMe } from '@/hooks/useQueryData';
 import { UserProfile } from '@/types/global';
 import { patchUserEducation } from '@/services/apiServices';
 import { EditUserEducationFormData, editUserEducationSchema } from '@/lib/validations/user';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-    TrashIcon,
-    PlusIcon,
-    GraduationCapIcon,
-    CalendarIcon,
-    BookOpenIcon,
-} from 'lucide-react';
+import { TrashIcon, PlusIcon, GraduationCapIcon, CalendarIcon, BookOpenIcon } from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -49,6 +44,7 @@ const convertISOToYear = (value?: string | null): string => {
 
 const EditEducationPage = () => {
     const [isLoading, setIsLoading] = useState(false);
+    const queryClient = useQueryClient();
 
     const [initialValuesLoaded, setInitialValuesLoaded] = useState(false);
     const {
@@ -92,7 +88,7 @@ const EditEducationPage = () => {
         setIsLoading(true);
 
         const convertYearToISO = (value?: string) => {
-            if (!value) return '';
+            if (!value || value.trim() === '') return null;
             if (/^\d{4}$/.test(value)) {
                 return `${value}-01-01T00:00:00.000Z`;
             }
@@ -100,11 +96,25 @@ const EditEducationPage = () => {
         };
 
         const payload = {
-            educations: (formData.educations ?? []).map((edu) => ({
-                ...edu,
-                startDate: convertYearToISO(edu.startDate),
-                endDate: convertYearToISO(edu.endDate),
-            })),
+            educations: (formData.educations ?? []).map((edu) => {
+                const education: any = {
+                    schoolId: edu.schoolId,
+                    degree: edu.degree,
+                    major: edu.major,
+                    startDate: convertYearToISO(edu.startDate),
+                };
+
+                const endDateValue = convertYearToISO(edu.endDate);
+                if (endDateValue !== null) {
+                    education.endDate = endDateValue;
+                }
+
+                if (edu.description?.trim()) {
+                    education.description = edu.description;
+                }
+
+                return education;
+            }),
         };
 
         const { success, message } = await patchUserEducation(payload);
@@ -114,6 +124,16 @@ const EditEducationPage = () => {
             toast.success('Education updated successfully!');
             reset(formData, { keepDirty: false });
             await refetchUserProfile();
+            // Invalidate all user profile queries to update profile pages
+            await queryClient.invalidateQueries({
+                predicate: (query) => {
+                    const key = query.queryKey[0] as string;
+                    return (
+                        (typeof key === 'string' && key.startsWith('/me')) ||
+                        (typeof key === 'string' && key.startsWith('/users/'))
+                    );
+                },
+            });
         } else {
             toast.error('Failed to update education', {
                 description: message,
@@ -230,7 +250,10 @@ const EditEducationPage = () => {
                                         name={`educations.${index}.degree`}
                                         control={control}
                                         render={({ field }) => (
-                                            <Select value={field.value} onValueChange={field.onChange}>
+                                            <Select
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                            >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select degree" />
                                                 </SelectTrigger>
@@ -239,10 +262,10 @@ const EditEducationPage = () => {
                                                         Associate Degree
                                                     </SelectItem>
                                                     <SelectItem value="Bachelor">
-                                                        Bachelor's Degree
+                                                        Bachelor&apos;s Degree
                                                     </SelectItem>
                                                     <SelectItem value="Master">
-                                                        Master's Degree
+                                                        Master&apos;s Degree
                                                     </SelectItem>
                                                     <SelectItem value="Doctorate">
                                                         Doctorate (PhD)
@@ -263,16 +286,14 @@ const EditEducationPage = () => {
                                 <Field className="gap-2">
                                     <FieldLabel className="flex items-center gap-2">
                                         <BookOpenIcon className="h-3.5 w-3.5" />
-                                        Major / Field of Study <span className="text-destructive">*</span>
+                                        Major / Field of Study{' '}
+                                        <span className="text-destructive">*</span>
                                     </FieldLabel>
                                     <Controller
                                         name={`educations.${index}.major`}
                                         control={control}
                                         render={({ field }) => (
-                                            <Input
-                                                {...field}
-                                                placeholder="e.g. Computer Science"
-                                            />
+                                            <Input {...field} placeholder="e.g. Computer Science" />
                                         )}
                                     />
                                     <FieldError
@@ -295,11 +316,7 @@ const EditEducationPage = () => {
                                         name={`educations.${index}.startDate`}
                                         control={control}
                                         render={({ field }) => (
-                                            <Input
-                                                {...field}
-                                                type="text"
-                                                placeholder="e.g. 2018"
-                                            />
+                                            <Input {...field} type="text" placeholder="e.g. 2018" />
                                         )}
                                     />
                                     <FieldError

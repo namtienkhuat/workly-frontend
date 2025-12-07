@@ -212,10 +212,15 @@ export const patchUserEducation = async (formData: EditUserEducationFormData) =>
             data: data.data,
         };
     } catch (error: any) {
+        const errorMessage =
+            error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            error?.message ||
+            'Unknown error';
         return {
             status: 'error',
             success: false,
-            message: error?.message || 'Unknown error',
+            message: errorMessage,
         };
     }
 };
@@ -230,10 +235,15 @@ export const patchUserWorkExperiences = async (formData: { workExperiences?: any
             data: data.data,
         };
     } catch (error: any) {
+        const errorMessage =
+            error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            error?.message ||
+            'Unknown error';
         return {
             status: 'error',
             success: false,
-            message: error?.message || 'Unknown error',
+            message: errorMessage,
         };
     }
 };

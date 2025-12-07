@@ -15,27 +15,19 @@ import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useGetMe } from '@/hooks/useQueryData';
-import { UserProfile, Location } from '@/types/global';
-import { patchUserProfile, patchUserLocation, getLocations } from '@/services/apiServices';
+import { UserProfile } from '@/types/global';
+import { patchUserProfile, patchUserLocation } from '@/services/apiServices';
 import { EditUserProfileFormData, editUserProfileSchema } from '@/lib/validations/user';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { UserIcon, MailIcon, BriefcaseIcon, MapPinIcon, InfoIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import SelectLocation from './_components/SelectLocation';
 
 const EditProfilePage = () => {
     const [isLoading, setIsLoading] = useState(false);
-    const [locations, setLocations] = useState<Location[]>([]);
-    const [isLoadingLocations, setIsLoadingLocations] = useState(false);
     const queryClient = useQueryClient();
     const { user: currentUser } = useAuth();
 
@@ -62,7 +54,7 @@ const EditProfilePage = () => {
     const selectedLocationId = watch('locationId');
 
     useEffect(() => {
-        if (userProfile && locations.length > 0) {
+        if (userProfile) {
             reset({
                 name: userProfile.name,
                 email: userProfile.email,
@@ -70,19 +62,7 @@ const EditProfilePage = () => {
                 locationId: userLocation?.locationId || undefined,
             });
         }
-    }, [userProfile, userLocation, locations, reset]);
-
-    useEffect(() => {
-        const fetchLocations = async () => {
-            setIsLoadingLocations(true);
-            const result = await getLocations();
-            if (result.success && result.data) {
-                setLocations(result.data);
-            }
-            setIsLoadingLocations(false);
-        };
-        fetchLocations();
-    }, []);
+    }, [userProfile, userLocation, reset]);
 
     const onSubmit = async (formData: EditUserProfileFormData) => {
         setIsLoading(true);
@@ -227,52 +207,12 @@ const EditProfilePage = () => {
                                 <MapPinIcon className="h-4 w-4" />
                                 Location
                             </FieldLabel>
-                            <Select
+                            <SelectLocation
                                 value={selectedLocationId}
-                                onValueChange={(value) =>
+                                onChange={(value) =>
                                     setValue('locationId', value, { shouldDirty: true })
                                 }
-                            >
-                                <SelectTrigger className="h-10">
-                                    <SelectValue placeholder="Select your location">
-                                        {selectedLocationId
-                                            ? locations.find(
-                                                  (loc) => loc.locationId === selectedLocationId
-                                              )?.name || 'Loading...'
-                                            : 'Select your location'}
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {isLoadingLocations ? (
-                                        <SelectItem value="loading" disabled>
-                                            Loading...
-                                        </SelectItem>
-                                    ) : locations.length > 0 ? (
-                                        locations.map((location) => (
-                                            <SelectItem
-                                                key={location.locationId}
-                                                value={location.locationId}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <MapPinIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                                                    {location.name}
-                                                </div>
-                                            </SelectItem>
-                                        ))
-                                    ) : (
-                                        <SelectItem value="no-locations" disabled>
-                                            No locations available
-                                        </SelectItem>
-                                    )}
-                                </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground">
-                                {isLoadingLocations
-                                    ? 'Loading locations...'
-                                    : selectedLocationId
-                                      ? `Selected: ${locations.find((loc) => loc.locationId === selectedLocationId)?.name}`
-                                      : `Choose from ${locations.length} locations in Vietnam`}
-                            </p>
+                            />
                             <FieldError
                                 errors={errors.locationId ? [errors.locationId] : undefined}
                             />
