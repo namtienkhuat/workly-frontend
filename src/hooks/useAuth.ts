@@ -14,6 +14,9 @@ export const useAuth = () => {
     const queryClient = useQueryClient();
     const router = useRouter();
 
+    // Check if token exists before making the query
+    const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem(TOKEN_KEY) : false;
+
     const {
         data: user,
         isLoading,
@@ -21,6 +24,7 @@ export const useAuth = () => {
     } = useQuery<{ data: UserProfile }, Error>({
         queryKey: ['auth', 'me'],
         queryFn: fetchMe,
+        enabled: hasToken, // Only fetch if token exists
         staleTime: 1000 * 60 * 5, // 5 minutes
         gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
         retry: false, // important: don't retry on 401

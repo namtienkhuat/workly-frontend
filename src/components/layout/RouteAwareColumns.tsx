@@ -67,12 +67,16 @@ export const RouteAwareColumns = ({ children }: { children: ReactNode }) => {
     }
 
     if (layoutType === '2-column') {
+        const hasRightSidebar = rightSidebarInitialized && rightSidebar !== null;
+
+        if (!hasRightSidebar) {
+            return <div className="w-full">{children}</div>;
+        }
+
         return (
             <div className="grid grid-cols-12 gap-6">
                 <main className="col-span-12 lg:col-span-9">{children}</main>
-                <aside className="hidden lg:block col-span-3">
-                    {rightSidebarInitialized ? rightSidebar : <SidebarSkeleton />}
-                </aside>
+                <aside className="hidden lg:block col-span-3">{rightSidebar}</aside>
             </div>
         );
     }
