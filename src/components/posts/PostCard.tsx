@@ -288,7 +288,11 @@ const PostCard = ({
                 </div>
             )}
 
-            <AuthRequiredModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+            <AuthRequiredModal
+                open={authModalOpen}
+                onOpenChange={setAuthModalOpen}
+                featureName="interact with this post"
+            />
         </article>
     );
 };

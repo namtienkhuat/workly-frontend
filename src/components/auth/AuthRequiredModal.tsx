@@ -10,7 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { LogIn, UserPlus, Sparkles } from 'lucide-react';
+import { LogIn, UserPlus } from 'lucide-react';
 import { paths } from '@/configs/route';
 
 interface AuthRequiredModalProps {
@@ -58,7 +58,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
                             Log in to continue
                         </DialogTitle>
                         <DialogDescription className="text-base text-muted-foreground leading-relaxed">
-                            You need to sign in or create an account to use .
+                            You need to sign in or create an account to use {featureName}.
                         </DialogDescription>
                     </DialogHeader>
 
