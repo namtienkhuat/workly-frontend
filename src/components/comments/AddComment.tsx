@@ -82,18 +82,18 @@ const CommentUpload = ({
             <div className="flex items-center gap-3 w-full">
                 {currentUser?.avatarUrl ? (
                     <Image
-                        src={currentUser!!.avatarUrl}
-                        alt={currentUser!!.name}
+                        src={currentUser?.avatarUrl}
+                        alt={currentUser?.name}
                         loading="lazy"
                         width={15}
                         height={15}
                         className="object-cover"
                     />
                 ) : (
-                    <Avatar className="h-[50px] w-[50px] rounded-full border-muted text-2xl" style={{ backgroundColor: StringUtil.getRandomColor() }}
+                    <Avatar className="h-[45px] w-[45px] rounded-full border-muted text-2xl" style={{ backgroundColor: StringUtil.getRandomColor() }}
                     >
                         <AvatarFallback className="text-2xl bg-white">
-                            {getInitials(currentUser!!.name)}
+                            {getInitials(currentUser?.name)}
                         </AvatarFallback>
                     </Avatar>
                 )}
@@ -103,15 +103,15 @@ const CommentUpload = ({
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder="Viết bình luận..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="enter comment..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     disabled={loading}
                 />
 
                 <button
                     onClick={handleSend}
                     disabled={loading || !commentText.trim()}
-                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? "Đang gửi..." : "Gửi"}
                 </button>

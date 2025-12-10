@@ -232,10 +232,10 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
         <div className="text-center py-[50px]">
             <div className="flex">
                 <div className=" mr-5">
-                    {currentUser!!.avatarUrl ? (
+                    {currentUser?.avatarUrl ? (
                         <Image
-                            src={currentUser!!.avatarUrl}
-                            alt={currentUser!!.name}
+                            src={currentUser?.avatarUrl}
+                            alt={currentUser?.name}
                             loading="lazy"
                             width={15}
                             height={15}
@@ -245,7 +245,7 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
                         <Avatar className="h-[50px] w-[50px] rounded-full border-muted text-2xl" style={{ backgroundColor: StringUtil.getRandomColor() }}
                         >
                             <AvatarFallback className="text-2xl bg-white">
-                                {getInitials(currentUser!!.name)}
+                                {getInitials(currentUser?.name)}
                             </AvatarFallback>
                         </Avatar>
                     )}</div>

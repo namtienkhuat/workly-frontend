@@ -1,3 +1,132 @@
-.comment-tree .ant-tree-indent-unit {
-    width: 36px !important;
+/* ========================================
+   Comment Tree Styles
+   ======================================== */
+
+/* Full width override for Ant Design Tree */
+.comment-tree,
+.comment-tree .ant-tree-list,
+.comment-tree .ant-tree-list-holder,
+.comment-tree .ant-tree-list-holder-inner,
+.comment-tree .ant-tree-treenode,
+.comment-tree .ant-tree-node-content-wrapper,
+.comment-tree .ant-tree-title {
+    width: 100% !important;
+}
+
+/* Tree node layout */
+.comment-tree .ant-tree-treenode {
+    padding: 0 !important;
+    align-items: flex-start !important;
+}
+
+.comment-tree .ant-tree-node-content-wrapper {
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    line-height: normal !important;
+}
+
+/* Remove default indent - we handle nesting in TreeNode.tsx */
+.comment-tree .ant-tree-indent {
+    display: none !important;
+}
+
+/* Switcher (expand/collapse button) */
+.comment-tree .ant-tree-switcher {
+    margin-right: 8px !important;
+    align-self: flex-start !important;
+    margin-top: 16px !important;
+}
+
+.switcher-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.switcher-icon:hover {
+    background: #e5e7eb;
+    color: #374151;
+    transform: scale(1.05);
+}
+
+/* Remove default Tree hover effects */
+.comment-tree .ant-tree-node-content-wrapper:hover {
+    background: transparent !important;
+}
+
+.comment-tree .ant-tree-node-selected .ant-tree-node-content-wrapper {
+    background: transparent !important;
+}
+
+
+/* ========================================
+   Custom Scrollbar
+   ======================================== */
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f9fafb;
+}
+
+
+/* ========================================
+   Dark Mode Support
+   ======================================== */
+
+.dark .switcher-icon {
+    background: #374151;
+    color: #d1d5db;
+}
+
+.dark .switcher-icon:hover {
+    background: #4b5563;
+    color: #f3f4f6;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #4b5563;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+.dark .custom-scrollbar {
+    scrollbar-color: #4b5563 #1f2937;
 }
