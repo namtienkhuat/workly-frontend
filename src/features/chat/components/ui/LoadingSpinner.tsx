@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 interface LoadingSpinnerProps {
     size?: 'sm' | 'md' | 'lg';
     message?: string;
@@ -12,13 +14,22 @@ const sizeClasses = {
 };
 
 export function LoadingSpinner({ size = 'md', message }: LoadingSpinnerProps) {
+    // Fix hydration error by only rendering message on client
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     return (
         <div className="flex h-full items-center justify-center">
             <div className="text-center">
                 <div
                     className={`${sizeClasses[size]} mx-auto animate-spin rounded-full border-primary border-t-transparent`}
                 ></div>
-                {message && <p className="mt-3 text-sm text-muted-foreground">{message}</p>}
+                {isMounted && message && (
+                    <p className="mt-3 text-sm text-muted-foreground">{message}</p>
+                )}
             </div>
         </div>
     );
