@@ -5,12 +5,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { UnreadBadge } from '@/features/chat/components/ui';
 
 const navItems = [
-    { icon: Home, label: 'Trang chủ', path: '/home' },
-    { icon: MessageCircle, label: 'Tin nhắn', path: '/chat', showBadge: true },
-    { icon: Users, label: 'Mạng lưới', path: '/network' },
-    { icon: Briefcase, label: 'Việc làm', path: '/jobs' },
-    { icon: User, label: 'Hồ sơ', path: '/profile/[id]' },
-    { icon: Settings, label: 'Cài đặt', path: '/settings' },
+    { icon: Home, label: 'Home', path: '/home' },
+    { icon: MessageCircle, label: 'Messages', path: '/chat', showBadge: true },
+    { icon: Users, label: 'Network', path: '/network' },
+    { icon: Briefcase, label: 'Jobs', path: '/jobs' },
+    { icon: User, label: 'Profile', path: '/profile/[id]' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
 export function Navigation() {
@@ -62,10 +62,10 @@ export function Navigation() {
             <div className="border-t p-4">
                 <div className="rounded-lg bg-gray-50 p-3">
                     <p className="text-sm text-gray-600">
-                        Tìm hiểu thêm <strong>Cơ Hội Việc Làm</strong>
+                        Learn more about <strong>Job Opportunities</strong>
                     </p>
                     <button className="mt-2 text-sm font-semibold text-blue-600 hover:underline">
-                        Tìm hiểu thêm
+                        Learn more
                     </button>
                 </div>
             </div>

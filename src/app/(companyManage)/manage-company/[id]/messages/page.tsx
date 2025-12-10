@@ -40,15 +40,15 @@ export default function CompanyMessagesPage() {
 
             await deleteConversation(conversationId);
 
-            // Nếu là hard delete (user đã bị xóa), redirect về messages list
-            // Để tránh tạo lại conversation với user đã xóa
-            // Hoặc nếu đang ở user detail page, cũng redirect về messages list
+            // If it's a hard delete (user has been deleted), redirect to messages list
+            // To avoid recreating conversation with deleted user
+            // Or if currently on user detail page, also redirect to messages list
             if (isHardDelete || pathname?.includes('/messages/user/')) {
                 router.push(`/manage-company/${companyId}/messages`);
             }
         } catch (error) {
             console.error('Error deleting conversation:', error);
-            // Vẫn redirect về messages list ngay cả khi có lỗi
+            // Still redirect to messages list even if there's an error
             if (pathname?.includes('/messages/user/')) {
                 router.push(`/manage-company/${companyId}/messages`);
             }
@@ -56,7 +56,7 @@ export default function CompanyMessagesPage() {
     };
 
     const handleViewProfile = (participantId: string, participantType: ParticipantType) => {
-        // Company xem profile của User
+        // Company views User profile
         if (participantType === ParticipantType.USER) {
             router.push(`/profile/${participantId}`);
         } else if (participantType === ParticipantType.COMPANY) {
@@ -67,7 +67,7 @@ export default function CompanyMessagesPage() {
     if (isLoading) {
         return (
             <div className="flex h-[600px] items-center justify-center">
-                <LoadingSpinner size="lg" message="Đang tải..." />
+                <LoadingSpinner size="lg" message="Loading..." />
             </div>
         );
     }
@@ -111,19 +111,19 @@ export default function CompanyMessagesPage() {
                             </div>
 
                             <h2 className="mb-3 text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                                Tin nhắn của công ty
+                                Company messages
                             </h2>
 
                             <p className="text-muted-foreground text-base mb-2">
                                 {isCompanySocketConnected
-                                    ? 'Chọn một cuộc trò chuyện từ danh sách bên trái'
-                                    : 'Đang kết nối...'}
+                                    ? 'Select a conversation from the list on the left'
+                                    : 'Connecting...'}
                             </p>
 
                             {conversations.length === 0 && !isLoadingConversations && (
                                 <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/10 backdrop-blur-sm">
                                     <p className="text-sm text-muted-foreground">
-                                        Chưa có tin nhắn nào từ ứng viên
+                                        No messages from candidates yet
                                     </p>
                                 </div>
                             )}
@@ -133,7 +133,7 @@ export default function CompanyMessagesPage() {
                                 <div className="flex items-center justify-center gap-2 mt-6">
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                                     <span className="text-xs text-muted-foreground">
-                                        Đã kết nối
+                                        Connected
                                     </span>
                                 </div>
                             )}

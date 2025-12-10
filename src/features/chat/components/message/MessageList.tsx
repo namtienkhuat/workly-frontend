@@ -19,7 +19,7 @@ export function MessageList({
     currentUserId,
     isLoading = false,
     isTyping = false,
-    emptyMessage = 'Chưa có tin nhắn',
+    emptyMessage = 'No messages yet',
 }: MessageListProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +29,7 @@ export function MessageList({
     }, [messages]);
 
     if (isLoading) {
-        return <LoadingSpinner message="Đang tải tin nhắn..." />;
+        return <LoadingSpinner message="Loading messages..." />;
     }
 
     if (messages.length === 0) {

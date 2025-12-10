@@ -57,7 +57,7 @@ export default function ChatCompanyPage() {
                 loadedCompanyRef.current = companyId;
             })
             .catch((err) => {
-                toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
+                toast.error(err.message || 'Unable to create conversation.');
             })
             .finally(() => {
                 setIsLoading(false);
@@ -103,7 +103,7 @@ export default function ChatCompanyPage() {
     if (isLoadingAuth) {
         return (
             <div className="flex h-full items-center justify-center">
-                <LoadingSpinner size="lg" message="Đang tải..." />
+                <LoadingSpinner size="lg" message="Loading..." />
             </div>
         );
     }
@@ -123,7 +123,7 @@ export default function ChatCompanyPage() {
             <div className="flex-1 relative">
                 {isLoading ? (
                     <div className="flex h-full items-center justify-center">
-                        <LoadingSpinner size="lg" message="Đang tải cuộc trò chuyện..." />
+                        <LoadingSpinner size="lg" message="Loading conversation..." />
                     </div>
                 ) : fullChatId ? (
                     <ChatView conversationId={fullChatId} onClose={handleClose} />
@@ -152,9 +152,9 @@ export default function ChatCompanyPage() {
                                 </div>
                             </div>
                             <h2 className="mb-2 text-2xl font-bold text-foreground/90">
-                                Không thể tải cuộc trò chuyện
+                                Unable to load conversation
                             </h2>
-                            <p className="text-muted-foreground">Vui lòng thử lại sau.</p>
+                            <p className="text-muted-foreground">Please try again later.</p>
                         </div>
                     </div>
                 )}

@@ -59,7 +59,7 @@ export function ChatContainer({
             <div className={`flex flex-col ${className}`}>
                 <ConversationHeader onClose={onClose} onMinimize={onMinimize} showMinimize={showMinimize} />
                 <div className="flex-1">
-                    <EmptyState message="Không tìm thấy cuộc trò chuyện" />
+                    <EmptyState message="Conversation not found" />
                 </div>
             </div>
         );
@@ -84,7 +84,7 @@ export function ChatContainer({
                     currentUserId={currentUserId}
                     isLoading={isLoading}
                     isTyping={isTyping}
-                    emptyMessage={`Bắt đầu cuộc trò chuyện với ${otherParticipant.name}`}
+                    emptyMessage={`Start a conversation with ${otherParticipant.name}`}
                 />
             </div>
 
@@ -93,7 +93,7 @@ export function ChatContainer({
                 {isDeleted ? (
                     <div className="flex items-center justify-center gap-2 p-4 bg-muted/50 rounded-lg border border-muted">
                         <span className="text-sm text-muted-foreground italic">
-                            Không thể gửi tin nhắn. {otherParticipant.type === 'COMPANY' ? 'Công ty' : 'Tài khoản'} này không còn tồn tại.
+                            Cannot send message. This {otherParticipant.type === 'COMPANY' ? 'company' : 'account'} no longer exists.
                         </span>
                     </div>
                 ) : (

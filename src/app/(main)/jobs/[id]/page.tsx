@@ -144,7 +144,7 @@ export default function JobDetailPage() {
             {/* Back Button */}
             <Button onClick={() => router.back()} variant="ghost" className="mb-4">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Quay lại
+                Back
             </Button>
 
             {/* Job Header Card */}
@@ -208,7 +208,7 @@ export default function JobDetailPage() {
                         disabled={isExpired}
                         onClick={() => setShowApplyModal(true)}
                     >
-                        Ứng tuyển ngay
+                        Apply now
                     </Button>
                 </div>
             </div>
@@ -217,7 +217,7 @@ export default function JobDetailPage() {
             <div className="rounded-3xl border border-border/40 bg-white/80 p-6 shadow-md backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
                 {/* Job Content */}
                 <div className="mb-8">
-                    <h2 className="text-2xl font-bold mb-4">Mô tả công việc</h2>
+                    <h2 className="text-2xl font-bold mb-4">Job Description</h2>
                     <div className="prose prose-sm max-w-none dark:prose-invert">
                         <p className="whitespace-pre-line text-foreground/90 leading-relaxed">
                             {job.content}
@@ -227,12 +227,12 @@ export default function JobDetailPage() {
 
                 {/* Skills & Requirements */}
                 <div className="pt-8 border-t border-border/40">
-                    <h2 className="text-2xl font-bold mb-4">Kỹ năng & Yêu cầu</h2>
+                    <h2 className="text-2xl font-bold mb-4">Skills & Requirements</h2>
 
                     {/* Skills */}
                     {job.skills && job.skills.length > 0 && (
                         <div className="mb-6">
-                            <h3 className="text-lg font-semibold mb-3">Kỹ năng yêu cầu</h3>
+                            <h3 className="text-lg font-semibold mb-3">Required Skills</h3>
                             <div className="flex flex-wrap gap-2">
                                 {job.skills.map((skill: string, index: number) => (
                                     <Badge
@@ -250,7 +250,7 @@ export default function JobDetailPage() {
                     {/* Level */}
                     {job.level && job.level.length > 0 && (
                         <div>
-                            <h3 className="text-lg font-semibold mb-3">Cấp độ</h3>
+                            <h3 className="text-lg font-semibold mb-3">Level</h3>
                             <div className="flex flex-wrap gap-2">
                                 {job.level.map((lvl: string, index: number) => (
                                     <Badge
@@ -268,7 +268,7 @@ export default function JobDetailPage() {
                     {/* Industry */}
                     {job.industry && (
                         <div className="mt-6">
-                            <h3 className="text-lg font-semibold mb-3">Ngành nghề</h3>
+                            <h3 className="text-lg font-semibold mb-3">Industry</h3>
                             <Badge variant="outline" className="px-4 py-2 text-sm">
                                 {job.industry}
                             </Badge>

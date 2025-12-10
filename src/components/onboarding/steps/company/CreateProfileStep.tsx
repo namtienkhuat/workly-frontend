@@ -12,9 +12,9 @@ const ProfilePreviewCard = ({ data }: { data: Partial<OnboardingFormData> }) => 
             </div>
         </div>
         <div className="mt-16 text-center">
-            <h3 className="text-xl font-bold text-gray-900">{data.name || 'Tên công ty'}</h3>
-            <p className="text-gray-600">{data.companyPosition || 'Vị trí của bạn'}</p>
-            <p className="mt-1 text-sm text-gray-400">Chưa có phần giới thiệu.</p>
+            <h3 className="text-xl font-bold text-gray-900">{data.name || 'Company name'}</h3>
+            <p className="text-gray-600">{data.companyPosition || 'Your position'}</p>
+            <p className="mt-1 text-sm text-gray-400">No introduction yet.</p>
         </div>
     </div>
 );
@@ -67,13 +67,13 @@ export default function CreateProfileStep() {
                     <div>
                         {' '}
                         <InputField
-                            label="Tên"
+                            label="Name"
                             name="name"
                             register={register}
                             error={errors.name}
                         />
                         <InputField
-                            label="Điện thoại"
+                            label="Phone"
                             name="phone"
                             type="tel"
                             register={register}
@@ -87,13 +87,13 @@ export default function CreateProfileStep() {
                             error={errors.email}
                         />
                         <InputField
-                            label="Nghề nghiệp của bạn là gì?"
+                            label="What is your profession?"
                             name="profession"
                             register={register}
                             error={errors.profession}
                         />
                         <InputField
-                            label="Vị trí"
+                            label="Position"
                             name="companyPosition"
                             register={register}
                             error={errors.companyPosition}

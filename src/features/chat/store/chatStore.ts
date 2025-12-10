@@ -484,8 +484,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
                                         type: otherParticipant.type,
                                         name:
                                             otherParticipant.type === ParticipantType.COMPANY
-                                                ? 'Công ty không tồn tại'
-                                                : 'Tài khoản không tồn tại',
+                                                ? 'Company not found'
+                                                : 'Account not found',
                                         email: '',
                                         avatar: '',
                                         isOnline: false,
@@ -623,8 +623,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
                             type: otherParticipant.type,
                             name:
                                 otherParticipant.type === ParticipantType.COMPANY
-                                    ? 'Công ty không tồn tại'
-                                    : 'Tài khoản không tồn tại',
+                                    ? 'Company not found'
+                                    : 'Account not found',
                             email: '',
                             avatar: '',
                             isOnline: false,
@@ -717,8 +717,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
                     return;
                 }
 
-                // Kiểm tra xem có participant nào đã bị xóa không
-                // Check cả otherParticipant.isDeleted và deletedParticipants từ conversation
+                // Check if any participant has been deleted
+                // Check both otherParticipant.isDeleted and deletedParticipants from conversation
                 const otherParticipantId = conversation?.otherParticipant?.id;
                 const isDeletedFromParticipant = conversation?.otherParticipant?.isDeleted || false;
 
@@ -739,7 +739,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
                     isDeletedFromConversation ||
                     hasDeletedParticipantInParticipants;
 
-                // TRƯỜNG HỢP 1: Có participant đã bị xóa → HARD DELETE
+                // CASE 1: Participant has been deleted → HARD DELETE
                 if (hasDeletedParticipant) {
                     try {
                         await conversationApiService.deleteConversation(
@@ -747,7 +747,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
                             hasDeletedParticipant
                         );
 
-                        // Sau khi hard delete thành công, xóa khỏi store
+                        // After successful hard delete, remove from store
                         const { [conversationId]: _, ...remainingMessages } = messages;
                         const { [conversationId]: __, ...remainingConversations } = conversations;
 
@@ -757,7 +757,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
                             openChatWindows: openChatWindows.filter((id) => id !== conversationId),
                             fullChatId: fullChatId === conversationId ? null : fullChatId,
                         });
-                        return; // Không làm soft delete nữa
+                        return; // No longer doing soft delete
                     } catch (error) {
                         // Nếu API call fail, fallback về soft delete
                     }

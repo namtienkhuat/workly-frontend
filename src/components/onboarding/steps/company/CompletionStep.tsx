@@ -24,8 +24,8 @@ const ProfileCard = ({ data }: { data: Partial<OnboardingFormData> }) => (
             </div>
         </div>
         <div className="mt-16 text-center">
-            <h3 className="text-xl font-bold text-gray-900">{data.name || 'Tên của bạn'}</h3>
-            <p className="text-gray-600">{data.companyPosition || 'Vị trí công việc'}</p>
+            <h3 className="text-xl font-bold text-gray-900">{data.name || 'Your name'}</h3>
+            <p className="text-gray-600">{data.companyPosition || 'Job position'}</p>
         </div>
     </div>
 );
@@ -63,13 +63,13 @@ export default function CompletionStep() {
                 <div className="mt-4 flex flex-col gap-4 sm:flex-row">
                     <NextStepCard
                         step="1"
-                        title="Xác minh email"
-                        description="Vui lòng xác minh email để bắt đầu."
+                        title="Verify email"
+                        description="Please verify your email to get started."
                     />
                     <NextStepCard
                         step="2"
-                        title="Tuyển dụng cùng Cake"
-                        description="Đăng tin tuyển dụng, tìm kiếm nhân tài và quản lý."
+                        title="Recruit with Cake"
+                        description="Post job listings, find talent, and manage."
                     />
                 </div>
             </div>

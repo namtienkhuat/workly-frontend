@@ -39,8 +39,8 @@ export default function CompanyUserChatPage() {
             try {
                 const { data } = await userApiService.getUserById(userId);
                 if (!data || data.user?.isDeleted) {
-                    // User không tồn tại hoặc đã bị xóa → redirect về messages list
-                    toast.error('Tài khoản không tồn tại');
+                    // User does not exist or has been deleted → redirect to messages list
+                    toast.error('Account not found');
                     router.push(`/manage-company/${companyId}/messages`);
                     return;
                 }
@@ -50,13 +50,13 @@ export default function CompanyUserChatPage() {
                 loadedUserRef.current = userId;
             } catch (err: any) {
                 console.error('Error starting conversation:', err);
-                // Nếu lỗi 404 (user không tồn tại), redirect về messages list
+                // If 404 error (user not found), redirect to messages list
                 if (err?.response?.status === 404) {
-                    toast.error('Tài khoản không tồn tại');
+                    toast.error('Account not found');
                     router.push(`/manage-company/${companyId}/messages`);
                     return;
                 }
-                toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
+                toast.error(err.message || 'Unable to create conversation.');
             } finally {
                 setIsLoading(false);
             }
@@ -88,12 +88,12 @@ export default function CompanyUserChatPage() {
             setFullChat(null);
             loadedUserRef.current = null;
             
-            // Luôn redirect về messages list sau khi xóa
-            // Đặc biệt quan trọng với hard delete để tránh tạo lại conversation
+            // Always redirect to messages list after deletion
+            // Especially important with hard delete to avoid recreating conversation
             router.push(`/manage-company/${companyId}/messages`);
         } catch (error) {
             console.error('Error deleting conversation:', error);
-            // Vẫn redirect về messages list ngay cả khi có lỗi
+            // Still redirect to messages list even if there's an error
             router.push(`/manage-company/${companyId}/messages`);
         }
     };
@@ -114,7 +114,7 @@ export default function CompanyUserChatPage() {
     if (isAuthLoading) {
         return (
             <div className="flex h-[600px] items-center justify-center">
-                <LoadingSpinner size="lg" message="Đang tải..." />
+                <LoadingSpinner size="lg" message="Loading..." />
             </div>
         );
     }
@@ -138,7 +138,7 @@ export default function CompanyUserChatPage() {
                     <div className="flex-1 relative">
                         {isLoading ? (
                             <div className="flex h-full items-center justify-center">
-                                <LoadingSpinner size="lg" message="Đang tải cuộc trò chuyện..." />
+                                <LoadingSpinner size="lg" message="Loading conversation..." />
                             </div>
                         ) : fullChatId ? (
                             <ChatView conversationId={fullChatId} onClose={handleClose} />
@@ -167,9 +167,9 @@ export default function CompanyUserChatPage() {
                                         </div>
                                     </div>
                                     <h2 className="mb-2 text-2xl font-bold text-foreground/90">
-                                        Không thể tải cuộc trò chuyện
+                                        Unable to load conversation
                                     </h2>
-                                    <p className="text-muted-foreground">Vui lòng thử lại sau.</p>
+                                    <p className="text-muted-foreground">Please try again later.</p>
                                 </div>
                             </div>
                         )}

@@ -94,7 +94,7 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Không thể tải bình luận mới");
+      toast.error("Unable to load new comments");
     }
   };
 
@@ -120,7 +120,7 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
       setComments(treeData || []);
     } catch (error) {
       console.error(error);
-      toast.error("Không thể tải bình luận");
+      toast.error("Unable to load comments");
     } finally {
       setLoading(false);
     }
@@ -137,7 +137,7 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
   }, [replyToCommentId]);
 
   if (loading) {
-    return <div className="text-center py-10 text-gray-500">Đang tải...</div>;
+    return <div className="text-center py-10 text-gray-500">Loading...</div>;
   }
 
   return (

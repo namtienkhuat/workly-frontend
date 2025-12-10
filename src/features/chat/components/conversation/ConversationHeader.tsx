@@ -20,12 +20,12 @@ export function ConversationHeader({
     if (!user) {
         return (
             <div className="flex items-center justify-between border-b p-4">
-                <div className="text-muted-foreground">Đang tải...</div>
+                <div className="text-muted-foreground">Loading...</div>
                 {onClose && (
                     <button
                         onClick={onClose}
                         className="rounded-md p-2 transition-colors hover:bg-accent"
-                        title="Đóng"
+                        title="Close"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -54,13 +54,13 @@ export function ConversationHeader({
                 <div>
                     <h3 className={`font-semibold ${user.isDeleted ? 'text-muted-foreground italic' : ''}`}>
                         {user.isDeleted 
-                            ? (user.type === 'COMPANY' ? 'Công ty không tồn tại' : 'Tài khoản không tồn tại')
+                            ? (user.type === 'COMPANY' ? 'Company not found' : 'Account not found')
                             : user.name}
                     </h3>
                     <p className="text-xs text-muted-foreground">
                         {user.isDeleted 
-                            ? 'Tài khoản đã bị xóa'
-                            : user.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
+                            ? 'Account deleted'
+                            : user.isOnline ? 'Active' : 'Inactive'}
                     </p>
                 </div>
             </div>
@@ -70,7 +70,7 @@ export function ConversationHeader({
                     <button
                         onClick={onMinimize}
                         className="rounded-md p-2 transition-colors hover:bg-accent"
-                        title="Thu nhỏ"
+                        title="Minimize"
                     >
                         <Minimize2 className="h-5 w-5" />
                     </button>
@@ -79,7 +79,7 @@ export function ConversationHeader({
                     <button
                         onClick={onClose}
                         className="rounded-md p-2 transition-colors hover:bg-accent"
-                        title="Đóng"
+                        title="Close"
                     >
                         <X className="h-5 w-5" />
                     </button>

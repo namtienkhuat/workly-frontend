@@ -22,13 +22,13 @@ export const RouteProtection: React.FC<RouteProtectionProps> = ({
     const [authModalOpen, setAuthModalOpen] = useState(false);
 
     const getFeatureName = (route: string): string => {
-        if (route.startsWith('/chat')) return 'tin nhắn';
-        if (route.startsWith('/settings')) return 'cài đặt';
+        if (route.startsWith('/chat')) return 'messaging';
+        if (route.startsWith('/settings')) return 'settings';
         if (route.startsWith('/manage-companies') || route.startsWith('/manage-company'))
-            return 'quản lý công ty';
-        if (route.startsWith('/profile/edit')) return 'chỉnh sửa hồ sơ';
-        if (route.startsWith('/profile')) return 'hồ sơ cá nhân';
-        return 'tính năng này';
+            return 'company management';
+        if (route.startsWith('/profile/edit')) return 'profile editing';
+        if (route.startsWith('/profile')) return 'profile';
+        return 'this feature';
     };
 
     const isRestrictedRoute = (route: string): boolean => {

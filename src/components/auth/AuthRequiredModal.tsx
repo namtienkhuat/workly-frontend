@@ -22,7 +22,7 @@ interface AuthRequiredModalProps {
 export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
     open,
     onOpenChange,
-    featureName = 'tính năng này',
+    featureName = 'this feature',
 }) => {
     const router = useRouter();
 

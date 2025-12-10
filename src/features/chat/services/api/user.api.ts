@@ -14,7 +14,7 @@ export interface UserProfile {
     address?: string;
     bio?: string;
     userId: string;
-    isDeleted?: boolean; // Đánh dấu tài khoản đã bị xóa
+    isDeleted?: boolean; // Mark account as deleted
 }
 
 export interface CompanyProfile {
@@ -28,7 +28,7 @@ export interface CompanyProfile {
     address?: string;
     phoneNumber?: string;
     companyId: string;
-    isDeleted?: boolean; // Đánh dấu công ty đã bị xóa
+    isDeleted?: boolean; // Mark company as deleted
 }
 
 export type ParticipantProfile = UserProfile | CompanyProfile;
@@ -89,7 +89,7 @@ export async function getCompanyById(
                     company: {
                         id: companyId,
                         companyId: companyId,
-                        name: 'Công ty không tồn tại',
+                        name: 'Company not found',
                         logo: '',
                         isDeleted: true,
                     } as CompanyProfile & { isDeleted: boolean },
