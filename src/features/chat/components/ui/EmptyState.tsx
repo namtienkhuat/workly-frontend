@@ -21,7 +21,7 @@ export function EmptyState({ message, icon, subtitle }: EmptyStateProps) {
                         {/* Icon container */}
                         <div className="relative rounded-full bg-gradient-to-br from-primary/10 via-primary/5 to-background p-6 border border-primary/10 shadow-lg">
                             {icon || (
-                                message.includes('tìm thấy') ? (
+                                message.includes('not found') || message.includes('No') ? (
                                     <Search className="h-12 w-12 text-primary/60" />
                                 ) : (
                                     <MessageCircle className="h-12 w-12 text-primary/60" />

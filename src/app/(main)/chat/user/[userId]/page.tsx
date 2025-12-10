@@ -55,7 +55,7 @@ export default function ChatUserPage() {
             try {
                 const { data } = await getUserById(userId);
                 if (!data || data.user?.isDeleted) {
-                    toast.error('Không tìm thấy người dùng hoặc tài khoản đã bị xóa.');
+                    toast.error('User not found or account has been deleted.');
                     router.push('/chat');
                     return;
                 }
@@ -66,10 +66,10 @@ export default function ChatUserPage() {
             } catch (err: any) {
                 // If user not found or deleted, redirect to /chat
                 if (err.response?.status === 404 || err.message?.includes('not found')) {
-                    toast.error('Không tìm thấy người dùng.');
+                    toast.error('User not found.');
                     router.push('/chat');
                 } else {
-                    toast.error(err.message || 'Không thể tạo cuộc trò chuyện.');
+                    toast.error(err.message || 'Unable to create conversation.');
                 }
             } finally {
                 setIsLoading(false);
@@ -118,7 +118,7 @@ export default function ChatUserPage() {
     if (isLoadingAuth) {
         return (
             <div className="flex h-full items-center justify-center">
-                <LoadingSpinner size="lg" message="Đang tải..." />
+                <LoadingSpinner size="lg" message="Loading..." />
             </div>
         );
     }
@@ -138,7 +138,7 @@ export default function ChatUserPage() {
             <div className="flex-1 relative">
                 {isLoading ? (
                     <div className="flex h-full items-center justify-center">
-                        <LoadingSpinner size="lg" message="Đang tải cuộc trò chuyện..." />
+                        <LoadingSpinner size="lg" message="Loading conversation..." />
                     </div>
                 ) : fullChatId ? (
                     <ChatView conversationId={fullChatId} onClose={handleClose} />
@@ -167,9 +167,9 @@ export default function ChatUserPage() {
                                 </div>
                             </div>
                             <h2 className="mb-2 text-2xl font-bold text-foreground/90">
-                                Không thể tải cuộc trò chuyện
+                                Unable to load conversation
                             </h2>
-                            <p className="text-muted-foreground">Vui lòng thử lại sau.</p>
+                            <p className="text-muted-foreground">Please try again later.</p>
                         </div>
                     </div>
                 )}

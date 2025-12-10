@@ -269,14 +269,14 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
                         </button>
 
                         <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
-                            Tạo bài viết mới
+                            Create new post
                         </h2>
 
                         {/* Form */}
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <textarea
                                 {...register("description")}
-                                placeholder="Bạn đang nghĩ gì?"
+                                placeholder="What's on your mind?"
                                 className="w-full p-3 border rounded-md dark:bg-gray-800 dark:text-white"
                                 rows={6}
                             />
@@ -285,7 +285,7 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
                             )}
                             <div className="max-w-sm mx-auto mt-6">
                                 <label htmlFor="mode" className="block mb-2 text-sm font-medium text-gray-700">
-                                    Chọn chế độ
+                                    Select mode
                                 </label>
                                 <select
                                     id="mode"
@@ -299,7 +299,7 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
                                 </select>
 
                                 <p className="mt-4 text-sm text-gray-600">
-                                    Bạn đã chọn: <span className="font-semibold text-blue-600">{mode}</span>
+                                    You selected: <span className="font-semibold text-blue-600">{mode}</span>
                                 </p>
                             </div>
 
@@ -387,8 +387,8 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
                                 >
                                     {isSubmitting
                                         ? progress > 0 && progress < 100
-                                            ? `Đang tải lên... ${progress}%`
-                                            : "Đang đăng..."
+                                            ? `Uploading... ${progress}%`
+                                            : "Posting..."
                                         : status === '' ? "Add" : "Update"}
                                 </button>
                             </div>

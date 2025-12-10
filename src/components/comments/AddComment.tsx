@@ -14,8 +14,8 @@ import { useAuth } from "@/hooks/useAuth";
 const commentSchema = z.object({
     desc: z
         .string()
-        .min(1, "Bình luận không được để trống")
-        .max(300, "Bình luận tối đa 300 ký tự"),
+        .min(1, "Comment cannot be empty")
+        .max(300, "Comment must be at most 300 characters"),
 });
 
 type CommentUploadProps = {
@@ -54,19 +54,19 @@ const CommentUpload = ({
             console.log(response);
 
             if (!response.data) {
-                throw new Error("API không trả về kết quả hợp lệ");
+                throw new Error("API did not return a valid result");
             }
 
             onCommentAdded(response.data);
             setCommentText("");
         } catch (err) {
             if (err instanceof z.ZodError) {
-                const message = err.issues?.[0]?.message ?? "Lỗi validation";
+                const message = err.issues?.[0]?.message ?? "Validation error";
                 setErrorMessage(message);
                 toast.error(message);
             } else {
                 console.error(err);
-                toast.error("Không thể gửi bình luận");
+                toast.error("Unable to send comment");
             }
         } finally {
             setLoading(false);
@@ -103,7 +103,7 @@ const CommentUpload = ({
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder="Viết bình luận..."
+                    placeholder="Write a comment..."
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     disabled={loading}
                 />
@@ -113,7 +113,7 @@ const CommentUpload = ({
                     disabled={loading || !commentText.trim()}
                     className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {loading ? "Đang gửi..." : "Gửi"}
+                    {loading ? "Sending..." : "Send"}
                 </button>
             </div>
 

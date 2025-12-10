@@ -22,7 +22,7 @@ export function MessageInput({
     onTypingStop,
     onFocus,
     onBlur,
-    placeholder = 'Nhập tin nhắn...',
+    placeholder = 'Type a message...',
     disabled = false,
     autoFocus = false,
 }: MessageInputProps) {

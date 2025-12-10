@@ -20,7 +20,7 @@ export function convertParticipantProfileToUserInfo(
             name:
                 userProfile.name ||
                 `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim() ||
-                'Người dùng',
+                'User',
             email: userProfile.email,
             avatar, // Map avatarUrl to avatar
             isOnline,
@@ -34,7 +34,7 @@ export function convertParticipantProfileToUserInfo(
         return {
             id: companyProfile.companyId,
             type: ParticipantType.COMPANY,
-            name: companyProfile.name || 'Công ty',
+            name: companyProfile.name || 'Company',
             email: companyProfile.email || '',
             avatar: logo, // Map logoUrl to avatar
             isOnline,
@@ -151,11 +151,11 @@ export function formatConversationTime(date: Date): string {
     if (diffInDays === 0) {
         return formatMessageTime(messageDate);
     } else if (diffInDays === 1) {
-        return 'Hôm qua';
+        return 'Yesterday';
     } else if (diffInDays < 7) {
-        return `${diffInDays} ngày trước`;
+        return `${diffInDays} days ago`;
     } else {
-        return messageDate.toLocaleDateString('vi-VN');
+        return messageDate.toLocaleDateString('en-US');
     }
 }
 

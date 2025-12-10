@@ -86,7 +86,7 @@ export const Header = () => {
                 icon: MessageCircle,
                 label: 'Messages',
                 requiresAuth: true,
-                featureName: 'tin nhắn',
+                featureName: 'messaging',
             },
             {
                 name: 'companies',
@@ -94,7 +94,7 @@ export const Header = () => {
                 icon: Building2,
                 label: 'Companies',
                 requiresAuth: true,
-                featureName: 'quản lý công ty',
+                featureName: 'company management',
             },
             {
                 name: 'me',
@@ -102,7 +102,7 @@ export const Header = () => {
                 icon: User,
                 label: 'Me',
                 requiresAuth: true,
-                featureName: 'hồ sơ cá nhân',
+                featureName: 'profile',
                 hideWhenNotAuthenticated: true, // Hide completely when not authenticated
             },
         ],

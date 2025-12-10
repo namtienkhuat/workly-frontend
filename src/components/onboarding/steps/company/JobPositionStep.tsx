@@ -21,8 +21,8 @@ export default function JobPositionStep() {
 
     return (
         <div className="w-full max-w-lg animate-fade-in rounded-lg bg-white p-8 text-center shadow-md mx-auto">
-            <h1 className="text-3xl font-bold text-gray-800">Vị trí công việc hiện tại</h1>
-            <p className="mt-2 text-gray-600">Giúp Cake cá nhân hóa trải nghiệm của bạn.</p>
+            <h1 className="text-3xl font-bold text-gray-800">Current job position</h1>
+            <p className="mt-2 text-gray-600">Help Cake personalize your experience.</p>
 
             <Controller
                 name="jobPosition"

@@ -55,12 +55,12 @@ export default function ManageCompaniesPage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Manage Companies</h1>
                     <p className="text-muted-foreground mt-1">
-                        Quản lý và điều hành các công ty của bạn
+                        Manage and operate your companies
                     </p>
                 </div>
                 <Button onClick={handleCreateCompany} size="lg" className="gap-2">
                     <Plus className="h-5 w-5" />
-                    Tạo công ty mới
+                    Create new company
                 </Button>
             </div>
 
@@ -72,7 +72,7 @@ export default function ManageCompaniesPage() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="text"
-                                placeholder="Tìm kiếm công ty theo tên hoặc ngành nghề..."
+                                placeholder="Search companies by name or industry..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10"
@@ -95,13 +95,13 @@ export default function ManageCompaniesPage() {
                         <div className="rounded-full bg-muted p-6 mb-4">
                             <Building2 className="h-12 w-12 text-muted-foreground" />
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">Chưa có công ty nào</h3>
+                        <h3 className="text-xl font-semibold mb-2">No companies yet</h3>
                         <p className="text-muted-foreground text-center mb-6 max-w-md">
-                            Bạn chưa quản lý công ty nào. Tạo công ty đầu tiên của bạn để bắt đầu!
+                            You haven't managed any companies yet. Create your first company to get started!
                         </p>
                         <Button onClick={handleCreateCompany} size="lg" className="gap-2">
                             <Plus className="h-5 w-5" />
-                            Tạo công ty đầu tiên
+                            Create your first company
                         </Button>
                     </CardContent>
                 </Card>
@@ -109,15 +109,15 @@ export default function ManageCompaniesPage() {
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-12">
                         <Search className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">Không tìm thấy công ty nào</h3>
-                        <p className="text-muted-foreground">Thử tìm kiếm với từ khóa khác</p>
+                        <h3 className="text-lg font-semibold mb-2">No companies found</h3>
+                        <p className="text-muted-foreground">Try searching with different keywords</p>
                     </CardContent>
                 </Card>
             ) : (
                 <>
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">
-                            Tìm thấy {filteredCompanies.length} công ty
+                            Found {filteredCompanies.length} companies
                         </p>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
@@ -186,7 +186,7 @@ export default function ManageCompaniesPage() {
                                                         <div className="flex items-center gap-1">
                                                             <Calendar className="h-4 w-4" />
                                                             <span>
-                                                                Thành lập {company.foundedYear}
+                                                                Founded {company.foundedYear}
                                                             </span>
                                                         </div>
                                                     )}
@@ -194,7 +194,7 @@ export default function ManageCompaniesPage() {
 
                                                 {company.followersCount !== undefined && (
                                                     <p className="text-sm text-muted-foreground">
-                                                        {company.followersCount} người theo dõi
+                                                        {company.followersCount} followers
                                                     </p>
                                                 )}
                                             </div>

@@ -69,7 +69,7 @@ export default function OnboardingController() {
 
     const CurrentStepComponent = stepComponents[currentStepSlug];
     if (!CurrentStepComponent) {
-        return <div>Bước không hợp lệ.</div>;
+        return <div>Invalid step.</div>;
     }
 
     const goToNextStep = async () => {

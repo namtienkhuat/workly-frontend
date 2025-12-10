@@ -61,7 +61,7 @@ export function mergeMessages(existing: Message[], incoming: Message[]): Message
  * Get last message preview text
  */
 export function getLastMessagePreview(message: Message | undefined, maxLength: number = 50): string {
-    if (!message) return 'Chưa có tin nhắn';
+    if (!message) return 'No messages yet';
     
     const content = message.content.trim();
     if (content.length <= maxLength) return content;

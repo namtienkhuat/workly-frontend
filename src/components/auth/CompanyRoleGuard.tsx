@@ -59,11 +59,11 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
                         </div>
 
                         <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                            Không tìm thấy công ty
+                            Company not found
                         </h3>
                         <p className="text-muted-foreground text-center mb-8 max-w-md leading-relaxed">
-                            Công ty bạn đang tìm kiếm không tồn tại hoặc đã bị xóa. Vui lòng kiểm
-                            tra lại đường dẫn hoặc quay lại danh sách công ty.
+                            The company you are looking for does not exist or has been deleted. Please check
+                            the URL or return to the company list.
                         </p>
                         <Button
                             onClick={() => router.push('/manage-companies')}
@@ -71,7 +71,7 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
                             className="gap-2 shadow-md hover:shadow-lg transition-all duration-300"
                         >
                             <ArrowLeft className="h-4 w-4" />
-                            Quay lại danh sách công ty
+                            Back to company list
                         </Button>
                     </CardContent>
                 </Card>
@@ -98,11 +98,11 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
                             </div>
                             <div className="flex-1">
                                 <CardTitle className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
-                                    Không có quyền truy cập
+                                    Access Denied
                                 </CardTitle>
                                 <CardDescription className="text-base leading-relaxed">
-                                    Bạn không có quyền quản lý công ty này. Chỉ Owner và Admin mới
-                                    có thể truy cập và thực hiện các thao tác quản lý.
+                                    You do not have permission to manage this company. Only Owner and Admin can
+                                    access and perform management operations.
                                 </CardDescription>
                             </div>
                         </div>
@@ -114,7 +114,7 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
                             <div className="flex items-center gap-2 mb-4">
                                 <Sparkles className="h-5 w-5 text-primary" />
                                 <p className="font-semibold text-foreground">
-                                    Yêu cầu quyền truy cập:
+                                    Required access:
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
@@ -156,15 +156,15 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
                                 <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                                 <div className="space-y-2">
                                     <p className="text-sm font-medium text-foreground">
-                                        Làm thế nào để có quyền truy cập?
+                                        How to get access?
                                     </p>
                                     <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Nếu bạn cần quyền quản lý công ty này, vui lòng liên hệ với{' '}
+                                        If you need permission to manage this company, please contact the{' '}
                                         <span className="font-semibold text-foreground">Owner</span>{' '}
-                                        của công ty để được cấp quyền{' '}
+                                        of the company to be granted{' '}
                                         <span className="font-semibold text-foreground">Admin</span>
-                                        . Owner có thể thêm bạn vào danh sách quản trị viên thông
-                                        qua trang quản lý Admins.
+                                        {' '}permissions. The Owner can add you to the admin list through
+                                        the Admins management page.
                                     </p>
                                 </div>
                             </div>
@@ -178,13 +178,13 @@ export const CompanyRoleGuard: React.FC<CompanyRoleGuardProps> = ({
                                 className="flex-1 h-12 border-2 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 <ArrowLeft className="h-4 w-4 mr-2" />
-                                Quay lại danh sách công ty
+                                Back to company list
                             </Button>
                             <Button
                                 onClick={() => router.push('/home')}
                                 className="flex-1 h-12 bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] font-semibold"
                             >
-                                Về trang chủ
+                                Go to home
                             </Button>
                         </div>
                     </CardContent>

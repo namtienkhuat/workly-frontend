@@ -45,7 +45,7 @@ export default function ChatPage() {
     if (isLoading) {
         return (
             <div className="flex h-full items-center justify-center">
-                <LoadingSpinner size="lg" message="Đang tải..." />
+                <LoadingSpinner size="lg" message="Loading..." />
             </div>
         );
     }
@@ -86,11 +86,11 @@ export default function ChatPage() {
                     </div>
 
                     <h2 className="mb-4 text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        Tin nhắn của bạn
+                        Your messages
                     </h2>
                     <p className="text-muted-foreground max-w-md mx-auto text-base leading-relaxed">
-                        Chọn một cuộc trò chuyện từ danh sách bên trái để bắt đầu nhắn tin hoặc tạo
-                        cuộc trò chuyện mới
+                        Select a conversation from the list on the left to start messaging or create
+                        a new conversation
                     </p>
 
                     {/* Decorative dots */}

@@ -111,8 +111,8 @@ export function ConversationItem({
                         >
                             {otherParticipant.isDeleted
                                 ? otherParticipant.type === ParticipantType.COMPANY
-                                    ? 'Công ty không tồn tại'
-                                    : 'Tài khoản không tồn tại'
+                                    ? 'Company not found'
+                                    : 'Account not found'
                                 : otherParticipant.name}
                         </h3>
                         {lastMessageAt && (
@@ -136,7 +136,7 @@ export function ConversationItem({
                                     : 'text-muted-foreground'
                             }`}
                         >
-                            {lastMessage?.content || 'Chưa có tin nhắn'}
+                            {lastMessage?.content || 'No messages yet'}
                         </p>
 
                         {myUnreadCount > 0 && (
@@ -184,7 +184,7 @@ export function ConversationItem({
                                             <User className="h-3.5 w-3.5 text-primary" />
                                         )}
                                     </div>
-                                    <span className="font-medium">Xem trang cá nhân</span>
+                                    <span className="font-medium">View profile</span>
                                 </button>
                             )}
                             <button
@@ -194,7 +194,7 @@ export function ConversationItem({
                                 <div className="rounded-md bg-destructive/10 p-1.5 group-hover/item:bg-destructive/20 transition-colors">
                                     <Trash2 className="h-3.5 w-3.5" />
                                 </div>
-                                <span className="font-medium">Xóa cuộc trò chuyện</span>
+                                <span className="font-medium">Delete conversation</span>
                             </button>
                         </div>
                     </PopoverContent>
@@ -205,20 +205,20 @@ export function ConversationItem({
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xóa cuộc trò chuyện?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Bạn có chắc chắn muốn xóa cuộc trò chuyện với{' '}
-                            <span className="font-semibold">{otherParticipant.name}</span>? Hành
-                            động này không thể hoàn tác.
+                            Are you sure you want to delete the conversation with{' '}
+                            <span className="font-semibold">{otherParticipant.name}</span>? This
+                            action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmDelete}
                             className="bg-destructive hover:bg-destructive/90"
                         >
-                            Xóa
+                            Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

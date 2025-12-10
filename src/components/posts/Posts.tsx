@@ -44,7 +44,7 @@ const Posts = ({ type }: { type: string }) => {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Không thể tải bài viết");
+      toast.error("Unable to load posts");
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ const Posts = ({ type }: { type: string }) => {
     return (
       <div>
         {canUpload && <UploadPostModal reload={fetchPosts} editPost={posts.find(p => p._id === status)} setStatus={setStatus} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} status={status} />}
-        <div className="text-center py-10 text-gray-500">Đang tải bài viết...</div>
+        <div className="text-center py-10 text-gray-500">Loading posts...</div>
       </div>
     );
   }
@@ -69,7 +69,7 @@ const Posts = ({ type }: { type: string }) => {
     return (
       <div>
         {canUpload && <UploadPostModal reload={fetchPosts} editPost={posts.find(p => p._id === status)} setStatus={setStatus} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} status={status} />}
-        <div className="text-center py-10 text-gray-400">Chưa có bài viết nào.</div>
+        <div className="text-center py-10 text-gray-400">No posts yet.</div>
       </div>
     );
   }
@@ -86,9 +86,9 @@ const Posts = ({ type }: { type: string }) => {
           fetchPosts(nextPage);
         }}
         hasMore={hasMore}
-        loader={<h4 className="text-center py-4">Đang tải thêm...</h4>}
+        loader={<h4 className="text-center py-4">Loading more...</h4>}
         endMessage={
-          <p className="text-center py-4 text-gray-400">Không còn bài viết nào nữa.</p>
+          <p className="text-center py-4 text-gray-400">No more posts.</p>
         }
       >
         <div className="flex flex-col gap-12">

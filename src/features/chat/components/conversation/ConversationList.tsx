@@ -56,7 +56,7 @@ export function ConversationList({
                             <MessageSquare className="h-5 w-5 text-primary" />
                         </div>
                         <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                            Tin nhắn
+                            Messages
                         </h2>
                     </div>
 
@@ -65,7 +65,7 @@ export function ConversationList({
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none transition-colors group-focus-within:text-primary" />
                         <Input
                             type="text"
-                            placeholder="Tìm kiếm cuộc trò chuyện..."
+                            placeholder="Search conversations..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-10 h-10 bg-background/80 backdrop-blur-sm border-border/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50 hover:border-primary/30 transition-all duration-200 shadow-sm"
@@ -78,13 +78,13 @@ export function ConversationList({
             <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/30">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
-                        <LoadingSpinner message="Đang tải..." />
+                        <LoadingSpinner message="Loading..." />
                     </div>
                 ) : sortedConversations.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 px-6">
                         <EmptyState
                             message={
-                                searchQuery ? 'Không tìm thấy kết quả' : 'Chưa có cuộc trò chuyện nào'
+                                searchQuery ? 'No results found' : 'No conversations yet'
                             }
                         />
                     </div>
