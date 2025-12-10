@@ -19,7 +19,6 @@ type CommentsProps = {
 
 const Comments = ({ postId, onAddComment }: CommentsProps) => {
   const [comments, setComments] = useState<DataNode[]>([]);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [replyToCommentId, setReplyToCommentId] = useState<string | null>(null);
   const handleCommentAdded = async (result: InsertOneResult) => {
@@ -32,7 +31,7 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
         const newComment: DataNode = {
           key: data.id,
           title: (
-            <div className="flex">
+            <div className="flex w-full">
               {data.author.imageUrl ? (
                 <Image
                   src={data.author.imageUrl}
@@ -40,11 +39,11 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
                   loading="lazy"
                   width={40}
                   height={40}
-                  className="object-cover rounded-full"
+                  className="object-cover rounded-full flex-shrink-0"
                 />
               ) : (
                 <Avatar
-                  className="h-[40px] w-[40px] rounded-full border-muted"
+                  className="h-[40px] w-[40px] rounded-full border-muted flex-shrink-0"
                   style={{ backgroundColor: StringUtil.getRandomColor() }}
                 >
                   <AvatarFallback className="text-xl bg-white">
@@ -52,16 +51,16 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
                   </AvatarFallback>
                 </Avatar>
               )}
-              <div className="flex flex-col gap-3 w-full">
+              <div className="flex flex-col gap-3 flex-1 min-w-0">
 
-                <div>
-                  <div className="flex items-center">
-                    <div className="ml-4">
+                <div className="w-full">
+                  <div className="flex items-center w-full">
+                    <div className="ml-4 flex-1 min-w-0">
                       <strong>{data.author.name}</strong>
                       <span className="text-gray-400 text-xs ml-2">
                         now
                       </span>
-                      <p className="text-gray-600">{data.content}</p>
+                      <p className="text-gray-600 break-words">{data.content}</p>
                     </div>
                   </div>
 
@@ -94,7 +93,7 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Unable to load new comments");
+      toast.error("Failed to load new comment");
     }
   };
 
@@ -110,17 +109,13 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
           replyToCommentId || '',
           postId,
           handleCommentAdded,
-          openMenuId || '',
-          (id: string) => {
-            setOpenMenuId(id)
-          }
         )
       );
 
       setComments(treeData || []);
     } catch (error) {
       console.error(error);
-      toast.error("Unable to load comments");
+      toast.error("Failed to load comments");
     } finally {
       setLoading(false);
     }
@@ -141,13 +136,14 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
   }
 
   return (
-    <div className="flex flex-col max-h-[500px]">
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 py-5">
+    <div className="flex flex-col max-h-[500px] w-full">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 py-5 w-full">
         <Tree
           treeData={comments}
           defaultExpandAll={false}
           selectable={false}
-          className="comment-tree"
+          className="comment-tree w-full"
+          style={{ width: '100%' }}
           switcherIcon={({ expanded }) => (
             <div
               style={{
@@ -165,7 +161,7 @@ const Comments = ({ postId, onAddComment }: CommentsProps) => {
               {expanded ? "-" : "+"}
             </div>)} />
       </div>
-      <div className="mt-4 pt-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+      <div className="mt-4 pt-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 w-full">
         <CommentUpload
           postId={postId}
           onCommentAdded={handleCommentAdded}
