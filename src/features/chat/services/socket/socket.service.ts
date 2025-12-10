@@ -29,12 +29,21 @@ class MultiSocketService {
             auth.userType = userType;
         }
 
-        const socket = io(CHAT_CONSTANTS.SOCKET_URL, {
+        // Construct full URL for socket.io connection through API Gateway
+        // Socket.io path must include the full path including /api/v1
+        const socketUrl = CHAT_CONSTANTS.SOCKET_URL;
+
+        const socket = io(socketUrl, {
             auth,
+            path: '/api/v1/socket.io/',
+            transports: ['websocket', 'polling'],
+            upgrade: true,
+            forceNew: true,
             reconnection: true,
             reconnectionDelay: CHAT_CONSTANTS.RECONNECT_DELAY,
             reconnectionDelayMax: CHAT_CONSTANTS.RECONNECT_DELAY_MAX,
             reconnectionAttempts: CHAT_CONSTANTS.MAX_RECONNECT_ATTEMPTS,
+            withCredentials: true,
         });
 
         this.sockets[identity] = socket;
@@ -47,16 +56,22 @@ class MultiSocketService {
         if (!socket) return;
 
         socket.on(SOCKET_EVENTS.CONNECT, () => {
+            console.log(`[Socket ${identity}] Connected successfully`);
             this.reconnectAttempts[identity] = 0;
         });
 
-        socket.on(SOCKET_EVENTS.DISCONNECT, () => {});
+        socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
+            console.log(`[Socket ${identity}] Disconnected:`, reason);
+        });
 
-        socket.on(SOCKET_EVENTS.CONNECT_ERROR, () => {
+        socket.on(SOCKET_EVENTS.CONNECT_ERROR, (error) => {
+            console.error(`[Socket ${identity}] Connection error:`, error);
             this.reconnectAttempts[identity]++;
         });
 
-        socket.on(SOCKET_EVENTS.ERROR, () => {});
+        socket.on(SOCKET_EVENTS.ERROR, (error) => {
+            console.error(`[Socket ${identity}] Error:`, error);
+        });
     }
 
     disconnect(identity: SocketIdentity): void {

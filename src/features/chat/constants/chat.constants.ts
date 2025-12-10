@@ -1,8 +1,8 @@
 // Chat feature constants
 
 export const CHAT_CONSTANTS = {
-    // Socket - Connect directly to service for real-time performance (bypass Kong)
-    SOCKET_URL: process.env.NEXT_PUBLIC_CHAT_SOCKET_URL || 'http://localhost:8005',
+    // Socket - Connect through API Gateway
+    SOCKET_URL: process.env.NEXT_PUBLIC_CHAT_SOCKET_URL || 'http://localhost:8000',
     MAX_RECONNECT_ATTEMPTS: 5,
     RECONNECT_DELAY: 1000,
     RECONNECT_DELAY_MAX: 5000,
