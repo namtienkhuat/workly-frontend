@@ -1,19 +1,24 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import CommonService from "../../services/common/commonService"
-import { CreatePostDTO, PostVisibilityType, UpdatePostDTO } from "@/models/profileModel";
-import { apiPaths } from "@/configs/route";
-import ProfileService from "@/services/profile/profileService";
-import { toast } from "sonner";
-import z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuth } from "@/hooks/useAuth";
-import Image from "next/image";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import { getInitials, getMediaUrl, getMimeType } from "@/utils/helpers";
-import StringUtil from "@/utils/StringUtil";
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import CommonService from '../../services/common/commonService';
+import { CreatePostDTO, PostVisibilityType, UpdatePostDTO } from '@/models/profileModel';
+import { apiPaths } from '@/configs/route';
+import ProfileService from '@/services/profile/profileService';
+import { toast } from 'sonner';
+import z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useAuth } from '@/hooks/useAuth';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { getInitials, getMediaUrl, getMimeType } from '@/utils/helpers';
+import StringUtil from '@/utils/StringUtil';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { X, ImageIcon, VideoIcon, Globe, Lock, Users, Loader2 } from 'lucide-react';
+import { Badge } from '../ui/badge';
+import RichTextEditor from './RichTextEditor';
 
 type PreviewFile = {
     url: string;
@@ -23,25 +28,56 @@ type PreviewFile = {
     originalUrl?: string;
     originalType?: string;
 };
-export default function UploadPostModal({ reload, type, authorId, isOpen, setIsOpen, status, setStatus, editPost }:
-    { reload: any, type: string, authorId: string, isOpen: any, setIsOpen: any, status?: string, setStatus?: any, editPost?: any }) {
+export default function UploadPostModal({
+    reload,
+    type,
+    authorId,
+    isOpen,
+    setIsOpen,
+    status,
+    setStatus,
+    editPost,
+}: {
+    reload: any;
+    type: string;
+    authorId: string;
+    isOpen: any;
+    setIsOpen: any;
+    status?: string;
+    setStatus?: any;
+    editPost?: any;
+}) {
     const [previews, setPreviews] = useState<PreviewFile[]>([]);
     const [progress, setProgress] = useState(0);
-    const [uploading, setUploading] = useState(false);
     const [newFiles, setNewFiles] = useState<PreviewFile[]>([]);
     const [deletedFiles, setDeletedFiles] = useState<PreviewFile[]>([]);
-
+    const [editorContent, setEditorContent] = useState<string>('');
 
     const { isLoading: isLoadingAuth, user: currentUser } = useAuth();
 
     const [mode, setMode] = useState<PostVisibilityType>(PostVisibilityType.PUBLIC);
     const formSchema = z.object({
-        description: z.string().min(1, "Description is required"),
-        media: z.any()
-    })
+        description: z.string().min(1, 'Description is required'),
+        media: z.any(),
+    });
+
+    type FormData = z.infer<typeof formSchema>;
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        setValue,
+        formState: { errors, isSubmitting },
+    } = useForm<FormData>({
+        resolver: zodResolver(formSchema),
+    });
+
     useEffect(() => {
         if (status !== '' && editPost) {
-            reset({ description: editPost.content });
+            const content = editPost.content || '';
+            reset({ description: content });
+            setEditorContent(content);
             if (editPost.media_url && editPost.media_url.length > 0) {
                 const previewsFromServer = editPost.media_url.map((media: any) => {
                     const fileUrl = media?.url || media;
@@ -53,7 +89,7 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
                         file: null,
                         isOriginal: true,
                         originalUrl: fileUrl,
-                        originalType: mediaType
+                        originalType: mediaType,
                     };
                 });
 
@@ -62,27 +98,16 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
             setMode(editPost.visibility);
         } else {
             reset({ description: '' });
+            setEditorContent('');
             setPreviews([]);
             setMode(PostVisibilityType.PUBLIC);
         }
-    }, [editPost, status]);
-
-    type FormData = z.infer<typeof formSchema>;
-
-    const {
-        register,
-        handleSubmit,
-        reset,
-        formState: { errors, isSubmitting },
-    } = useForm<FormData>(
-        {
-            resolver: zodResolver(formSchema),
-        }
-    );
+    }, [editPost, status, reset]);
 
     const handleClosePopup = () => {
-        reload()
+        reload();
         reset({ description: '' });
+        setEditorContent('');
         setPreviews([]);
         setProgress(0);
         setMode(PostVisibilityType.PUBLIC);
@@ -90,32 +115,35 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
         setStatus('');
         setNewFiles([]);
         setDeletedFiles([]);
-    }
+    };
 
     const uploadFiles = async (files: FileList): Promise<any> => {
         try {
             const result = await CommonService.uploadFilesToServer(files, apiPaths.uploadFile, {
                 onProgress: setProgress,
-                onUploadingChange: setUploading,
-            })
-            return result
+            });
+            return result;
         } catch (error) {
-            console.error("Upload failed:", error);
             throw error;
         }
     };
     function filesArrayToFileList(files: PreviewFile[]): FileList {
         const dataTransfer = new DataTransfer();
-        files.forEach(file => dataTransfer.items.add(file.file));
+        files.forEach((file) => dataTransfer.items.add(file.file));
         return dataTransfer.files;
     }
     const onSubmit = async (data: FormData) => {
         try {
             let finalMediaUrls = [];
+            const content = editorContent || data.description || '';
+
+            const textContent = content.replace(/<[^>]*>/g, '').trim();
+            if (!textContent) {
+                toast.error('Please enter some content');
+                return;
+            }
 
             if (status !== '' && editPost) {
-                // MODE EDIT
-                // Upload new files
                 if (newFiles.length > 0) {
                     const files = filesArrayToFileList(newFiles);
                     finalMediaUrls = await uploadFiles(files);
@@ -123,30 +151,29 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
 
                 const updatePostData: UpdatePostDTO = {
                     postId: editPost._id,
-                    content: data.description,
+                    content: content,
                     media_url_add: finalMediaUrls,
                     media_url_delete: deletedFiles as any,
                     visibility: mode ? mode : PostVisibilityType.PUBLIC,
                     author_type: type,
-                    author_id: authorId
+                    author_id: authorId,
                 };
 
                 await ProfileService.updatePost(updatePostData);
             }
 
             if (status === '' && !editPost) {
-                // MODE ADD
                 if (previews.length > 0) {
                     const files = filesArrayToFileList(previews);
                     finalMediaUrls = await uploadFiles(files);
                 }
 
                 const postData: CreatePostDTO = {
-                    content: data.description,
+                    content: content,
                     media_url: finalMediaUrls,
                     visibility: mode ? mode : PostVisibilityType.PUBLIC,
                     author_type: type,
-                    author_id: authorId
+                    author_id: authorId,
                 };
 
                 await ProfileService.addPost(postData);
@@ -154,9 +181,12 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
 
             handleClosePopup();
             toast.success('Successfully!');
-        } catch (err) {
-            console.error(err);
-            toast.error("error");
+        } catch (err: any) {
+            const errorMessage =
+                err?.response?.data?.message ||
+                err?.message ||
+                'Failed to save post. Please try again.';
+            toast.error(errorMessage);
             setProgress(0);
         }
     };
@@ -168,7 +198,7 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
                 url: URL.createObjectURL(file),
                 type: file.type,
                 file: file,
-                isOriginal: false  // new File
+                isOriginal: false,
             }));
 
             setPreviews((prev) => [...prev, ...newPreviews]);
@@ -178,8 +208,7 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = e.target.value;
+    const handleModeChange = (value: string) => {
         if (
             value === PostVisibilityType.PUBLIC ||
             value === PostVisibilityType.PRIVATE ||
@@ -200,7 +229,6 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
                     return updated;
                 });
             }
-
 
             if (!fileToRemove.isOriginal) {
                 setNewFiles((prevNew) => {
@@ -226,130 +254,284 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
         });
     };
     if (isLoadingAuth) {
-        return <div>loading....</div>
+        return (
+            <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+        );
     }
+
+    const getVisibilityIcon = (mode: PostVisibilityType) => {
+        switch (mode) {
+            case PostVisibilityType.PUBLIC:
+                return <Globe className="h-4 w-4" />;
+            case PostVisibilityType.PRIVATE:
+                return <Lock className="h-4 w-4" />;
+            case PostVisibilityType.FOLLOWER:
+                return <Users className="h-4 w-4" />;
+            default:
+                return <Globe className="h-4 w-4" />;
+        }
+    };
+
     return (
-        <div className="text-center py-[50px]">
-            <div className="flex">
-                <div className=" mr-5">
-                    {currentUser!!.avatarUrl ? (
-                        <Image
-                            src={currentUser!!.avatarUrl}
-                            alt={currentUser!!.name}
-                            loading="lazy"
-                            width={15}
-                            height={15}
-                            className="object-cover"
-                        />
-                    ) : (
-                        <Avatar className="h-[50px] w-[50px] rounded-full border-muted text-2xl" style={{ backgroundColor: StringUtil.getRandomColor() }}
-                        >
-                            <AvatarFallback className="text-2xl bg-white">
-                                {getInitials(currentUser!!.name)}
+        <div className="mb-6">
+            {/* Trigger Button */}
+            <div
+                className="relative flex items-center gap-4 p-5 rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-sm shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden"
+                onClick={() => {
+                    setIsOpen(true);
+                    setStatus('');
+                }}
+            >
+                {/* Animated background gradient */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                {/* Animated pattern overlay */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300">
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(68,68,68,.1)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]"></div>
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 flex items-center gap-4 w-full">
+                    {/* Avatar with glow effect */}
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <Avatar className="h-14 w-14 border-2 border-primary/30 group-hover:border-primary/60 transition-all duration-300 relative z-10 shadow-lg group-hover:shadow-primary/20 group-hover:scale-105">
+                            {currentUser?.avatarUrl ? (
+                                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+                            ) : null}
+                            <AvatarFallback
+                                className="text-base font-semibold bg-gradient-to-br from-primary/20 to-primary/10"
+                                style={{ backgroundColor: StringUtil.getRandomColor() }}
+                            >
+                                {getInitials(currentUser?.name || 'U')}
                             </AvatarFallback>
                         </Avatar>
-                    )}</div>
-                <button
-                    onClick={() => { setIsOpen(true); setStatus('') }}
-                    className="bg-[#DCDCDC] font-bold text-white text-left px-4 py-2 w-full border border-[#D3D3D3] rounded-lg hover:bg-[#D3D3D3] transition"
-                >
-                    What are you thinking?
-                </button>
+                    </div>
+
+                    {/* Input area */}
+                    <div className="flex-1 text-left">
+                        <p className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-300">
+                            What&apos;s on your mind?
+                        </p>
+                        <p className="text-xs text-muted-foreground/70 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            Share your thoughts, photos, or videos
+                        </p>
+                    </div>
+
+                    {/* Action icons */}
+                    <div className="flex gap-3 items-center">
+                        <div className="p-2.5 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+                            <ImageIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors" />
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-purple-500/10 group-hover:bg-purple-500/20 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                            <VideoIcon className="h-5 w-5 text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Shine effect on hover */}
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out">
+                    <div className="w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                </div>
             </div>
 
-            {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-xl p-6 relative animate-fade-in">
-                        <button
-                            onClick={handleClosePopup}
-                            className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:hover:text-white"
-                            disabled={isSubmitting}
-                        >
-                            ✕
-                        </button>
+            <Dialog
+                open={isOpen}
+                onOpenChange={(open) => {
+                    if (!open) handleClosePopup();
+                }}
+            >
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold">
+                            {status === '' ? 'Create New Post' : 'Edit Post'}
+                        </DialogTitle>
+                    </DialogHeader>
 
-                        <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
-                            Create new post
-                        </h2>
-
-                        {/* Form */}
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                            <textarea
-                                {...register("description")}
-                                placeholder="What's on your mind?"
-                                className="w-full p-3 border rounded-md dark:bg-gray-800 dark:text-white"
-                                rows={6}
-                            />
-                            {errors.description && (
-                                <p className="text-red-500 text-sm">{errors.description.message}</p>
-                            )}
-                            <div className="max-w-sm mx-auto mt-6">
-                                <label htmlFor="mode" className="block mb-2 text-sm font-medium text-gray-700">
-                                    Select mode
-                                </label>
-                                <select
-                                    id="mode"
-                                    value={mode}
-                                    onChange={handleChange}
-                                    className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800"
+                    {/* Form */}
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                        {/* User Info */}
+                        <div className="flex items-center gap-3 pb-4 border-b">
+                            <Avatar className="h-10 w-10">
+                                {currentUser?.avatarUrl ? (
+                                    <AvatarImage
+                                        src={currentUser.avatarUrl}
+                                        alt={currentUser.name}
+                                    />
+                                ) : null}
+                                <AvatarFallback
+                                    className="text-sm"
+                                    style={{ backgroundColor: StringUtil.getRandomColor() }}
                                 >
-                                    <option value={PostVisibilityType.PUBLIC}>PUBLIC</option>
-                                    <option value={PostVisibilityType.PRIVATE}>PRIVATE</option>
-                                    <option value={PostVisibilityType.FOLLOWER}>FOLLOWER</option>
-                                </select>
-
-                                <p className="mt-4 text-sm text-gray-600">
-                                    You selected: <span className="font-semibold text-blue-600">{mode}</span>
-                                </p>
+                                    {getInitials(currentUser?.name || 'U')}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold text-sm">{currentUser?.name}</p>
+                                <Badge variant="secondary" className="text-xs mt-1 gap-1">
+                                    {getVisibilityIcon(mode)}
+                                    {mode}
+                                </Badge>
                             </div>
+                        </div>
 
-                            <input
-                                type="file"
-                                multiple
-                                accept="image/*,video/*"
-                                {...register("media")}
-                                onChange={handleFileChange}
-                                disabled={isSubmitting}
-                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 
-                                            file:rounded-md file:border-0 file:text-sm file:font-semibold 
-                                            file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100
-                                            disabled:opacity-50 disabled:cursor-not-allowed  "
+                        {/* Rich Text Editor */}
+                        <div className="space-y-2">
+                            <RichTextEditor
+                                content={editorContent}
+                                onChange={(content) => {
+                                    setEditorContent(content);
+                                    setValue('description', content);
+                                }}
+                                placeholder="What's on your mind?"
+                                error={errors.description?.message}
                             />
+                        </div>
 
-                            {/* Upload Progress */}
-                            {progress > 0 && progress < 100 && (
-                                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                                    <div
-                                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                                        style={{ width: `${progress}%` }}
-                                    ></div>
+                        {/* Visibility Selector */}
+                        <div className="space-y-3">
+                            <label className="text-sm font-medium flex items-center gap-2 text-foreground">
+                                <Globe className="h-4 w-4 text-muted-foreground" />
+                                Post Visibility
+                            </label>
+                            <Select value={mode} onValueChange={handleModeChange}>
+                                <SelectTrigger className="w-full h-11 border-2 border-input/50 bg-background hover:border-primary/50 transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                    <div className="flex items-center gap-2.5 w-full">
+                                        <span className="flex-shrink-0">
+                                            {getVisibilityIcon(mode)}
+                                        </span>
+                                        <SelectValue className="flex-1 text-left font-medium">
+                                            {mode === PostVisibilityType.PUBLIC && 'Public'}
+                                            {mode === PostVisibilityType.PRIVATE && 'Private'}
+                                            {mode === PostVisibilityType.FOLLOWER && 'Followers'}
+                                        </SelectValue>
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="min-w-[320px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+                                    <SelectItem
+                                        value={PostVisibilityType.PUBLIC}
+                                        className="cursor-pointer py-3 px-4 hover:bg-accent/50 transition-all duration-200 focus:bg-accent rounded-md data-[highlighted]:bg-accent"
+                                    >
+                                        <div className="flex items-center gap-3 w-full pr-8">
+                                            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/30 transition-transform duration-200 group-hover:scale-110 flex-shrink-0">
+                                                <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-sm text-foreground">
+                                                    Public
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-0.5">
+                                                    Anyone can see this post
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem
+                                        value={PostVisibilityType.PRIVATE}
+                                        className="cursor-pointer py-3 px-4 hover:bg-accent/50 transition-all duration-200 focus:bg-accent rounded-md data-[highlighted]:bg-accent"
+                                    >
+                                        <div className="flex items-center gap-3 w-full pr-8">
+                                            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/30 transition-transform duration-200 group-hover:scale-110 flex-shrink-0">
+                                                <Lock className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-sm text-foreground">
+                                                    Private
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-0.5">
+                                                    Only you can see this post
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem
+                                        value={PostVisibilityType.FOLLOWER}
+                                        className="cursor-pointer py-3 px-4 hover:bg-accent/50 transition-all duration-200 focus:bg-accent rounded-md data-[highlighted]:bg-accent"
+                                    >
+                                        <div className="flex items-center gap-3 w-full pr-8">
+                                            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 transition-transform duration-200 group-hover:scale-110 flex-shrink-0">
+                                                <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-sm text-foreground">
+                                                    Followers
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-0.5">
+                                                    Only your followers can see this
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* File Upload */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium flex items-center gap-2">
+                                <ImageIcon className="h-4 w-4" />
+                                Media Files
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*,video/*"
+                                    {...register('media')}
+                                    onChange={handleFileChange}
+                                    disabled={isSubmitting}
+                                    className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2.5 file:px-4 
+                                                file:rounded-lg file:border-0 file:text-sm file:font-semibold 
+                                                file:bg-primary/10 file:text-primary hover:file:bg-primary/20
+                                                disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Upload Progress */}
+                        {progress > 0 && progress < 100 && (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Uploading...</span>
+                                    <span className="font-medium text-primary">{progress}%</span>
                                 </div>
-                            )}
+                                <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                                    <div
+                                        className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
-                            {/* Preview ảnh & video */}
-                            {previews.length > 0 && (
-                                <div className="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto">
+                        {/* Preview Media */}
+                        {previews.length > 0 && (
+                            <div className="space-y-3">
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    {previews.length} file{previews.length > 1 ? 's' : ''} selected
+                                </p>
+                                <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto p-1">
                                     {previews.map((file, index) => (
-                                        <div key={index} className="relative group">
-                                            {file.type.startsWith("video/") ? (
+                                        <div
+                                            key={index}
+                                            className="relative group rounded-lg overflow-hidden border border-border bg-muted/30"
+                                        >
+                                            {file.type.startsWith('video/') ? (
                                                 <video
                                                     src={file.url}
                                                     controls
-                                                    className="w-full max-h-64 rounded-md object-cover"
-                                                    onError={(e) => {
-                                                        console.error('Video load ERROR:', file.url);
-                                                        console.error('Error details:', e);
-                                                    }}
+                                                    className="w-full h-32 object-cover"
+                                                    onError={(e) => {}}
                                                 />
                                             ) : (
+                                                // eslint-disable-next-line @next/next/no-img-element
                                                 <img
                                                     src={file.url}
                                                     alt={`preview-${index}`}
-                                                    className="w-full max-h-64 object-cover rounded-md"
-                                                    onError={(e) => {
-                                                        console.error('Image load ERROR:', file.url);
-                                                        console.error('Error details:', e);
-                                                    }}
+                                                    className="w-full h-32 object-cover"
+                                                    onError={(e) => {}}
                                                 />
                                             )}
                                             {/* Remove button */}
@@ -357,45 +539,46 @@ export default function UploadPostModal({ reload, type, authorId, isOpen, setIsO
                                                 type="button"
                                                 onClick={() => removePreview(index)}
                                                 disabled={isSubmitting}
-                                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 
+                                                className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full w-7 h-7 
                                                             flex items-center justify-center opacity-0 group-hover:opacity-100 
-                                                            transition-opacity hover:bg-red-600 disabled:opacity-50"
+                                                            transition-all hover:bg-destructive/90 disabled:opacity-50 shadow-lg"
                                             >
-                                                ✕
+                                                <X className="h-4 w-4" />
                                             </button>
                                         </div>
                                     ))}
                                 </div>
-                            )}
-
-                            <div className="flex justify-end gap-3 pt-3">
-                                <button
-                                    type="button"
-                                    onClick={handleClosePopup}
-                                    disabled={isSubmitting}
-                                    className="px-4 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 
-                                                dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800
-                                                disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 
-                                              disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isSubmitting
-                                        ? progress > 0 && progress < 100
-                                            ? `Uploading... ${progress}%`
-                                            : "Posting..."
-                                        : status === '' ? "Add" : "Update"}
-                                </button>
                             </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-end gap-3 pt-4 border-t">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleClosePopup}
+                                disabled={isSubmitting}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting} className="min-w-[100px]">
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        {progress > 0 && progress < 100
+                                            ? `Uploading ${progress}%`
+                                            : 'Posting...'}
+                                    </>
+                                ) : status === '' ? (
+                                    'Post'
+                                ) : (
+                                    'Update'
+                                )}
+                            </Button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

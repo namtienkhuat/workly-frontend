@@ -117,7 +117,7 @@ const EditCompanyPage = () => {
 
         if (success) {
             toast.success('Company deleted successfully!');
-            router.push('/');
+            router.push('/manage-companies');
         } else {
             toast.error('Failed to delete company', {
                 description: message,
