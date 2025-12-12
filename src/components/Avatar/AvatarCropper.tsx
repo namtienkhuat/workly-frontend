@@ -10,6 +10,7 @@ interface AvatarCropperProps {
     initialImageUrl?: string;
     aspectRatio?: number;
     circularCrop?: boolean;
+    onError?: (error: string) => void;
 }
 
 const AvatarCropper: React.FC<AvatarCropperProps> = ({
@@ -17,6 +18,7 @@ const AvatarCropper: React.FC<AvatarCropperProps> = ({
     initialImageUrl,
     aspectRatio = 1,
     circularCrop,
+    onError,
 }) => {
     const [imgSrc, setImgSrc] = useState<string>(initialImageUrl || '');
     const [crop, setCrop] = useState<Crop>();
@@ -28,13 +30,52 @@ const AvatarCropper: React.FC<AvatarCropperProps> = ({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Constants matching backend validation
+    const MAX_FILE_SIZE = 1024 * 1024 * 2; // 2MB
+
     const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Clear previous errors
+        if (onError) {
+            onError('');
+        }
+
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
             if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    const errorMsg = 'Invalid file type. Please select an image file.';
+                    if (onError) {
+                        onError(errorMsg);
+                    }
+                    // Reset file input
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                    return;
+                }
+
+                // Validate file size
+                if (file.size > MAX_FILE_SIZE) {
+                    const errorMsg = `File size exceeds 2MB limit. Please select a smaller image.`;
+                    if (onError) {
+                        onError(errorMsg);
+                    }
+                    // Reset file input
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                    return;
+                }
+
+                // File is valid, proceed with reading
                 const reader = new FileReader();
                 reader.addEventListener('load', () => {
                     setImgSrc(reader.result?.toString() || '');
+                    // Clear any previous errors on successful load
+                    if (onError) {
+                        onError('');
+                    }
                 });
                 reader.readAsDataURL(file);
             }
