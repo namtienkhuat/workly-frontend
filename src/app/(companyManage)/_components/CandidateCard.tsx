@@ -1,22 +1,39 @@
 'use client';
 
-import { Candidate } from "@/models/jobModel";
-import { getCVUrl } from "@/utils/helpers";
-import { useState } from "react";
-import DocumentViewer from "./DocumentViewer";
+import { Candidate } from '@/models/jobModel';
+import { getCVUrl } from '@/utils/helpers';
+import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { MessageCircle } from 'lucide-react';
+import DocumentViewer from './DocumentViewer';
 
 export default function CandidateCard({
     candidate,
-    onFeedback
+    onFeedback,
 }: {
     candidate: Candidate;
     jobId: string;
     onFeedback?: (userId: string, status: 'ACCEPTED' | 'REJECTED') => Promise<void>;
 }) {
+    const params = useParams();
     const [showPDFPreview, setShowPDFPreview] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
     const isPDF = getCVUrl(candidate.cvUrl);
+
+    const handleProfileClick = () => {
+        window.open(`/profile/${candidate.userId}`, '_blank');
+    };
+
+    const handleChatClick = () => {
+        const currCompanyId = params.id as string;
+        if (currCompanyId) {
+            window.open(
+                `/manage-company/${currCompanyId}/messages/user/${candidate.userId}`,
+                '_blank'
+            );
+        }
+    };
 
     const handleAccept = async () => {
         if (!onFeedback) return;
@@ -44,18 +61,35 @@ export default function CandidateCard({
         <>
             <div className="border rounded-lg p-4 mb-3 hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-2">
-                    <div>
-                        <h3 className="font-semibold text-lg">{candidate.name}</h3>
+                    <div className="flex-1">
+                        <h3
+                            onClick={handleProfileClick}
+                            className="font-semibold text-lg hover:text-blue-600 cursor-pointer transition-colors"
+                        >
+                            {candidate.name}
+                        </h3>
                         <p className="text-sm text-gray-600">{candidate.email}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${candidate.status === 'PENDING'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : candidate.status === 'ACCEPTED'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                        {candidate.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleChatClick}
+                            className="p-2 hover:bg-blue-50 rounded-full transition-colors group"
+                            title="Chat with candidate"
+                        >
+                            <MessageCircle className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
+                        </button>
+                        <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                candidate.status === 'PENDING'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : candidate.status === 'ACCEPTED'
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-red-100 text-red-700'
+                            }`}
+                        >
+                            {candidate.status}
+                        </span>
+                    </div>
                 </div>
 
                 {candidate.coverLetter && (
@@ -113,9 +147,7 @@ export default function CandidateCard({
                     >
                         {/* Header */}
                         <div className="flex justify-between items-center p-4 border-b">
-                            <h3 className="font-semibold text-lg">
-                                {candidate.name}'s CV
-                            </h3>
+                            <h3 className="font-semibold text-lg">{candidate.name}'s CV</h3>
                             <div className="flex items-center gap-2">
                                 <a
                                     href={candidate.cvUrl}
