@@ -117,6 +117,10 @@ export function useGetJobById(id: string) {
     return useData([`/jobs/${id}`, {}], getDataWithStatus);
 }
 
+export function useGetMyApplications(queryParams: Record<string, any> = {}) {
+    return useData(['/jobs/applications', queryParams], getDataWithStatus);
+}
+
 // Mutation functions
 interface CreateConversationPayload {
     participantId: string;
