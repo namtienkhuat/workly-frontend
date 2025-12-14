@@ -41,6 +41,7 @@ interface ChatStore {
     isLoadingConversations: boolean;
     hiddenConversations: Set<string>;
     clearedConversations: Record<string, number>;
+    pendingConversationRequests: Record<string, Promise<Conversation>>; // Track ongoing requests
 
     // Messages
     messages: Record<string, Message[]>; // conversationId -> messages[]
@@ -164,6 +165,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
         isLoadingConversations: false,
         hiddenConversations: loadHiddenConversations(),
         clearedConversations: loadClearedConversations(),
+        pendingConversationRequests: {},
         messages: {},
         isLoadingMessages: {},
         userInfoCache: {},
@@ -238,39 +240,81 @@ export const useChatStore = create<ChatStore>((set, get) => {
                         };
                         get().updateConversation(updatedConv);
                     } else {
-                        // Conversation not in store - might be a new conversation
-                        // Load conversations to get the new conversation with correct unreadCount
-                        await new Promise((resolve) => setTimeout(resolve, 100));
-                        conversation = get().conversations[data.conversationId];
-                        if (!conversation) {
-                            // Load conversations with user context to get user's conversations
-                            const {
-                                currentUserId: oldCurrentUserId,
-                                currentUserType: oldCurrentUserType,
-                            } = get();
-                            if (personalUserId && oldCurrentUserId !== personalUserId) {
-                                set({
-                                    currentUserId: personalUserId,
-                                    currentUserType: ParticipantType.USER,
-                                });
-                                await get().loadConversations();
-                                set({
-                                    currentUserId: oldCurrentUserId,
-                                    currentUserType: oldCurrentUserType,
-                                });
-                            } else {
-                                await get().loadConversations();
+                        // Conversation not in store - fetch this specific conversation
+                        try {
+                            const response = await conversationApiService.getConversationById(
+                                data.conversationId
+                            );
+                            const fetchedConv = response.data;
+
+                            // Find the other participant
+                            const { currentUserId, currentUserType } = get();
+                            const otherParticipant = fetchedConv.participants.find(
+                                (p) => !(p.id === currentUserId && p.type === currentUserType)
+                            );
+
+                            let userInfo;
+                            if (otherParticipant) {
+                                const isDeletedFromConversation =
+                                    fetchedConv.deletedParticipants?.[otherParticipant.id];
+
+                                if (isDeletedFromConversation) {
+                                    userInfo = {
+                                        id: otherParticipant.id,
+                                        type: otherParticipant.type,
+                                        name:
+                                            otherParticipant.type === ParticipantType.COMPANY
+                                                ? 'Company not found'
+                                                : 'Account not found',
+                                        email: '',
+                                        avatar: '',
+                                        isOnline: false,
+                                        isDeleted: true,
+                                    };
+                                } else {
+                                    const fetchedInfo = await get().fetchParticipantInfo(
+                                        otherParticipant.id,
+                                        otherParticipant.type
+                                    );
+                                    userInfo = fetchedInfo || undefined;
+                                }
                             }
-                            // After loading, update conversation with new message
-                            conversation = get().conversations[data.conversationId];
-                            if (conversation) {
-                                const updatedConv = {
-                                    ...conversation,
-                                    lastMessage: data.message,
-                                    lastMessageAt: data.message.createdAt,
-                                };
-                                get().updateConversation(updatedConv);
+
+                            // Calculate unreadCount for new conversation
+                            const updatedUnreadCount = { ...fetchedConv.unreadCount };
+                            // Increment unreadCount for current user if message is from other user
+                            if (personalUserId && personalUserId !== data.message.sender.id) {
+                                updatedUnreadCount[personalUserId] =
+                                    (updatedUnreadCount[personalUserId] || 0) + 1;
                             }
+                            // Reset unreadCount for sender
+                            if (data.message.sender.id) {
+                                updatedUnreadCount[data.message.sender.id] = 0;
+                            }
+
+                            const conversationWithInfo = {
+                                ...fetchedConv,
+                                otherParticipant: userInfo,
+                                lastMessage: data.message,
+                                lastMessageAt: data.message.createdAt,
+                                unreadCount: updatedUnreadCount,
+                            };
+
+                            // Add to store
+                            set({
+                                conversations: {
+                                    ...get().conversations,
+                                    [data.conversationId]: conversationWithInfo,
+                                },
+                                conversationsVersion: get().conversationsVersion + 1,
+                            });
+
+                            // Join conversation room
+                            if (personalUserId) {
+                                socketService.joinConversation('user', data.conversationId);
+                            }
+                        } catch (error) {
+                            console.error('Failed to fetch conversation for new message:', error);
                         }
                     }
                 });
@@ -367,22 +411,81 @@ export const useChatStore = create<ChatStore>((set, get) => {
                         };
                         get().updateConversation(updatedConv);
                     } else {
-                        // Conversation not in store - might be a new conversation
-                        // Load conversations to get the new conversation with correct unreadCount
-                        await new Promise((resolve) => setTimeout(resolve, 100));
-                        conversation = get().conversations[data.conversationId];
-                        if (!conversation) {
-                            await get().loadConversations();
-                            // After loading, update conversation with new message
-                            conversation = get().conversations[data.conversationId];
-                            if (conversation) {
-                                const updatedConv = {
-                                    ...conversation,
-                                    lastMessage: data.message,
-                                    lastMessageAt: data.message.createdAt,
-                                };
-                                get().updateConversation(updatedConv);
+                        // Conversation not in store - fetch this specific conversation
+                        try {
+                            const response = await conversationApiService.getConversationById(
+                                data.conversationId
+                            );
+                            const fetchedConv = response.data;
+
+                            // Find the other participant
+                            const { currentUserId, currentUserType } = get();
+                            const otherParticipant = fetchedConv.participants.find(
+                                (p) => !(p.id === currentUserId && p.type === currentUserType)
+                            );
+
+                            let userInfo;
+                            if (otherParticipant) {
+                                const isDeletedFromConversation =
+                                    fetchedConv.deletedParticipants?.[otherParticipant.id];
+
+                                if (isDeletedFromConversation) {
+                                    userInfo = {
+                                        id: otherParticipant.id,
+                                        type: otherParticipant.type,
+                                        name:
+                                            otherParticipant.type === ParticipantType.COMPANY
+                                                ? 'Company not found'
+                                                : 'Account not found',
+                                        email: '',
+                                        avatar: '',
+                                        isOnline: false,
+                                        isDeleted: true,
+                                    };
+                                } else {
+                                    const fetchedInfo = await get().fetchParticipantInfo(
+                                        otherParticipant.id,
+                                        otherParticipant.type
+                                    );
+                                    userInfo = fetchedInfo || undefined;
+                                }
                             }
+
+                            // Calculate unreadCount for new conversation
+                            const updatedUnreadCount = { ...fetchedConv.unreadCount };
+                            // Increment unreadCount for current company if message is from other user
+                            if (currentCompanyId && currentCompanyId !== data.message.sender.id) {
+                                updatedUnreadCount[currentCompanyId] =
+                                    (updatedUnreadCount[currentCompanyId] || 0) + 1;
+                            }
+                            // Reset unreadCount for sender
+                            if (data.message.sender.id) {
+                                updatedUnreadCount[data.message.sender.id] = 0;
+                            }
+
+                            const conversationWithInfo = {
+                                ...fetchedConv,
+                                otherParticipant: userInfo,
+                                lastMessage: data.message,
+                                lastMessageAt: data.message.createdAt,
+                                unreadCount: updatedUnreadCount,
+                            };
+
+                            // Add to store
+                            set({
+                                conversations: {
+                                    ...get().conversations,
+                                    [data.conversationId]: conversationWithInfo,
+                                },
+                                conversationsVersion: get().conversationsVersion + 1,
+                            });
+
+                            // Join conversation room
+                            if (currentCompanyId) {
+                                socketService.joinConversation('company', data.conversationId);
+                            }
+                        } catch (error) {
+                            console.error('Failed to fetch conversation for new message:', error);
                         }
                     }
                 });
@@ -595,109 +698,137 @@ export const useChatStore = create<ChatStore>((set, get) => {
             participantId: string,
             participantType: ParticipantType
         ) => {
-            try {
-                const response = await conversationApiService.createOrGetConversation({
-                    participantId,
-                    participantType,
-                });
+            // Create unique key for this participant pair to prevent duplicate requests
+            const requestKey = `${participantId}_${participantType}`;
 
-                const conversation = response.data;
-                const { currentUserId, currentUserType } = get();
-                // Find the participant that is NOT the current user
-                // Must check both id AND type to correctly identify the other participant
-                const otherParticipant = conversation.participants.find(
-                    (p) => !(p.id === currentUserId && p.type === currentUserType)
-                );
+            // Check if there's already a pending request for this conversation
+            const pendingRequest = get().pendingConversationRequests[requestKey];
+            if (pendingRequest) {
+                console.log(`[createOrGetConversation] Using pending request for ${requestKey}`);
+                return pendingRequest;
+            }
 
-                // Fetch real user info
-                let userInfo: UserInfo | undefined;
-                if (otherParticipant) {
-                    // Check if participant is deleted from conversation's deletedParticipants
-                    const isDeletedFromConversation =
-                        conversation.deletedParticipants?.[otherParticipant.id];
-
-                    if (isDeletedFromConversation) {
-                        // Create placeholder for deleted participant
-                        userInfo = {
-                            id: otherParticipant.id,
-                            type: otherParticipant.type,
-                            name:
-                                otherParticipant.type === ParticipantType.COMPANY
-                                    ? 'Company not found'
-                                    : 'Account not found',
-                            email: '',
-                            avatar: '',
-                            isOnline: false,
-                            isDeleted: true,
-                        };
-                    } else {
-                        const fetchedInfo = await get().fetchParticipantInfo(
-                            otherParticipant.id,
-                            otherParticipant.type
-                        );
-                        userInfo = fetchedInfo || undefined;
-                    }
-                }
-
-                const conversationWithInfo: ConversationWithUserInfo = {
-                    ...conversation,
-                    otherParticipant: userInfo,
-                };
-
-                // If this conversation was hidden, unhide it (user is intentionally starting it)
-                const { hiddenConversations, conversations: existingConversations } = get();
-                if (hiddenConversations.has(conversation._id)) {
-                    await get().unhideConversation(conversation._id);
-                }
-
-                // Only add if conversation doesn't already exist to avoid duplicates
-                const existing = existingConversations[conversation._id];
-                if (!existing) {
-                    set({
-                        conversations: {
-                            ...existingConversations,
-                            [conversation._id]: conversationWithInfo,
-                        },
+            // Create new request and store it
+            const requestPromise = (async () => {
+                try {
+                    const response = await conversationApiService.createOrGetConversation({
+                        participantId,
+                        participantType,
                     });
-                } else {
-                    // Update existing conversation if needed
-                    // Always use conversationWithInfo.otherParticipant as it's calculated based on current currentUserId/currentUserType
-                    // Don't preserve existing.otherParticipant as it might be from a different perspective (user vs company)
-                    if (existing.otherParticipant !== conversationWithInfo.otherParticipant) {
+
+                    const conversation = response.data;
+                    const { currentUserId, currentUserType } = get();
+                    // Find the participant that is NOT the current user
+                    // Must check both id AND type to correctly identify the other participant
+                    const otherParticipant = conversation.participants.find(
+                        (p) => !(p.id === currentUserId && p.type === currentUserType)
+                    );
+
+                    // Fetch real user info
+                    let userInfo: UserInfo | undefined;
+                    if (otherParticipant) {
+                        // Check if participant is deleted from conversation's deletedParticipants
+                        const isDeletedFromConversation =
+                            conversation.deletedParticipants?.[otherParticipant.id];
+
+                        if (isDeletedFromConversation) {
+                            // Create placeholder for deleted participant
+                            userInfo = {
+                                id: otherParticipant.id,
+                                type: otherParticipant.type,
+                                name:
+                                    otherParticipant.type === ParticipantType.COMPANY
+                                        ? 'Company not found'
+                                        : 'Account not found',
+                                email: '',
+                                avatar: '',
+                                isOnline: false,
+                                isDeleted: true,
+                            };
+                        } else {
+                            const fetchedInfo = await get().fetchParticipantInfo(
+                                otherParticipant.id,
+                                otherParticipant.type
+                            );
+                            userInfo = fetchedInfo || undefined;
+                        }
+                    }
+
+                    const conversationWithInfo: ConversationWithUserInfo = {
+                        ...conversation,
+                        otherParticipant: userInfo,
+                    };
+
+                    // If this conversation was hidden, unhide it (user is intentionally starting it)
+                    const { hiddenConversations, conversations: existingConversations } = get();
+                    if (hiddenConversations.has(conversation._id)) {
+                        await get().unhideConversation(conversation._id);
+                    }
+
+                    // Only add if conversation doesn't already exist to avoid duplicates
+                    const existing = existingConversations[conversation._id];
+                    if (!existing) {
                         set({
                             conversations: {
                                 ...existingConversations,
-                                [conversation._id]: {
-                                    ...existing,
-                                    ...conversationWithInfo,
-                                    otherParticipant:
-                                        conversationWithInfo.otherParticipant ||
-                                        existing.otherParticipant,
-                                },
+                                [conversation._id]: conversationWithInfo,
                             },
                         });
+                    } else {
+                        // Update existing conversation if needed
+                        // Always use conversationWithInfo.otherParticipant as it's calculated based on current currentUserId/currentUserType
+                        // Don't preserve existing.otherParticipant as it might be from a different perspective (user vs company)
+                        if (existing.otherParticipant !== conversationWithInfo.otherParticipant) {
+                            set({
+                                conversations: {
+                                    ...existingConversations,
+                                    [conversation._id]: {
+                                        ...existing,
+                                        ...conversationWithInfo,
+                                        otherParticipant:
+                                            conversationWithInfo.otherParticipant ||
+                                            existing.otherParticipant,
+                                    },
+                                },
+                            });
+                        }
                     }
+
+                    // Ensure socket is joined to conversation room
+                    const personalUserId = get().personalUserId;
+                    const currentCompanyId = get().currentCompanyId;
+                    const hasUser = personalUserId
+                        ? conversation.participants.some((p) => p.id === personalUserId)
+                        : false;
+                    const hasCompany = currentCompanyId
+                        ? conversation.participants.some(
+                              (p) => p.id === currentCompanyId && p.type === ParticipantType.COMPANY
+                          )
+                        : false;
+                    if (hasUser) socketService.joinConversation('user', conversation._id);
+                    if (hasCompany) socketService.joinConversation('company', conversation._id);
+                    await get().loadMessages(conversation._id);
+
+                    return conversation;
+                } catch (error) {
+                    throw error;
+                } finally {
+                    // Clean up pending request
+                    const { pendingConversationRequests } = get();
+                    const { [requestKey]: _, ...remainingRequests } = pendingConversationRequests;
+                    set({ pendingConversationRequests: remainingRequests });
                 }
+            })();
 
-                // Ensure socket is joined to conversation room
-                const personalUserId = get().personalUserId;
-                const currentCompanyId = get().currentCompanyId;
-                const hasUser = personalUserId
-                    ? conversation.participants.some((p) => p.id === personalUserId)
-                    : false;
-                const hasCompany = currentCompanyId
-                    ? conversation.participants.some(
-                          (p) => p.id === currentCompanyId && p.type === ParticipantType.COMPANY
-                      )
-                    : false;
-                if (hasUser) socketService.joinConversation('user', conversation._id);
-                if (hasCompany) socketService.joinConversation('company', conversation._id);
-                await get().loadMessages(conversation._id);
+            // Store the pending request
+            set({
+                pendingConversationRequests: {
+                    ...get().pendingConversationRequests,
+                    [requestKey]: requestPromise,
+                },
+            });
 
-                return conversation;
-            } catch (error) {
-                throw error;
-            }
+            return requestPromise;
         },
 
         deleteConversation: async (conversationId: string) => {
