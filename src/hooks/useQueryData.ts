@@ -86,12 +86,12 @@ export function useGetMe() {
     );
 }
 
-export function useGetAllSkills(queryParams: Record<string, any> = {}) {
-    return useData(['/skills', queryParams], getDataWithStatus);
+export function useGetAllSkills(queryParams: Record<string, any> = {}, enabled: boolean = true) {
+    return useData(['/skills', queryParams], getDataWithStatus, enabled);
 }
 
-export function useGetAllSchools(queryParams: Record<string, any> = {}) {
-    return useData(['/schools', queryParams], getDataWithStatus);
+export function useGetAllSchools(queryParams: Record<string, any> = {}, enabled: boolean = true) {
+    return useData(['/schools', queryParams], getDataWithStatus, enabled);
 }
 
 export function useGetUserBasicInfo(id: string) {
@@ -115,6 +115,10 @@ export function useGetFeedJobs(queryParams: Record<string, any> = {}) {
 
 export function useGetJobById(id: string) {
     return useData([`/jobs/${id}`, {}], getDataWithStatus);
+}
+
+export function useGetMyApplications(queryParams: Record<string, any> = {}) {
+    return useData(['/jobs/applications', queryParams], getDataWithStatus);
 }
 
 // Mutation functions

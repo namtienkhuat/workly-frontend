@@ -106,12 +106,18 @@ const JobCard = ({
     const [isDeleting, setIsDeleting] = useState(false);
     const [selectedFileName, setSelectedFileName] = useState<string>('');
     const [isApplied, setIsApplied] = useState<boolean>(job.isApplied || false);
+    const [showFullContent, setShowFullContent] = useState(false);
 
     const [company, setCompany] = useState<{
         id: string;
         name: string;
         imageUrl?: string;
     }>();
+
+    // Check if content is long (more than 200 characters)
+    const isContentLong = job.content.length > 200;
+    const displayContent =
+        showFullContent || !isContentLong ? job.content : job.content.substring(0, 200) + '...';
 
     useEffect(() => {
         if (isCompanyPage) {
@@ -292,7 +298,17 @@ const JobCard = ({
 
             {/* Content */}
             <div className="mb-4">
-                <p className="text-sm text-foreground/80 line-clamp-3 mb-4">{job.content}</p>
+                <p className="text-sm text-foreground/80 mb-2 whitespace-pre-line">
+                    {displayContent}
+                </p>
+                {isContentLong && (
+                    <button
+                        onClick={() => setShowFullContent(!showFullContent)}
+                        className="text-primary text-sm font-medium hover:underline"
+                    >
+                        {showFullContent ? 'Show less' : 'Show more'}
+                    </button>
+                )}
 
                 {/* Job Details */}
                 <div className="flex flex-wrap gap-3 text-sm mb-4">
@@ -407,8 +423,7 @@ const JobCard = ({
                             variant="outline"
                             className="rounded-full"
                             onClick={() => {
-                                // TODO: Navigate to application details or open modal
-                                // router.push(`/jobs/${job._id}/application`);
+                                router.push(`/my-applications`);
                             }}
                         >
                             View Application

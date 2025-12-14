@@ -75,11 +75,7 @@ const SelectLocation = ({
             </Select>
             {showHelperText && (
                 <p className="text-xs text-muted-foreground mt-1.5">
-                    {isLoadingLocations
-                        ? 'Loading locations...'
-                        : selectedLocation
-                          ? `Selected: ${selectedLocation.name}`
-                          : `Choose from ${locations.length} locations in Vietnam`}
+                    {isLoadingLocations && 'Loading locations...'}
                 </p>
             )}
         </div>
@@ -87,4 +83,3 @@ const SelectLocation = ({
 };
 
 export default SelectLocation;
-
