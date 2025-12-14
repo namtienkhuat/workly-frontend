@@ -69,7 +69,7 @@ const Posts = ({ type }: { type: string }) => {
     return (
       <div>
         {canUpload && <UploadPostModal reload={fetchPosts} editPost={posts.find(p => p._id === status)} setStatus={setStatus} type={type} authorId={params.id as string} isOpen={isOpen} setIsOpen={setIsOpen} status={status} />}
-        <div className="text-center py-10 text-gray-400">No posts yet.</div>
+        <div className="text-center py-10 text-gray-400">There are no posts</div>
       </div>
     );
   }
@@ -86,7 +86,7 @@ const Posts = ({ type }: { type: string }) => {
           fetchPosts(nextPage);
         }}
         hasMore={hasMore}
-        loader={<h4 className="text-center py-4">Loading more...</h4>}
+        loader={<h4 className="text-center py-4">loading...</h4>}
         endMessage={
           <p className="text-center py-4 text-gray-400">No more posts.</p>
         }
