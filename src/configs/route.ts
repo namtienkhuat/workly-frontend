@@ -45,4 +45,9 @@ export const apiPaths = {
     getAllComment: '/posts/comment/list',
     getPostById: (id: string) => `/api/posts/${id}`,
     getFeed: '/feed',
+    // Bookmark routes
+    bookmarkItem: '/bookmarks',
+    unbookmarkItem: '/bookmarks/remove',
+    getUserBookmarks: '/bookmarks',
+    getBookmarkStatus: '/bookmarks/status',
 };

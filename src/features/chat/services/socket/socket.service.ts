@@ -29,21 +29,17 @@ class MultiSocketService {
             auth.userType = userType;
         }
 
-        // Construct full URL for socket.io connection through API Gateway
-        // Socket.io path must include the full path including /api/v1
-        const socketUrl = CHAT_CONSTANTS.SOCKET_URL;
-
-        const socket = io(socketUrl, {
+        // Connect through Kong Gateway (same as REST API)
+        // Socket.io will automatically use /socket.io/ path
+        // Kong routes this to chat service on port 8005
+        const socket = io(CHAT_CONSTANTS.SOCKET_URL, {
             auth,
-            path: '/api/v1/socket.io/',
             transports: ['websocket', 'polling'],
             upgrade: true,
-            forceNew: true,
             reconnection: true,
             reconnectionDelay: CHAT_CONSTANTS.RECONNECT_DELAY,
             reconnectionDelayMax: CHAT_CONSTANTS.RECONNECT_DELAY_MAX,
             reconnectionAttempts: CHAT_CONSTANTS.MAX_RECONNECT_ATTEMPTS,
-            withCredentials: true,
         });
 
         this.sockets[identity] = socket;
@@ -70,7 +66,12 @@ class MultiSocketService {
         });
 
         socket.on(SOCKET_EVENTS.ERROR, (error) => {
-            console.error(`[Socket ${identity}] Error:`, error);
+            console.error(`[Socket ${identity}] Error:`, {
+                error,
+                message: error?.message,
+                type: error?.type,
+                details: JSON.stringify(error),
+            });
         });
     }
 

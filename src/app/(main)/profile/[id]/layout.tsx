@@ -172,7 +172,7 @@ const PublicProfileLayout = ({ children }: { children: React.ReactNode }) => {
                         />
 
                         <CardFooter className="px-2 py-1">
-                            <ProfileTabNav isOwner={false} userId={id} />
+                            <ProfileTabNav isOwner={isCurrentUser} userId={id} />
                         </CardFooter>
                     </Card>
                 </div>

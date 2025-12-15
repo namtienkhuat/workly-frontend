@@ -22,8 +22,16 @@ const viewTabs: TabConfig[] = [
 ];
 
 const ProfileTabNav = ({ isOwner = false, userId }: { isOwner?: boolean; userId: string }) => {
-    const tabs = isOwner ? ownerTabs : viewTabs;
     const pathname = usePathname();
+    const isEditPage = pathname.startsWith('/profile/edit');
+
+    // If on edit page, show ownerTabs
+    // If viewing profile (not edit), show viewTabs, and add Bookmarks if owner
+    const tabs = isEditPage
+        ? ownerTabs
+        : isOwner
+          ? [...viewTabs, { id: 'bookmark', label: 'Bookmarks' }]
+          : viewTabs;
 
     return (
         <div className="w-full border-t">
@@ -31,7 +39,7 @@ const ProfileTabNav = ({ isOwner = false, userId }: { isOwner?: boolean; userId:
                 <ul className="flex items-center p-2 gap-4">
                     {tabs.map((tab) => {
                         const tabPath = tab.id ? `/${tab.id}` : '';
-                        const basePath = isOwner ? '/profile/edit' : `/profile/${userId}`;
+                        const basePath = isEditPage ? '/profile/edit' : `/profile/${userId}`;
                         const href = `${basePath}${tabPath}`;
                         const isActive = pathname === href;
                         return (

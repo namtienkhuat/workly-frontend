@@ -12,6 +12,8 @@ import {
     MoreVertical,
     Edit,
     Trash2,
+    Bookmark,
+    BookmarkCheck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,6 +52,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import z from 'zod';
 import jobService from '@/services/job/jobService';
 import commonService from '@/services/common/commonService';
+import bookmarkService, { BookmarkType } from '@/services/bookmark/bookmarkService';
 import { apiPaths } from '@/configs/route';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthRequiredModal } from '@/components/auth/AuthRequiredModal';
@@ -88,12 +91,14 @@ const JobCard = ({
     canEdit = false,
     onReload,
     companyProfile,
+    onBookmarkChange,
 }: {
     job: Job;
     isCompanyPage?: boolean;
     canEdit?: boolean;
     onReload?: () => void;
     companyProfile?: CompanyProfile;
+    onBookmarkChange?: (isBookmarked: boolean) => void; // Callback when bookmark status changes
 }) => {
     const { isAuthenticated } = useAuth();
 
@@ -106,6 +111,7 @@ const JobCard = ({
     const [isDeleting, setIsDeleting] = useState(false);
     const [selectedFileName, setSelectedFileName] = useState<string>('');
     const [isApplied, setIsApplied] = useState<boolean>(job.isApplied || false);
+    const [isBookmarked, setIsBookmarked] = useState(false);
     const [showFullContent, setShowFullContent] = useState(false);
 
     const [company, setCompany] = useState<{
@@ -131,6 +137,20 @@ const JobCard = ({
         }
     }, [companyProfile]);
 
+    useEffect(() => {
+        // Check bookmark status
+        if (isAuthenticated && job._id) {
+            bookmarkService
+                .getBookmarkStatus(job._id, BookmarkType.JOB)
+                .then((res) => {
+                    setIsBookmarked(res.data?.isBookmarked || false);
+                })
+                .catch(() => {
+                    // Silent fail if not authenticated
+                });
+        }
+    }, [job._id, isAuthenticated]);
+
     const {
         register,
         handleSubmit,
@@ -148,6 +168,41 @@ const JobCard = ({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setSelectedFileName(e.target.files[0].name);
+        }
+    };
+
+    const handleBookmark = async () => {
+        if (!isAuthenticated) {
+            setShowLoginModal(true);
+            return;
+        }
+
+        try {
+            if (isBookmarked) {
+                await bookmarkService.unbookmarkItem(job._id, BookmarkType.JOB);
+                setIsBookmarked(false);
+                // Only show toast if no callback (not in bookmark page)
+                if (!onBookmarkChange) {
+                    toast.success('Removed from bookmarks');
+                }
+                // Notify parent component about bookmark change
+                onBookmarkChange?.(false);
+            } else {
+                await bookmarkService.bookmarkItem(job._id, BookmarkType.JOB);
+                setIsBookmarked(true);
+                // Only show toast if no callback (not in bookmark page)
+                if (!onBookmarkChange) {
+                    toast.success('Saved to bookmarks');
+                }
+                // Notify parent component about bookmark change
+                onBookmarkChange?.(true);
+            }
+        } catch (error: any) {
+            console.error('Bookmark error:', error);
+            console.error('Error response:', error?.response);
+            const errorMessage =
+                error?.response?.data?.message || error?.message || 'Failed to update bookmark';
+            toast.error(errorMessage);
         }
     };
 
@@ -429,6 +484,23 @@ const JobCard = ({
                             View Application
                         </Button>
                     )}
+                    <Button
+                        variant="outline"
+                        className="rounded-full flex items-center gap-2"
+                        onClick={handleBookmark}
+                    >
+                        {isBookmarked ? (
+                            <>
+                                <BookmarkCheck className="h-4 w-4 text-primary" />
+                                <span>Saved</span>
+                            </>
+                        ) : (
+                            <>
+                                <Bookmark className="h-4 w-4" />
+                                <span>Save</span>
+                            </>
+                        )}
+                    </Button>
                 </div>
             </footer>
 
