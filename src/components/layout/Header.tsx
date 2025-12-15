@@ -179,7 +179,6 @@ export const Header = () => {
                                 onSubmit={(e) => {
                                     e.preventDefault();
                                     const query = encodeURIComponent(input);
-                                    console.log("pathname", pathname);
                                     if (pathname.includes('search')) {
                                         router.replace(`${pathname}?keyword=${query}`);
                                     } else {
@@ -192,7 +191,7 @@ export const Header = () => {
                                     type="text"
                                     placeholder="Company, User, Job, Post..."
                                     value={input}
-                                    onChange={e => setInput(e.target.value)}
+                                    onChange={(e) => setInput(e.target.value)}
                                     className="pl-10 h-9 bg-muted/50 dark:bg-muted/20 border-none focus-visible:ring-1 focus-visible:ring-primary/20 hover:bg-muted dark:hover:bg-muted/40 transition-colors"
                                 />
                             </form>
@@ -264,7 +263,7 @@ export const Header = () => {
                     />
                 </div>
             </div>
-        </header >
+        </header>
     );
 };
 
@@ -371,6 +370,22 @@ const MeDropdownMenu = ({
                             <div className="font-medium text-sm">Edit Profile</div>
                             <div className="text-xs text-muted-foreground">
                                 Update your information
+                            </div>
+                        </div>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    asChild
+                    className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-accent transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                >
+                    <Link href="/my-applications" className="flex items-center gap-3">
+                        <div className="p-1.5 rounded-md bg-green-500/10">
+                            <Briefcase className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-medium text-sm">My Applications</div>
+                            <div className="text-xs text-muted-foreground">
+                                Track your job applications
                             </div>
                         </div>
                     </Link>

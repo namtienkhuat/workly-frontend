@@ -151,7 +151,6 @@ export const patchUserProfile = async (formData: EditUserProfileFormData) => {
 export async function patchUserSkills(formData: { skillIds: string[] }) {
     try {
         const { data } = await api.patch('/me/skills', formData);
-
         return {
             status: 'success',
             success: true,

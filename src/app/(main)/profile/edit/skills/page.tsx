@@ -116,7 +116,7 @@ const EditSkillsPage = () => {
                     <Alert>
                         <InfoIcon className="h-4 w-4" />
                         <AlertDescription>
-                            Add skills that you're proficient in. These help employers and
+                            Add skills that you&apos;re proficient in. These help employers and
                             recruiters find you for relevant opportunities.
                         </AlertDescription>
                     </Alert>

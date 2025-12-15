@@ -15,7 +15,7 @@ const adminTabs: TabConfig[] = [
     { id: '', label: 'Overview' },
     { id: 'edit', label: 'Edit Information' },
     { id: 'admins', label: 'Admins' },
-    { id: 'posts', label: 'Posts' },
+    // { id: 'posts', label: 'Posts' },
     { id: 'create-job', label: 'Hiring' },
     { id: 'messages', label: 'Messages' },
     { id: 'candidates', label: 'Candidates' },

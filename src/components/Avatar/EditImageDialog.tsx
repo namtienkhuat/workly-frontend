@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 
 import {
     Dialog,
@@ -28,8 +30,22 @@ const EditImageDialog = ({
     onCropComplete,
     isSubmitting,
 }: EditImageDialogProps) => {
+    const [error, setError] = useState<string>('');
+
+    const handleError = (errorMsg: string) => {
+        setError(errorMsg);
+    };
+
+    const handleOpenChange = (newOpen: boolean) => {
+        if (!newOpen) {
+            // Clear error when dialog closes
+            setError('');
+        }
+        onOpenChange(newOpen);
+    };
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Edit image</DialogTitle>
@@ -42,11 +58,19 @@ const EditImageDialog = ({
                             <Loader2 className="w-4 h-4 animate-spin" />
                         </div>
                     ) : (
-                        <AvatarCropper
-                            initialImageUrl={initialImageUrl}
-                            aspectRatio={aspectRatio}
-                            onCropComplete={onCropComplete}
-                        />
+                        <div className="flex flex-col gap-4">
+                            {error && (
+                                <div className="rounded-md bg-red-50 border border-red-200 p-3">
+                                    <p className="text-sm text-red-600">{error}</p>
+                                </div>
+                            )}
+                            <AvatarCropper
+                                initialImageUrl={initialImageUrl}
+                                aspectRatio={aspectRatio}
+                                onCropComplete={onCropComplete}
+                                onError={handleError}
+                            />
+                        </div>
                     )}
                 </div>
             </DialogContent>

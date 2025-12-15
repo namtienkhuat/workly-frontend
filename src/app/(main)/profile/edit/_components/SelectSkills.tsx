@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Check, ChevronsUpDown, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, X } from 'lucide-react';
 import {
     Command,
     CommandEmpty,
@@ -14,7 +14,7 @@ import {
     CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { useGetAllSkills, useGetMe } from '@/hooks/useQueryData';
+import { useGetAllSkills } from '@/hooks/useQueryData';
 import { Skill } from '@/types/global';
 
 interface SelectSkillsProps {
@@ -30,13 +30,15 @@ const SelectSkills = ({
 }: SelectSkillsProps) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
+    const [customSkills, setCustomSkills] = useState<Skill[]>([]);
 
-    const { data: skillsData, isLoading } = useGetAllSkills({ search });
+    const { data: skillsData, isLoading } = useGetAllSkills({ search, page: 1, limit: 100 }, open);
     const allSkillsFromSearch: Skill[] = skillsData?.data ?? [];
 
     const uniqueSkills = new Map<string, Skill>();
     skillsFromProfile.forEach((skill: Skill) => uniqueSkills.set(skill.skillId, skill));
     allSkillsFromSearch.forEach((skill) => uniqueSkills.set(skill.skillId, skill));
+    customSkills.forEach((skill) => uniqueSkills.set(skill.skillId, skill));
     const allSkills = Array.from(uniqueSkills.values());
 
     const selectedSkills = allSkills.filter((skill) => selectedIds.includes(skill.skillId));
@@ -49,6 +51,41 @@ const SelectSkills = ({
             newSelectedIds = [...selectedIds, skillId];
         }
         onChange(newSelectedIds);
+    };
+
+    const handleAddNewSkill = () => {
+        if (!search.trim()) return;
+
+        const trimmedSearch = search.trim();
+        const newSkillId = trimmedSearch.toLowerCase().replace(/ /g, '_');
+
+        const existingSkill = allSkills.find(
+            (skill) =>
+                skill.skillId === newSkillId ||
+                skill.name.toLowerCase() === trimmedSearch.toLowerCase()
+        );
+
+        if (existingSkill) {
+            if (!selectedIds.includes(existingSkill.skillId)) {
+                onChange([...selectedIds, existingSkill.skillId]);
+            }
+        } else {
+            // Check if already selected (edge case)
+            if (selectedIds.includes(newSkillId)) {
+                setSearch('');
+                return;
+            }
+
+            const newSkill: Skill = {
+                skillId: newSkillId,
+                name: trimmedSearch,
+            };
+
+            setCustomSkills((prev) => [...prev, newSkill]);
+            onChange([...selectedIds, newSkill.skillId]);
+        }
+
+        setSearch('');
     };
 
     return (
@@ -92,6 +129,17 @@ const SelectSkills = ({
                     <CommandList>
                         <CommandEmpty>{isLoading ? 'Loading...' : 'No skill found.'}</CommandEmpty>
                         <CommandGroup>
+                            {search.trim() && (
+                                <CommandItem
+                                    value={`add-new-${search}`}
+                                    onSelect={handleAddNewSkill}
+                                    className="text-primary font-medium"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add &quot;{search}&quot;
+                                </CommandItem>
+                            )}
+
                             {allSkills.map((skill) => (
                                 <CommandItem
                                     key={skill.skillId}

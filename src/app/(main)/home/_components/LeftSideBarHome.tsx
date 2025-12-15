@@ -160,7 +160,7 @@ const LeftSideBarHome = () => {
                         {
                             label: 'My Applied Jobs',
                             icon: Briefcase,
-                            href: '/jobs/applied',
+                            href: '/my-applications',
                         },
                         {
                             label: 'Settings',

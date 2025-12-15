@@ -1,5 +1,7 @@
 import * as z from 'zod';
 
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
 export const signupSchema = z.object({
     name: z.string().min(2, {
         message: 'Name must be at least 2 characters.',
@@ -7,9 +9,13 @@ export const signupSchema = z.object({
     email: z.string().email({
         message: 'Please enter a valid email address.',
     }),
-    password: z.string().min(8, {
-        message: 'Password must be at least 8 characters.',
-    }),
+    password: z
+        .string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(
+            passwordRegex,
+            'Password must contain at least one uppercase, one lowercase, one number, and one special character'
+        ),
 });
 
 export type SignupFormData = z.infer<typeof signupSchema>;
@@ -34,9 +40,13 @@ export const loginSchema = z.object({
     email: z.string().email({
         message: 'Please enter a valid email address.',
     }),
-    password: z.string().min(1, {
-        message: 'Password is required.',
-    }),
+    password: z
+        .string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(
+            passwordRegex,
+            'Password must contain at least one uppercase, one lowercase, one number, and one special character'
+        ),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;

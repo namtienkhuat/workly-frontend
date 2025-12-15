@@ -24,9 +24,13 @@ const SignUpPage = () => {
         reset,
     } = useForm<SignupFormData>({
         resolver: zodResolver(signupSchema),
+        mode: 'onBlur',
+        reValidateMode: 'onChange',
     });
 
     const onSubmit = async (payload: SignupFormData) => {
+        // Validation is handled by react-hook-form before this function is called
+        // This function only runs if validation passes
         setIsLoading(true);
         const { success, message, data } = await postSignup(payload);
         setIsLoading(false);

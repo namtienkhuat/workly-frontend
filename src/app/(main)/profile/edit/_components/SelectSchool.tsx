@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus } from 'lucide-react';
 import {
     Command,
     CommandEmpty,
@@ -24,16 +24,53 @@ interface SelectSchoolProps {
 const SelectSchool = ({ value, onChange }: SelectSchoolProps) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
+    const [customSchools, setCustomSchools] = useState<School[]>([]);
 
-    const { data: schoolData, isLoading: isLoadingSchools } = useGetAllSchools({
-        search: search,
-    });
-    const schoolList: School[] = schoolData?.data ?? [];
+    const { data: schoolData, isLoading: isLoadingSchools } = useGetAllSchools(
+        {
+            search: search,
+        },
+        open
+    );
+    const allSchoolsFromSearch: School[] = schoolData?.data ?? [];
+
+    const uniqueSchools = new Map<string, School>();
+    allSchoolsFromSearch.forEach((school) => uniqueSchools.set(school.schoolId, school));
+    customSchools.forEach((school) => uniqueSchools.set(school.schoolId, school));
+    const schoolList = Array.from(uniqueSchools.values());
 
     const handleSelect = (schoolId: string) => {
         onChange(schoolId);
         setOpen(false);
         setSearch('');
+    };
+
+    const handleAddNewSchool = () => {
+        if (!search.trim()) return;
+
+        const trimmedSearch = search.trim();
+        const newSchoolId = trimmedSearch.toLowerCase().replace(/ /g, '_');
+
+        const existingSchool = schoolList.find(
+            (school) =>
+                school.schoolId === newSchoolId ||
+                school.name.toLowerCase() === trimmedSearch.toLowerCase()
+        );
+
+        if (existingSchool) {
+            onChange(existingSchool.schoolId);
+        } else {
+            const newSchool: School = {
+                schoolId: newSchoolId,
+                name: trimmedSearch,
+            };
+
+            setCustomSchools((prev) => [...prev, newSchool]);
+            onChange(newSchool.schoolId);
+        }
+
+        setSearch('');
+        setOpen(false);
     };
 
     const currentSchool = schoolList.find((s) => s.schoolId === value);
@@ -63,6 +100,17 @@ const SelectSchool = ({ value, onChange }: SelectSchoolProps) => {
                             {isLoadingSchools ? 'Loading...' : 'No school found.'}
                         </CommandEmpty>
                         <CommandGroup>
+                            {search.trim() && (
+                                <CommandItem
+                                    value={`add-new-${search}`}
+                                    onSelect={handleAddNewSchool}
+                                    className="text-primary font-medium"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add &quot;{search}&quot;
+                                </CommandItem>
+                            )}
+
                             {schoolList.map((school) => (
                                 <CommandItem
                                     key={school.schoolId}
