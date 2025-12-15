@@ -87,7 +87,6 @@ const JobCard: React.FC<Job & { onReload: any, canUploadCompany: boolean }> = ({
             if (formData.cv) {
                 // Call API upload file
                 const uploadResponse = await commonService.uploadCVToServer(formData.cv, apiPaths.uploadFile);
-                console.log("uploadResponse", uploadResponse);
 
                 cvUrl = uploadResponse[0].url;
             }

@@ -5,7 +5,6 @@ import { FaGoogle, FaGithub, FaFacebook } from 'react-icons/fa6';
 
 export const OAuthButtons = () => {
     const handleOAuthSignIn = (provider: 'google' | 'github' | 'facebook') => {
-        console.log(`OAuth sign in with ${provider} - Implement custom OAuth flow`);
     };
 
     return (

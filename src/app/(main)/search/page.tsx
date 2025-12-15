@@ -70,7 +70,6 @@ export default function SearchPage() {
             setLoading(true);
             try {
                 const { data } = await searchService.getGlobalSearch({ keyword: query });
-                console.log(data);
                 setJobs(data.jobs || []);
                 setPosts(data.posts || []);
                 setUsers(data.users || []);

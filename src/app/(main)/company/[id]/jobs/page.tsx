@@ -119,8 +119,6 @@ const CompanyJobs = () => {
     const fetchMoreJobs = async () => {
         if (loading) return;
 
-        console.log('Fetching more jobs...'); // Debug log
-
         try {
             const nextPage = currentPage + 1;
             const requestParams = {

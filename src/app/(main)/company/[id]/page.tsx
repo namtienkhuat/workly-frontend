@@ -124,7 +124,7 @@ const CompanyProfilePage = () => {
                                     {companyProfile.foundedYear}
                                 </Badge>
                                 <span className="text-xs text-muted-foreground">
-                                    {new Date().getFullYear() - companyProfile.foundedYear} years old
+                                    {new Date().getFullYear() - companyProfile.foundedYear} years
                                 </span>
                             </div>
                         ) : (

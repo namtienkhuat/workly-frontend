@@ -251,7 +251,7 @@ const PostCard = ({
                                 <Clock className="h-3.5 w-3.5" />
                                 <span>{formatRelativeTime(post.created_at)}</span>
                             </div>
-                            {post.visibility && (
+                            {/* {post.visibility && (
                                 <Badge
                                     variant="outline"
                                     className={`text-xs px-2.5 py-1 h-6 flex items-center gap-1.5 font-medium ${getVisibilityColor(
@@ -261,7 +261,7 @@ const PostCard = ({
                                     {getVisibilityIcon(post.visibility)}
                                     <span>{getVisibilityLabel(post.visibility)}</span>
                                 </Badge>
-                            )}
+                            )} */}
                         </div>
                     </div>
                 </div>
@@ -279,12 +279,12 @@ const PostCard = ({
 
                         {menuOpen && (
                             <>
-                                <div 
+                                <div
                                     className="fixed inset-0"
                                     style={{ zIndex: 9998 }}
                                     onClick={() => setMenuOpen(false)}
                                 />
-                                <div 
+                                <div
                                     className="absolute right-0 top-12 min-w-[180px] rounded-xl border border-border/60 bg-background/95 backdrop-blur-md p-1.5 shadow-2xl animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
                                     style={{ zIndex: 9999 }}
                                 >
@@ -323,7 +323,10 @@ const PostCard = ({
                 )}
 
                 {currentMedia && (
-                    <div className="relative w-full rounded-xl overflow-hidden bg-muted/30 group/media" style={{ zIndex: 1 }}>
+                    <div
+                        className="relative w-full rounded-xl overflow-hidden bg-muted/30 group/media"
+                        style={{ zIndex: 1 }}
+                    >
                         {currentMedia.type === MediaType.IMAGE && (
                             <img
                                 src={StringUtil.generatePath(currentMedia.url)}
@@ -383,7 +386,9 @@ const PostCard = ({
                         className="flex items-center justify-center gap-2 rounded-xl h-11 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 group/like"
                         onClick={handleLike}
                     >
-                        <div className={`transition-transform duration-200 ${liked ? 'scale-110' : 'group-hover/like:scale-110'}`}>
+                        <div
+                            className={`transition-transform duration-200 ${liked ? 'scale-110' : 'group-hover/like:scale-110'}`}
+                        >
                             {liked ? (
                                 <FavoriteOutlinedIcon className="text-red-500" />
                             ) : (
@@ -397,7 +402,9 @@ const PostCard = ({
                         className="flex items-center justify-center gap-2 rounded-xl h-11 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 group/comment"
                         onClick={handleCommentClick}
                     >
-                        <MessageCircle className={`h-4 w-4 transition-transform duration-200 group-hover/comment:scale-110 ${commentOpen ? 'text-blue-600 dark:text-blue-400' : ''}`} />
+                        <MessageCircle
+                            className={`h-4 w-4 transition-transform duration-200 group-hover/comment:scale-110 ${commentOpen ? 'text-blue-600 dark:text-blue-400' : ''}`}
+                        />
                         <span className="font-medium">{totalComment}</span>
                     </Button>
                     <Button

@@ -51,7 +51,6 @@ const CommentUpload = ({
                 parentId,
                 postId,
             });
-            console.log(response);
 
             if (!response.data) {
                 throw new Error("API did not return a valid result");

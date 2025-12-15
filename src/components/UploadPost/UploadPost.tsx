@@ -154,7 +154,7 @@ export default function UploadPostModal({
                     content: content,
                     media_url_add: finalMediaUrls,
                     media_url_delete: deletedFiles as any,
-                    visibility: mode ? mode : PostVisibilityType.PUBLIC,
+                    visibility: PostVisibilityType.PUBLIC,
                     author_type: type,
                     author_id: authorId,
                 };
@@ -301,10 +301,7 @@ export default function UploadPostModal({
                             {currentUser?.avatarUrl ? (
                                 <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
                             ) : null}
-                            <AvatarFallback
-                                className="text-base font-semibold bg-gradient-to-br from-primary/20 to-primary/10"
-                                style={{ backgroundColor: StringUtil.getRandomColor() }}
-                            >
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                                 {getInitials(currentUser?.name || 'U')}
                             </AvatarFallback>
                         </Avatar>
@@ -361,19 +358,16 @@ export default function UploadPostModal({
                                         alt={currentUser.name}
                                     />
                                 ) : null}
-                                <AvatarFallback
-                                    className="text-sm"
-                                    style={{ backgroundColor: StringUtil.getRandomColor() }}
-                                >
+                                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                                     {getInitials(currentUser?.name || 'U')}
                                 </AvatarFallback>
                             </Avatar>
                             <div>
                                 <p className="font-semibold text-sm">{currentUser?.name}</p>
-                                <Badge variant="secondary" className="text-xs mt-1 gap-1">
+                                {/* <Badge variant="secondary" className="text-xs mt-1 gap-1">
                                     {getVisibilityIcon(mode)}
                                     {mode}
-                                </Badge>
+                                </Badge> */}
                             </div>
                         </div>
 
@@ -391,7 +385,7 @@ export default function UploadPostModal({
                         </div>
 
                         {/* Visibility Selector */}
-                        <div className="space-y-3">
+                        {/* <div className="space-y-3">
                             <label className="text-sm font-medium flex items-center gap-2 text-foreground">
                                 <Globe className="h-4 w-4 text-muted-foreground" />
                                 Post Visibility
@@ -466,7 +460,7 @@ export default function UploadPostModal({
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
-                        </div>
+                        </div> */}
 
                         {/* File Upload */}
                         <div className="space-y-2">

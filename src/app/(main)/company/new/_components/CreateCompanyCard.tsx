@@ -141,8 +141,8 @@ const CreateCompanyCard = () => {
                         />
                     </Field>
                 </CardContent>
-                <CardFooter className="flex items-center justify-between gap-4 border-t px-6 py-4">
-                    <div className="flex items-center gap-3">
+                <CardFooter className="flex items-center justify-end gap-4 border-t px-6 py-4">
+                    {/* <div className="flex items-center gap-3">
                         <p className="text-sm text-muted-foreground">You already have team?</p>
                         <Button
                             type="button"
@@ -152,8 +152,8 @@ const CreateCompanyCard = () => {
                         >
                             Join team
                         </Button>
-                    </div>
-                    <div className="h-6 w-px bg-border" />
+                    </div> */}
+                    {/* <div className="h-6 w-px bg-border" /> */}
 
                     <Button
                         type="submit"
