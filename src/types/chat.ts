@@ -2,7 +2,7 @@
 // This file maintains backward compatibility with existing code
 // New code should import from '@/features/chat/types' instead
 
-export {
+export type {
     // Base types
     ParticipantType,
     MessageStatus,

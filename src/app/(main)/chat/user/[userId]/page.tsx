@@ -8,9 +8,10 @@ import { ChatView, ConversationList } from '@/features/chat/components';
 import { useChat } from '@/features/chat/hooks/useChat';
 import { ParticipantType } from '@/features/chat/types';
 import { LoadingSpinner } from '@/features/chat/components/ui';
-import { getUserById } from '@/features/chat';
+// import { getUserById } from '@/features/chat';
 import { useAuth } from '@/hooks/useAuth';
 import { TOKEN_KEY } from '@/constants';
+import { getUserById } from '@/features/chat/services';
 
 export default function ChatUserPage() {
     const params = useParams();

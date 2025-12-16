@@ -72,6 +72,7 @@ export default function RichTextEditor({
             document.addEventListener('mousedown', handleClickOutside);
             return () => document.removeEventListener('mousedown', handleClickOutside);
         }
+        return undefined;
     }, [showColorPicker]);
 
     if (!editor) {
