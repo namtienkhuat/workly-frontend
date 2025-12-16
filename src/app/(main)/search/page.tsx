@@ -13,12 +13,11 @@ import { CompanyProfile, UserProfile } from '@/types/global';
 import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { toast } from 'sonner';
 
 const FollowButton = () => {
     const [isFollowing, setIsFollowing] = useState(false);
-
 
     const handleFollow = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -37,28 +36,41 @@ const FollowButton = () => {
     );
 };
 
-export default function SearchPage() {
+function SearchPageContent() {
     const searchParams = useSearchParams();
     const [posts, setPosts] = useState<PostResponse[]>([]);
     const [jobs, setJobs] = useState<Job[]>([]);
     const [companies, setCompanies] = useState<CompanyProfile[]>([]);
     const [users, setUsers] = useState<UserProfile[]>([]);
-    const [pagination, setPagination] = useState<any>()
+    const [pagination, setPagination] = useState<any>();
     const [loading, setLoading] = useState(true);
 
-    const router = useRouter()
+    const router = useRouter();
     const query = searchParams.get('keyword');
 
     const handleSearch = (label: string) => {
         router.push(`/search/${label}?keyword=${encodeURIComponent(query as string)}`);
     };
-    const SectionFooter = ({ count, label, route }: { count: number; label: string, route: string }) => {
+    const SectionFooter = ({
+        count,
+        label,
+        route,
+    }: {
+        count: number;
+        label: string;
+        route: string;
+    }) => {
         return (
             <div className="flex justify-center w-full pt-5">
                 {!count || count <= 5 ? (
                     <div className="text-muted-foreground">No more {label} to load</div>
                 ) : (
-                    <button className="text-primary hover:underline cursor-pointer" onClick={() => { handleSearch(route) }}>
+                    <button
+                        className="text-primary hover:underline cursor-pointer"
+                        onClick={() => {
+                            handleSearch(route);
+                        }}
+                    >
                         See all {label} Results
                     </button>
                 )}
@@ -85,18 +97,19 @@ export default function SearchPage() {
         fetchData();
     }, [query]);
 
-
     return (
         <div className="space-y-6">
-            {loading && <div className="fixed inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            </div>}
-            <div >
+            {loading && (
+                <div className="fixed inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                </div>
+            )}
+            <div>
                 <div className="mt-10 mb-5 uppercase tracking-widest font-bold text-gray-900 text-xl border-b-2 border-gray-300 pb-2">
                     USERS
                 </div>
                 {users.length > 0 && (
-                    <div className='p-5 '>
+                    <div className="p-5 ">
                         <Card>
                             <CardContent className="px-0 pb-2">
                                 {users.map((user) => (
@@ -116,15 +129,14 @@ export default function SearchPage() {
                     </div>
                 )}
                 {!loading && <SectionFooter count={pagination?.users} label="Users" route="user" />}
-
             </div>
             <div>
                 <div className="mt-10 mb-5 uppercase tracking-widest font-bold text-gray-900 text-xl border-b-2 border-gray-300 pb-2">
                     COMPANIES
                 </div>
                 {companies.length > 0 && (
-                    <div className='p-5 '>
-                        <Card >
+                    <div className="p-5 ">
+                        <Card>
                             <CardContent className="px-0 pb-2">
                                 {companies.map((company) => (
                                     <CompanyInfo
@@ -142,8 +154,13 @@ export default function SearchPage() {
                         </Card>
                     </div>
                 )}
-                {!loading && <SectionFooter count={pagination?.companies} label="Companies" route="company" />}
-
+                {!loading && (
+                    <SectionFooter
+                        count={pagination?.companies}
+                        label="Companies"
+                        route="company"
+                    />
+                )}
             </div>
             <div>
                 <div className="mt-10 mb-5 uppercase tracking-widest font-bold text-gray-900 text-xl border-b-2 border-gray-300 pb-2">
@@ -155,10 +172,10 @@ export default function SearchPage() {
                             <PostCard
                                 key={post._id}
                                 post={post}
-                                reload={() => { }}
+                                reload={() => {}}
                                 type={post.author_type}
                                 authorId={post.author?.id || ''}
-                                openPopupEdit={() => { }}
+                                openPopupEdit={() => {}}
                                 isFeed={true}
                             />
                         ))}
@@ -172,9 +189,7 @@ export default function SearchPage() {
                 </div>
                 {jobs.length > 0 && (
                     <div className="flex flex-col gap-6 ">
-                        <div
-                            className="space-y-4 p-5"
-                        >
+                        <div className="space-y-4 p-5">
                             {jobs.map((job) => (
                                 <JobCard key={job._id} job={job} />
                             ))}
@@ -184,5 +199,19 @@ export default function SearchPage() {
                 {!loading && <SectionFooter count={pagination?.jobs} label="Jobs" route="jobs" />}
             </div>
         </div>
+    );
+}
+
+export default function SearchPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="fixed inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                </div>
+            }
+        >
+            <SearchPageContent />
+        </Suspense>
     );
 }

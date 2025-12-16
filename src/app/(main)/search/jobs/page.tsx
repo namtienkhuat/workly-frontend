@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
     Select,
@@ -6,32 +6,32 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
-import React, { useEffect, useState } from "react";
-import { Search, Loader } from "lucide-react";
-import SelectSkills from "../../profile/edit/_components/SelectSkills";
-import { useRouter, useSearchParams } from "next/navigation";
-import searchService from "@/services/search/searchService";
-import InfiniteScroll from "react-infinite-scroll-component";
-import JobCardSkeleton from "@/components/jobs/JobCardSkeleton";
-import JobCard from "@/components/jobs/JobCard";
-import { Job } from "@/models/jobModel";
+import React, { useEffect, useState, Suspense } from 'react';
+import { Search, Loader } from 'lucide-react';
+import SelectSkills from '../../profile/edit/_components/SelectSkills';
+import { useRouter, useSearchParams } from 'next/navigation';
+import searchService from '@/services/search/searchService';
+import InfiniteScroll from 'react-infinite-scroll-component';
+import JobCardSkeleton from '@/components/jobs/JobCardSkeleton';
+import JobCard from '@/components/jobs/JobCard';
+import { Job } from '@/models/jobModel';
 
 const experienceLevelOptions = [
-    { value: "intern", label: "Intern" },
-    { value: "fresher", label: "Fresher" },
-    { value: "junior", label: "Junior" },
-    { value: "mid_level", label: "Mid-Level" },
-    { value: "senior", label: "Senior" },
-    { value: "lead", label: "Lead/Manager" },
+    { value: 'intern', label: 'Intern' },
+    { value: 'fresher', label: 'Fresher' },
+    { value: 'junior', label: 'Junior' },
+    { value: 'mid_level', label: 'Mid-Level' },
+    { value: 'senior', label: 'Senior' },
+    { value: 'lead', label: 'Lead/Manager' },
 ];
 
-export default function PageJobSearch() {
+function JobSearchContent() {
     const [skills, setSkills] = useState<string[]>([]);
     const [level, setLevel] = useState<string | null>(null);
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [jobs, setJobs] = useState<Job[]>([]);
     const [page, setPage] = useState(1);
@@ -42,26 +42,25 @@ export default function PageJobSearch() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    const keyword = searchParams.get("keyword") ?? "";
+    const keyword = searchParams.get('keyword') ?? '';
 
     useEffect(() => {
-        handleSearch()
+        handleSearch();
     }, [keyword]);
 
     useEffect(() => {
         if (!shouldFetch) {
             return;
         }
-        handleSearch()
+        handleSearch();
         setShouldFetch(false);
     }, [level, startDate, skills, endDate]);
-
 
     const clearAll = () => {
         setSkills([]);
         setLevel(null);
-        setStartDate("");
-        setEndDate("");
+        setStartDate('');
+        setEndDate('');
         setShouldFetch(true);
     };
 
@@ -129,20 +128,14 @@ export default function PageJobSearch() {
                     <div className="flex justify-between w-[100%]">
                         <div className="flex justify-between w-[37%]">
                             <div className="flex items-center">
-                                <Select
-                                    value={level ?? ""}
-                                    onValueChange={(v) => setLevel(v)}
-                                >
+                                <Select value={level ?? ''} onValueChange={(v) => setLevel(v)}>
                                     <SelectTrigger className="flex items-center gap-2 px-6 py-1.5 border border-gray-600 rounded-full text-sm font-medium text-gray-700 hover:border-gray-800 hover:bg-gray-50 transition-colors">
                                         <SelectValue placeholder="Level: All levels" />
                                     </SelectTrigger>
 
                                     <SelectContent>
                                         {experienceLevelOptions.map((opt) => (
-                                            <SelectItem
-                                                key={opt.value}
-                                                value={opt.value}
-                                            >
+                                            <SelectItem key={opt.value} value={opt.value}>
                                                 {opt.label}
                                             </SelectItem>
                                         ))}
@@ -155,9 +148,7 @@ export default function PageJobSearch() {
                                 <input
                                     type="date"
                                     value={startDate}
-                                    onChange={(e) =>
-                                        setStartDate(e.target.value)
-                                    }
+                                    onChange={(e) => setStartDate(e.target.value)}
                                     className="border-none bg-transparent text-sm focus:outline-none w-[110px]"
                                 />
                                 <span className="text-gray-400">-</span>
@@ -188,10 +179,7 @@ export default function PageJobSearch() {
                             >
                                 {isLoading ? (
                                     <>
-                                        <Loader
-                                            size={16}
-                                            className="animate-spin"
-                                        />
+                                        <Loader size={16} className="animate-spin" />
                                         Searching...
                                     </>
                                 ) : (
@@ -219,9 +207,7 @@ export default function PageJobSearch() {
                 }
                 endMessage={
                     <p className="text-center text-gray-500 py-4">
-                        {jobs.length === 0
-                            ? "No jobs available"
-                            : "No more jobs to load"}
+                        {jobs.length === 0 ? 'No jobs available' : 'No more jobs to load'}
                     </p>
                 }
                 className="space-y-4 p-4"
@@ -231,5 +217,21 @@ export default function PageJobSearch() {
                 ))}
             </InfiniteScroll>
         </div>
+    );
+}
+
+export default function PageJobSearch() {
+    return (
+        <Suspense
+            fallback={
+                <div className="space-y-4 p-4">
+                    {[...Array(2)].map((_, index) => (
+                        <JobCardSkeleton key={`loader-${index}`} />
+                    ))}
+                </div>
+            }
+        >
+            <JobSearchContent />
+        </Suspense>
     );
 }

@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import searchService from "@/services/search/searchService";
-import InfiniteScroll from "react-infinite-scroll-component";
-import PostCard from "@/components/posts/PostCard";
-import { PostResponse } from "@/models/profileModel";
-import PostSkeleton from "@/components/posts/PostSkeleton";
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import searchService from '@/services/search/searchService';
+import InfiniteScroll from 'react-infinite-scroll-component';
+import PostCard from '@/components/posts/PostCard';
+import { PostResponse } from '@/models/profileModel';
+import PostSkeleton from '@/components/posts/PostSkeleton';
 
-export default function PageJobSearch() {
+function PostSearchContent() {
     const [posts, setPosts] = useState<PostResponse[]>([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
@@ -17,12 +17,11 @@ export default function PageJobSearch() {
 
     const router = useRouter();
     const searchParams = useSearchParams();
-    const keyword = searchParams.get("keyword") ?? "";
+    const keyword = searchParams.get('keyword') ?? '';
 
     useEffect(() => {
         searchKeyword(keyword);
     }, [keyword]);
-
 
     const searchKeyword = async (kw: string) => {
         setIsLoading(true);
@@ -58,7 +57,7 @@ export default function PageJobSearch() {
             const res = await searchService.getPostSearchPaging({
                 keyword,
                 page: next,
-                size: 10
+                size: 10,
             });
 
             setPosts((prev) => [...prev, ...(res.data ?? [])]);
@@ -94,11 +93,7 @@ export default function PageJobSearch() {
                         </div>
                     ) : null
                 }
-                endMessage={
-                    <p className="text-center text-gray-500 py-4">
-                        No more posts to show
-                    </p>
-                }
+                endMessage={<p className="text-center text-gray-500 py-4">No more posts to show</p>}
             >
                 <div className="flex flex-col gap-6">
                     {posts.map((post) => (
@@ -107,13 +102,29 @@ export default function PageJobSearch() {
                             post={post}
                             reload={handleReload}
                             type={post.author_type}
-                            authorId={post.author?.id || ""}
-                            openPopupEdit={() => { }}
+                            authorId={post.author?.id || ''}
+                            openPopupEdit={() => {}}
                             isFeed={true}
                         />
                     ))}
                 </div>
             </InfiniteScroll>
         </section>
+    );
+}
+
+export default function PageJobSearch() {
+    return (
+        <Suspense
+            fallback={
+                <section className="space-y-4 pb-10">
+                    <div className="py-4">
+                        <PostSkeleton />
+                    </div>
+                </section>
+            }
+        >
+            <PostSearchContent />
+        </Suspense>
     );
 }

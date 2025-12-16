@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import searchService from "@/services/search/searchService";
-import { Card, CardContent } from "@/components/ui/card";
-import CompanyInfo from "@/components/company/CompanyInfo";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import searchService from '@/services/search/searchService';
+import { Card, CardContent } from '@/components/ui/card';
+import CompanyInfo from '@/components/company/CompanyInfo';
+import { Button } from '@/components/ui/button';
 import {
     Pagination,
     PaginationContent,
@@ -14,9 +14,9 @@ import {
     PaginationLink,
     PaginationNext,
     PaginationPrevious,
-} from "@/components/ui/pagination";
-import { CompanyProfile } from "@/types/global";
-import { Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+} from '@/components/ui/pagination';
+import { CompanyProfile } from '@/types/global';
+import { Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 const FollowButton = () => {
     const [isFollowing, setIsFollowing] = useState(false);
@@ -38,7 +38,7 @@ const FollowButton = () => {
     );
 };
 
-export default function CompanyJobSearch() {
+function CompanySearchContent() {
     const [isLoading, setIsLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -48,7 +48,7 @@ export default function CompanyJobSearch() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    const keyword = searchParams.get("keyword") ?? "";
+    const keyword = searchParams.get('keyword') ?? '';
     const pageSize = 10;
 
     useEffect(() => {
@@ -61,7 +61,7 @@ export default function CompanyJobSearch() {
             const requestParams = {
                 page: pageNum,
                 size: pageSize,
-                keyword: keyword
+                keyword: keyword,
             };
 
             const response = await searchService.getCompanySearchPaging(requestParams);
@@ -170,12 +170,13 @@ export default function CompanyJobSearch() {
             )}
 
             {companies.length > 0 && (
-                <div className='p-5 max-w-7xl mx-auto'>
+                <div className="p-5 max-w-7xl mx-auto">
                     {/* Results info */}
                     <div className="mb-4 flex items-center justify-between">
                         {keyword && (
                             <p className="text-sm text-muted-foreground">
-                                Search results for: <span className="font-medium text-foreground">"{keyword}"</span>
+                                Search results for:{' '}
+                                <span className="font-medium text-foreground">"{keyword}"</span>
                             </p>
                         )}
                     </div>
@@ -222,7 +223,11 @@ export default function CompanyJobSearch() {
                                             <PaginationItem>
                                                 <PaginationPrevious
                                                     onClick={() => goToPage(page - 1)}
-                                                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                    className={
+                                                        page === 1
+                                                            ? 'pointer-events-none opacity-50'
+                                                            : 'cursor-pointer'
+                                                    }
                                                 />
                                             </PaginationItem>
 
@@ -233,7 +238,11 @@ export default function CompanyJobSearch() {
                                             <PaginationItem>
                                                 <PaginationNext
                                                     onClick={() => goToPage(page + 1)}
-                                                    className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                    className={
+                                                        page === totalPages
+                                                            ? 'pointer-events-none opacity-50'
+                                                            : 'cursor-pointer'
+                                                    }
                                                 />
                                             </PaginationItem>
 
@@ -289,7 +298,9 @@ export default function CompanyJobSearch() {
                                     <span>Page</span>
                                     <span className="font-semibold text-foreground">{page}</span>
                                     <span>of</span>
-                                    <span className="font-semibold text-foreground">{totalPages}</span>
+                                    <span className="font-semibold text-foreground">
+                                        {totalPages}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -319,12 +330,28 @@ export default function CompanyJobSearch() {
                         <p className="text-muted-foreground max-w-md">
                             {keyword
                                 ? `We couldn't find any companies matching "${keyword}". Try a different search term.`
-                                : "Try adjusting your search to find what you're looking for."
-                            }
+                                : "Try adjusting your search to find what you're looking for."}
                         </p>
                     </div>
                 </div>
             )}
         </div>
+    );
+}
+
+export default function CompanyJobSearch() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">Loading companies...</p>
+                    </div>
+                </div>
+            }
+        >
+            <CompanySearchContent />
+        </Suspense>
     );
 }

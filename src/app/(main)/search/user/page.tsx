@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import searchService from "@/services/search/searchService";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import searchService from '@/services/search/searchService';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
     Pagination,
     PaginationContent,
@@ -13,10 +13,10 @@ import {
     PaginationLink,
     PaginationNext,
     PaginationPrevious,
-} from "@/components/ui/pagination";
-import { UserProfile } from "@/types/global";
-import { Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-import UserInfo from "@/components/user/UserInfo";
+} from '@/components/ui/pagination';
+import { UserProfile } from '@/types/global';
+import { Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import UserInfo from '@/components/user/UserInfo';
 
 const FollowButton = () => {
     const [isFollowing, setIsFollowing] = useState(false);
@@ -38,7 +38,7 @@ const FollowButton = () => {
     );
 };
 
-export default function CompanyJobSearch() {
+function UserSearchContent() {
     const [isLoading, setIsLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -48,7 +48,7 @@ export default function CompanyJobSearch() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    const keyword = searchParams.get("keyword") ?? "";
+    const keyword = searchParams.get('keyword') ?? '';
     const pageSize = 10;
 
     useEffect(() => {
@@ -61,7 +61,7 @@ export default function CompanyJobSearch() {
             const requestParams = {
                 page: pageNum,
                 size: pageSize,
-                keyword: keyword
+                keyword: keyword,
             };
 
             const response = await searchService.getUserSearchPaging(requestParams);
@@ -167,7 +167,7 @@ export default function CompanyJobSearch() {
             )}
 
             {users.length > 0 && (
-                <div className='p-5 '>
+                <div className="p-5 ">
                     <Card>
                         <CardContent className="px-0 pb-2">
                             {users.map((user) => (
@@ -208,7 +208,11 @@ export default function CompanyJobSearch() {
                                     <PaginationItem>
                                         <PaginationPrevious
                                             onClick={() => goToPage(page - 1)}
-                                            className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                            className={
+                                                page === 1
+                                                    ? 'pointer-events-none opacity-50'
+                                                    : 'cursor-pointer'
+                                            }
                                         />
                                     </PaginationItem>
 
@@ -219,7 +223,11 @@ export default function CompanyJobSearch() {
                                     <PaginationItem>
                                         <PaginationNext
                                             onClick={() => goToPage(page + 1)}
-                                            className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                            className={
+                                                page === totalPages
+                                                    ? 'pointer-events-none opacity-50'
+                                                    : 'cursor-pointer'
+                                            }
                                         />
                                     </PaginationItem>
 
@@ -280,37 +288,50 @@ export default function CompanyJobSearch() {
                     </div>
                 </div>
             )}
-            {
-                isLoading && users.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-20 px-4">
-                        <div className="text-center space-y-3">
-                            <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                                <svg
-                                    className="w-8 h-8 text-muted-foreground"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                    />
-                                </svg>
-                            </div>
-                            <p className="text-xl font-semibold text-foreground">No User found</p>
-                            <p className="text-muted-foreground max-w-md">
-                                {keyword
-                                    ? `We couldn't find any companies matching "${keyword}". Try a different search term.`
-                                    : "Try adjusting your search to find what you're looking for."
-                                }
-                            </p>
+            {isLoading && users.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 px-4">
+                    <div className="text-center space-y-3">
+                        <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                            <svg
+                                className="w-8 h-8 text-muted-foreground"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                />
+                            </svg>
                         </div>
+                        <p className="text-xl font-semibold text-foreground">No User found</p>
+                        <p className="text-muted-foreground max-w-md">
+                            {keyword
+                                ? `We couldn't find any companies matching "${keyword}". Try a different search term.`
+                                : "Try adjusting your search to find what you're looking for."}
+                        </p>
                     </div>
-                )
-            }
+                </div>
+            )}
         </div>
-    )
+    );
 }
 
+export default function CompanyJobSearch() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">Loading...</p>
+                    </div>
+                </div>
+            }
+        >
+            <UserSearchContent />
+        </Suspense>
+    );
+}
