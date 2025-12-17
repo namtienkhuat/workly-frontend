@@ -3,7 +3,7 @@
 export const CHAT_CONSTANTS = {
     // Socket - Connect through Kong Gateway (same as REST API)
     // In production, both REST API and WebSocket go through Kong on same domain
-    SOCKET_URL: process.env.BACKEND_URL || 'http://localhost:8000',
+    SOCKET_URL: process.env.NEXT_PUBLIC_CHAT_SOCKET_URL || 'http://localhost:8000',
     MAX_RECONNECT_ATTEMPTS: 5,
     RECONNECT_DELAY: 1000,
     RECONNECT_DELAY_MAX: 5000,

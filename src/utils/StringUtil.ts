@@ -1,7 +1,5 @@
-import { BACKEND_URL } from './models/Constants';
-
-const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-export const STORAGE_URL = `${backendUrl}/storage`;
+const BACKEND_URL = process.env.NEXT_PUBLIC_CHAT_SOCKET_URL || 'http://localhost:8000';
+export const STORAGE_URL = `${BACKEND_URL}/storage`;
 
 export default {
     generatePath(path: string): string {
