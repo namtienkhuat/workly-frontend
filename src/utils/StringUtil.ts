@@ -8,7 +8,7 @@ export default {
         return STORAGE_URL + '/uploads/images/' + path;
     },
     generatePathVideo(path: string): string {
-        return BACKEND_URL + '/posts/video/' + path;
+        return BACKEND_URL + '/api/v1/posts/video/' + path;
     },
 
     getRandomColor(): string {
