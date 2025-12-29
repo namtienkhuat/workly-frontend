@@ -33,6 +33,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { AuthRequiredModal } from '@/components/auth/AuthRequiredModal';
 import { Badge } from '@/components/ui/badge';
+import { set } from 'zod';
 
 interface PostCardProps {
     post: PostResponse;
@@ -104,21 +105,21 @@ const PostCard = ({
         }
 
         if (liked) {
-            await likeService
-                .unlikePost(post._id)
-                .then(() => {
-                    setLiked(false);
-                    setTotalLikes((prev) => prev.filter((id) => id !== currentUser.userId));
-                })
-                .catch(() => toast.error('unlike error'));
+            setLiked(false);
+            setTotalLikes((prev) => prev.filter((id) => id !== currentUser.userId));
+            await likeService.unlikePost(post._id).catch(() => {
+                toast.error('unlike error');
+                setLiked(true);
+                setTotalLikes((prev) => [...prev, currentUser.userId]);
+            });
         } else {
-            await likeService
-                .likePost(post._id)
-                .then(() => {
-                    setLiked(true);
-                    setTotalLikes((prev) => [...prev, currentUser.userId]);
-                })
-                .catch(() => toast.error('like error'));
+            setLiked(true);
+            setTotalLikes((prev) => [...prev, currentUser.userId]);
+            await likeService.likePost(post._id).catch(() => {
+                toast.error('like error');
+                setLiked(false);
+                setTotalLikes((prev) => prev.filter((id) => id !== currentUser.userId));
+            });
         }
     };
 
