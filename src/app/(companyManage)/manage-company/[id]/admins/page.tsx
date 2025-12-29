@@ -80,6 +80,10 @@ const AdminsPage = () => {
         setIsSubmitting(false);
 
         if (result.success) {
+            await queryClient.invalidateQueries({
+                queryKey: ['/companies/my-companies'],
+            });
+
             toast.success('Admin added successfully!', {
                 description: result.message,
             });

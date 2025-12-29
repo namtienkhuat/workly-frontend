@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useParams, useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -56,6 +57,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const EditCompanyPage = () => {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
+    const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -102,6 +104,12 @@ const EditCompanyPage = () => {
         if (success) {
             toast.success('Company information updated successfully!');
             refetchCompanyProfile();
+            
+            // Invalidate companies list cache to reflect updated company info
+            queryClient.invalidateQueries({ 
+                queryKey: ['/companies/my-companies'] 
+            });
+            
             router.push(`/manage-company/${id}`);
         } else {
             toast.error('Failed to update company', {
@@ -117,6 +125,12 @@ const EditCompanyPage = () => {
 
         if (success) {
             toast.success('Company deleted successfully!');
+            
+            // Invalidate companies list cache to remove deleted company
+            queryClient.invalidateQueries({ 
+                queryKey: ['/companies/my-companies'] 
+            });
+            
             router.push('/manage-companies');
         } else {
             toast.error('Failed to delete company', {

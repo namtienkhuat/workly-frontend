@@ -130,12 +130,14 @@ export default function ManageCompaniesPage() {
                                 <CardContent className="p-6">
                                     <div className="flex items-start gap-4">
                                         {/* Company Logo */}
-                                        <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                        <div className={`w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden ${
+                                            company.logoUrl ? '' : 'bg-primary/10'
+                                        }`}>
                                             {company.logoUrl ? (
                                                 <img
                                                     src={company.logoUrl}
                                                     alt={company.name}
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-cover rounded-lg"
                                                 />
                                             ) : (
                                                 <Building2 className="h-8 w-8 text-primary" />
