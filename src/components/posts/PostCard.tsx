@@ -98,7 +98,21 @@ const PostCard = ({
             toast.error('edit post fail');
         }
     };
-    const handleLike = async () => {
+    function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
+        let timeout: NodeJS.Timeout | null;
+
+        return (...args: Parameters<T>) => {
+            if (timeout) return;
+
+            fn(...args);
+
+            timeout = setTimeout(() => {
+                timeout = null;
+            }, delay);
+        };
+    }
+
+    const handleLike = debounce(async () => {
         if (!currentUser?.userId) {
             setAuthModalOpen(true);
             return;
@@ -121,7 +135,7 @@ const PostCard = ({
                 setTotalLikes((prev) => prev.filter((id) => id !== currentUser.userId));
             });
         }
-    };
+    }, 500);
 
     const handleCommentClick = () => {
         if (!currentUser?.userId) {
