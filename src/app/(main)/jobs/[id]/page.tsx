@@ -100,7 +100,6 @@ export default function JobDetailPage() {
                     formData.cv,
                     apiPaths.uploadFile
                 );
-                console.log('uploadResponse', uploadResponse);
 
                 cvUrl = uploadResponse[0].url;
             }

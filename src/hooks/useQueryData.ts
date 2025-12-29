@@ -105,6 +105,10 @@ export function useGetUserProfile(id: string) {
     );
 }
 
+export function useGetSearchUsers(queryParams: Record<string, any> = {}, enabled: boolean = true) {
+    return useData(['/users', queryParams], getDataWithStatus, enabled);
+}
+
 export function useGetAllIndustries(queryParams: Record<string, any> = {}) {
     return useData([`/industries`, queryParams], getDataWithStatus);
 }

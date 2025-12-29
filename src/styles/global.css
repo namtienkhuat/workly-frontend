@@ -120,6 +120,11 @@
 
     body {
         @apply bg-background text-foreground;
+        font-weight: 400;
+    }
+    
+    p, span, div, a, li, td, th {
+        font-weight: 400;
     }
 }
 

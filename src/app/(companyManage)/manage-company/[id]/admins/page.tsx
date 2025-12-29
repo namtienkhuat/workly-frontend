@@ -1,11 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useParams, useRouter } from 'next/navigation';
-import { useGetCompanyAdmins, useGetCompanyProfile, useGetMe } from '@/hooks/useQueryData';
+import {
+    useGetCompanyAdmins,
+    useGetCompanyProfile,
+    useGetMe,
+    useGetSearchUsers,
+} from '@/hooks/useQueryData';
 import { UserPlus, Trash2, Shield, Mail, User, ShieldCheck, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,7 +37,7 @@ import { Label } from '@/components/ui/label';
 import { addCompanyAdmin, removeCompanyAdmin } from '@/services/apiServices';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { getInitials } from '@/utils/helpers';
 
 interface Admin {
     userId: string;
@@ -60,21 +65,38 @@ const AdminsPage = () => {
     const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
     const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
-    const [addMethod, setAddMethod] = useState<'email' | 'userId'>('email');
     const [newAdminEmail, setNewAdminEmail] = useState('');
-    const [newAdminUserId, setNewAdminUserId] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(newAdminEmail.trim());
+        }, 300);
+        return () => clearTimeout(handler);
+    }, [newAdminEmail]);
+
+    const shouldSearch = debouncedSearch.length > 0;
+    const { data: searchUsersData, isFetching: isSearchingUsers } = useGetSearchUsers(
+        {
+            search: debouncedSearch,
+        },
+        shouldSearch
+    );
+
+    const searchUsersRaw = searchUsersData?.data?.users ?? searchUsersData?.data ?? [];
+    const filteredUsers = Array.isArray(searchUsersRaw) ? searchUsersRaw : [];
+
     const handleAddAdmin = async () => {
-        const value = addMethod === 'email' ? newAdminEmail.trim() : newAdminUserId.trim();
+        const value = newAdminEmail.trim();
 
         if (!value) {
-            toast.error(`Please enter ${addMethod === 'email' ? 'an email' : 'a User ID'}`);
+            toast.error('Please enter an email');
             return;
         }
 
         setIsSubmitting(true);
-        const payload = addMethod === 'email' ? { email: value } : { userId: value };
+        const payload = { email: value };
 
         const result = await addCompanyAdmin(id, payload);
         setIsSubmitting(false);
@@ -89,7 +111,6 @@ const AdminsPage = () => {
             });
             setIsAddDialogOpen(false);
             setNewAdminEmail('');
-            setNewAdminUserId('');
             refetch();
         } else {
             toast.error('Failed to add admin', {
@@ -316,69 +337,68 @@ const AdminsPage = () => {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="space-y-3">
-                            <Label>Add by</Label>
-                            <RadioGroup
-                                value={addMethod}
-                                onValueChange={(value) => setAddMethod(value as 'email' | 'userId')}
-                                className="flex gap-4"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="email" id="email" />
-                                    <Label htmlFor="email" className="font-normal cursor-pointer">
-                                        Email
-                                    </Label>
+                        <div className="space-y-2">
+                            <Label htmlFor="email-input">Search by name or email</Label>
+                            <Input
+                                id="email-input"
+                                type="text"
+                                placeholder="Start typing a name or email..."
+                                value={newAdminEmail}
+                                onChange={(e) => setNewAdminEmail(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleAddAdmin();
+                                    }
+                                }}
+                            />
+                            {shouldSearch && (
+                                <div className="mt-2">
+                                    {isSearchingUsers && (
+                                        <div className="text-xs text-muted-foreground px-1 py-1">
+                                            Searching...
+                                        </div>
+                                    )}
+                                    {!isSearchingUsers && filteredUsers.length > 0 && (
+                                        <div className="border rounded-md divide-y max-h-48 overflow-auto">
+                                            {filteredUsers.map((user) => (
+                                                <button
+                                                    type="button"
+                                                    key={user.email || user.userId}
+                                                    className="w-full text-left px-3 py-2 hover:bg-accent/60 transition-colors flex items-center gap-3"
+                                                    onClick={() => setNewAdminEmail(user.email)}
+                                                >
+                                                    <Avatar className="h-8 w-8">
+                                                        <AvatarImage
+                                                            src={user.avatarUrl}
+                                                            alt={user.name}
+                                                        />
+                                                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                                            {getInitials(user.name)}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <div className="font-medium leading-tight">
+                                                            {user.name}
+                                                        </div>
+                                                        <div className="text-sm text-muted-foreground leading-tight">
+                                                            {user.email}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {!isSearchingUsers && filteredUsers.length === 0 && (
+                                        <div className="text-xs text-muted-foreground px-1 py-1">
+                                            No users found
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="userId" id="userId-option" />
-                                    <Label
-                                        htmlFor="userId-option"
-                                        className="font-normal cursor-pointer"
-                                    >
-                                        User ID
-                                    </Label>
-                                </div>
-                            </RadioGroup>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                Pick from suggestions or press Enter to submit by email.
+                            </p>
                         </div>
-
-                        {addMethod === 'email' ? (
-                            <div className="space-y-2">
-                                <Label htmlFor="email-input">Email Address</Label>
-                                <Input
-                                    id="email-input"
-                                    type="email"
-                                    placeholder="Enter email address..."
-                                    value={newAdminEmail}
-                                    onChange={(e) => setNewAdminEmail(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleAddAdmin();
-                                        }
-                                    }}
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Enter the email address of the user you want to add
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                <Label htmlFor="userId-input">User ID</Label>
-                                <Input
-                                    id="userId-input"
-                                    placeholder="Enter user ID..."
-                                    value={newAdminUserId}
-                                    onChange={(e) => setNewAdminUserId(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleAddAdmin();
-                                        }
-                                    }}
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    You can find a user&apos;s ID on their profile page
-                                </p>
-                            </div>
-                        )}
                     </div>
                     <DialogFooter>
                         <Button
@@ -386,7 +406,6 @@ const AdminsPage = () => {
                             onClick={() => {
                                 setIsAddDialogOpen(false);
                                 setNewAdminEmail('');
-                                setNewAdminUserId('');
                             }}
                             disabled={isSubmitting}
                         >

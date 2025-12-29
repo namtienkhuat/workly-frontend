@@ -47,6 +47,7 @@ const CreatePostPage = () => {
 
         try {
             const { data } = await api.post(`/companies/${id}/posts`, { post: formData });
+            console.log(data);
             toast.success('Post created successfully!');
             reset();
             router.push(`/manage-company/${id}`);

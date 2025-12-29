@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
@@ -45,7 +45,7 @@ interface NavItem {
     hideWhenNotAuthenticated?: boolean; // Hide completely when not authenticated (instead of showing popup)
 }
 
-export const Header = () => {
+const HeaderContent = () => {
     const pathname = usePathname();
     const { user, isAuthenticated } = useAuth();
     const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -264,6 +264,51 @@ export const Header = () => {
                 </div>
             </div>
         </header>
+    );
+};
+
+export const Header = () => {
+    return (
+        <Suspense
+            fallback={
+                <header className="sticky top-0 z-50 border-b bg-white dark:bg-background shadow-sm">
+                    <div className="mx-auto max-w-7xl">
+                        <div className="flex items-center justify-between gap-2 md:gap-4 px-3 md:px-4 py-2">
+                            {/* Logo */}
+                            <Link
+                                href="/home"
+                                className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className="w-9 h-9 md:w-10 md:h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                                        W
+                                    </div>
+                                </div>
+                            </Link>
+
+                            {/* Search Bar Skeleton */}
+                            <div className="flex-1 max-w-xs md:max-w-md">
+                                <div className="relative">
+                                    <div className="h-9 bg-muted/50 rounded-md animate-pulse" />
+                                </div>
+                            </div>
+
+                            {/* Navigation Skeleton */}
+                            <nav className="flex items-center gap-0.5 md:gap-1">
+                                {[...Array(5)].map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-[50px] md:w-[65px] h-[60px] bg-muted/30 rounded-md animate-pulse"
+                                    />
+                                ))}
+                            </nav>
+                        </div>
+                    </div>
+                </header>
+            }
+        >
+            <HeaderContent />
+        </Suspense>
     );
 };
 

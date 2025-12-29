@@ -1,6 +1,5 @@
-import { BACKEND_URL } from './models/Constants';
-
-export const STORAGE_URL = 'http://localhost:8000/storage';
+const BACKEND_URL = process.env.NEXT_PUBLIC_CHAT_SOCKET_URL || 'http://localhost:8000';
+export const STORAGE_URL = `${BACKEND_URL}/storage`;
 
 export default {
     generatePath(path: string): string {
@@ -9,7 +8,7 @@ export default {
         return STORAGE_URL + '/uploads/images/' + path;
     },
     generatePathVideo(path: string): string {
-        return BACKEND_URL + '/posts/video/' + path;
+        return BACKEND_URL + '/api/v1/posts/video/' + path;
     },
 
     getRandomColor(): string {

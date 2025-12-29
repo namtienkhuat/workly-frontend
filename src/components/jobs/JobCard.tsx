@@ -218,7 +218,6 @@ const JobCard = ({
                     formData.cv,
                     apiPaths.uploadFile
                 );
-                console.log('uploadResponse', uploadResponse);
 
                 cvUrl = uploadResponse[0].url;
             }
@@ -369,7 +368,15 @@ const JobCard = ({
                 <div className="flex flex-wrap gap-3 text-sm mb-4">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                         <MapPin className="h-4 w-4 flex-shrink-0" />
-                        <span>{job.location}</span>
+                        <span>
+                            {job.location
+                                .split('_')
+                                .map(
+                                    (loc) =>
+                                        loc.trim().charAt(0).toUpperCase() + loc.trim().slice(1)
+                                )
+                                .join(' ')}
+                        </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                         <Briefcase className="h-4 w-4 flex-shrink-0" />

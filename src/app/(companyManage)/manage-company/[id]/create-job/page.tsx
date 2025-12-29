@@ -23,13 +23,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import Select from "react-select";
+import Select from 'react-select';
 
 import { toast } from 'sonner';
 import z from 'zod';
 import jobService from '@/services/job/jobService';
 import SelectSkills from '@/app/(main)/profile/edit/_components/SelectSkills';
 import SelectIndustry from '@/app/(main)/company/new/_components/SelectIndustry';
+import SelectLocation from '@/app/(main)/profile/edit/_components/SelectLocation';
 interface OptionType {
     value: string;
     label: string;
@@ -53,7 +54,7 @@ const experienceLevelOptions = [
     { value: 'junior', label: 'Junior' },
     { value: 'mid_level', label: 'Mid-Level' },
     { value: 'senior', label: 'Senior' },
-    { value: 'lead', label: 'Lead/Manager' }
+    { value: 'lead', label: 'Lead/Manager' },
 ];
 const createJobSchema = z.object({
     title: z.string().min(1, 'Job title is required'),
@@ -64,8 +65,8 @@ const createJobSchema = z.object({
     salaryMax: z.number().min(0, 'Maximum salary must be positive').optional(),
     skills: z.array(z.string()).min(1, 'Skill is required'),
     industry: z.string().min(1, 'industry is required'),
-    endDate: z.string().min(1, "endDate is required"),
-    experienceLevel: z.array(z.string()).min(1, "experienceLevel is required")
+    endDate: z.string().min(1, 'endDate is required'),
+    experienceLevel: z.array(z.string()).min(1, 'experienceLevel is required'),
 });
 
 type CreateJobFormData = z.infer<typeof createJobSchema>;
@@ -74,7 +75,6 @@ const CreateJobPage = () => {
     const { id } = useParams<{ id: string }>();
     const searchParams = useSearchParams();
     const router = useRouter();
-    const [isFetching, setIsFetching] = useState(false);
 
     const jobId = searchParams.get('jobId');
     const isEditMode = !!jobId;
@@ -90,10 +90,8 @@ const CreateJobPage = () => {
     });
     useEffect(() => {
         const fetchJobData = async () => {
-
             try {
                 if (!isEditMode) return;
-                setIsFetching(true);
                 const response = await jobService.getJobCompanyDetail(jobId, id);
                 const jobData = response.data;
 
@@ -119,15 +117,13 @@ const CreateJobPage = () => {
                     skills: jobData.skills || [],
                     experienceLevel: jobData.level || [],
                     industry: jobData.industry || 'it',
-                    endDate: formattedEndDate
+                    endDate: formattedEndDate,
                 } as CreateJobFormData);
             } catch (error: any) {
                 toast.error('Failed to load job data', {
                     description: error.response?.data?.message || 'Unknown error',
                 });
                 router.push(`/company/${id}/jobs`);
-            } finally {
-                setIsFetching(false);
             }
         };
 
@@ -144,19 +140,20 @@ const CreateJobPage = () => {
                 industry: formData.industry.toLowerCase(),
                 location: formData.location,
                 jobType: formData.employmentType,
-                salary: formData.salaryMin && formData.salaryMax
-                    ? `$${formData.salaryMin} - $${formData.salaryMax}`
-                    : undefined,
+                salary:
+                    formData.salaryMin && formData.salaryMax
+                        ? `$${formData.salaryMin} - $${formData.salaryMax}`
+                        : undefined,
                 endDate: formData.endDate,
-                skills: formData.skills.map(i => i.toLowerCase()),
-                level: formData.experienceLevel.map(e => e.toLowerCase())
+                skills: formData.skills.map((i) => i.toLowerCase()),
+                level: formData.experienceLevel.map((e) => e.toLowerCase()),
             };
             if (isEditMode) {
                 // Update job
                 await jobService.updateJob({
                     jobId: jobId,
                     companyId: id,
-                    ...jobPayload
+                    ...jobPayload,
                 });
                 toast.success('Job updated successfully!');
             } else {
@@ -218,9 +215,17 @@ const CreateJobPage = () => {
                         <FieldLabel>
                             Location <span className="text-red-500">*</span>
                         </FieldLabel>
-                        <Input
-                            placeholder="e.g., San Francisco, CA or Remote"
-                            {...register('location')}
+                        <Controller
+                            name="location"
+                            control={control}
+                            render={({ field }) => (
+                                <SelectLocation
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    placeholder="Select location"
+                                    showHelperText={false}
+                                />
+                            )}
                         />
                         <FieldError
                             className="mt-1 text-xs"
@@ -236,7 +241,10 @@ const CreateJobPage = () => {
                                 name="employmentType"
                                 control={control}
                                 render={({ field }) => (
-                                    <SelectSingle value={field.value} onValueChange={field.onChange}>
+                                    <SelectSingle
+                                        value={field.value}
+                                        onValueChange={field.onChange}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select employment type" />
                                         </SelectTrigger>
@@ -266,11 +274,13 @@ const CreateJobPage = () => {
                                 errors={errors.endDate ? [errors.endDate] : undefined}
                             />
                         </Field>
-                    </div >
+                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <Field className="gap-2">
-                            <FieldLabel>Minimum Salary (optional)</FieldLabel>
+                            <FieldLabel>
+                                Minimum Salary <span className="text-red-500">*</span>
+                            </FieldLabel>
                             <Input
                                 type="number"
                                 placeholder="0"
@@ -283,7 +293,9 @@ const CreateJobPage = () => {
                         </Field>
 
                         <Field className="gap-2">
-                            <FieldLabel>Maximum Salary (optional)</FieldLabel>
+                            <FieldLabel>
+                                Maximum Salary <span className="text-red-500">*</span>
+                            </FieldLabel>
                             <Input
                                 type="number"
                                 placeholder="0"
@@ -352,16 +364,26 @@ const CreateJobPage = () => {
                                     <div className="space-y-1">
                                         <Select
                                             isMulti
-                                            value={experienceLevelOptions.filter(opt => field.value?.includes(opt.value))}
+                                            value={experienceLevelOptions.filter((opt) =>
+                                                field.value?.includes(opt.value)
+                                            )}
                                             onChange={(options) => {
-                                                field.onChange((options as OptionType[]).map(opt => opt.value));
+                                                field.onChange(
+                                                    (options as OptionType[]).map(
+                                                        (opt) => opt.value
+                                                    )
+                                                );
                                             }}
                                             options={experienceLevelOptions}
                                             className="text-sm"
                                         />
                                         <FieldError
                                             className="text-xs text-red-500"
-                                            errors={errors.experienceLevel ? [errors.experienceLevel] : undefined}
+                                            errors={
+                                                errors.experienceLevel
+                                                    ? [errors.experienceLevel]
+                                                    : undefined
+                                            }
                                         />
                                     </div>
                                 )}
@@ -379,12 +401,7 @@ const CreateJobPage = () => {
                         Cancel
                     </Button>
                     <Button type="submit" disabled={isLoading}>
-                        {isLoading
-                            ? "Posting..."
-                            : isEditMode
-                                ? "Update Job"
-                                : "Create Job"
-                        }
+                        {isLoading ? 'Posting...' : isEditMode ? 'Update Job' : 'Create Job'}
                     </Button>
                 </CardFooter>
             </form>

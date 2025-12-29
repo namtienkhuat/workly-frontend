@@ -9,7 +9,7 @@ export const CHAT_CONSTANTS = {
     RECONNECT_DELAY_MAX: 5000,
 
     // API - Use Kong Gateway for REST APIs
-    CHAT_API_URL: process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:8000/api/v1',
+    CHAT_API_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
 
     // Pagination
     DEFAULT_PAGE_SIZE: 50,

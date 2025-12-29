@@ -3,7 +3,7 @@
 import { Candidate } from '@/models/jobModel';
 import { getCVUrl } from '@/utils/helpers';
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { MessageCircle } from 'lucide-react';
 import DocumentViewer from './DocumentViewer';
 
