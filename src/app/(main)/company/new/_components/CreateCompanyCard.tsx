@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -30,6 +31,7 @@ import { createCompanySchema, type CreateCompanyFormData } from '@/lib/validatio
 
 const CreateCompanyCard = () => {
     const router = useRouter();
+    const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(false);
     const {
         register,
@@ -48,6 +50,11 @@ const CreateCompanyCard = () => {
 
         if (success) {
             toast.success('Company created successfully!');
+
+            queryClient.invalidateQueries({
+                queryKey: ['/companies/my-companies'],
+            });
+
             router.push(`/manage-company/${data.company.companyId}`);
             reset();
         } else {
