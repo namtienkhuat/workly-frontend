@@ -278,7 +278,9 @@ const CreateJobPage = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <Field className="gap-2">
-                            <FieldLabel>Minimum Salary (optional)</FieldLabel>
+                            <FieldLabel>
+                                Minimum Salary <span className="text-red-500">*</span>
+                            </FieldLabel>
                             <Input
                                 type="number"
                                 placeholder="0"
@@ -291,7 +293,9 @@ const CreateJobPage = () => {
                         </Field>
 
                         <Field className="gap-2">
-                            <FieldLabel>Maximum Salary (optional)</FieldLabel>
+                            <FieldLabel>
+                                Maximum Salary <span className="text-red-500">*</span>
+                            </FieldLabel>
                             <Input
                                 type="number"
                                 placeholder="0"
