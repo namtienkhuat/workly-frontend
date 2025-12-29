@@ -27,16 +27,22 @@ export const RouteProtection: React.FC<RouteProtectionProps> = ({
         if (route.startsWith('/manage-companies') || route.startsWith('/manage-company'))
             return 'company management';
         if (route.startsWith('/profile/edit')) return 'profile editing';
-        if (route.startsWith('/profile')) return 'profile';
         return 'this feature';
     };
 
     const isRestrictedRoute = (route: string): boolean => {
         if (route.startsWith('/profile')) {
-            const profileIdPattern = /^\/profile\/[^\/]+$/;
-            if (profileIdPattern.test(route)) {
+            const publicProfilePattern = /^\/profile\/[^\/]+(?:\/.*)?$/;
+            const editProfilePattern = /^\/profile\/edit/;
+
+            if (editProfilePattern.test(route)) {
+                return true;
+            }
+
+            if (publicProfilePattern.test(route)) {
                 return false;
             }
+
             return true;
         }
 
