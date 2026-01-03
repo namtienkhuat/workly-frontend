@@ -179,7 +179,7 @@ const UserProfilePage = () => {
                                         <div>
                                             <h3 className="font-semibold text-lg">{exp.title}</h3>
                                             <p className="text-base font-medium text-muted-foreground">
-                                                {exp.companyName || 'Company'}
+                                                {exp.companyName || exp.name || 'Company'}
                                             </p>
                                         </div>
 
@@ -191,11 +191,17 @@ const UserProfilePage = () => {
                                             </span>
                                         </div>
 
-                                        {exp.description && (
-                                            <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-                                                {exp.description}
-                                            </p>
-                                        )}
+                                        <div className="mt-2">
+                                            {exp.description && exp.description.trim() ? (
+                                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                                    {exp.description}
+                                                </p>
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground/60 italic">
+                                                    No description provided
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -227,7 +233,10 @@ const UserProfilePage = () => {
                     {educationsFromProfile.length > 0 ? (
                         <div className="space-y-6">
                             {educationsFromProfile.map((edu: any, index) => (
-                                <div key={edu.schoolId || index} className="relative pl-8 pb-6 last:pb-0">
+                                <div
+                                    key={edu.schoolId || index}
+                                    className="relative pl-8 pb-6 last:pb-0"
+                                >
                                     {/* Timeline line */}
                                     {index < educationsFromProfile.length - 1 && (
                                         <div className="absolute left-[11px] top-8 bottom-0 w-0.5 bg-gradient-to-b from-green-500/50 to-transparent" />

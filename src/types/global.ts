@@ -60,10 +60,11 @@ export interface Education {
 export interface WorkExperience {
     companyId: string;
     companyName?: string;
+    name?: string; // Company name from company node (for regular companies)
     title: string;
     startDate: string;
     endDate?: string;
-    description?: string;
+    description?: string; // User's description from relationship
 }
 
 export interface UserProfile {
