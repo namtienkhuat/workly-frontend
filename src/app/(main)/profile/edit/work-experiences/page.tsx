@@ -41,6 +41,7 @@ const convertISOToYear = (value?: string | null): string => {
 const EditWorkExperiencesPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [initialValuesLoaded, setInitialValuesLoaded] = useState(false);
+    const [originalDescriptions, setOriginalDescriptions] = useState<Record<number, string>>({});
     const queryClient = useQueryClient();
 
     const {
@@ -70,6 +71,12 @@ const EditWorkExperiencesPage = () => {
                     endDate: convertISOToYear(exp.endDate),
                 })
             );
+
+            const descriptionsMap: Record<number, string> = {};
+            initialWorkExperiences.forEach((exp: any, index: number) => {
+                descriptionsMap[index] = exp.description || '';
+            });
+            setOriginalDescriptions(descriptionsMap);
 
             reset({ workExperiences: initialWorkExperiences });
             setInitialValuesLoaded(true);
@@ -111,6 +118,8 @@ const EditWorkExperiencesPage = () => {
 
                 if (exp.description?.trim()) {
                     experience.description = exp.description;
+                } else {
+                    experience.description = '';
                 }
 
                 return experience;

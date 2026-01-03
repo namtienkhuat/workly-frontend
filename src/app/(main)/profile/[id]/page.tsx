@@ -60,8 +60,17 @@ const UserProfilePage = () => {
         []) as Industry[];
     const educationsFromProfile = (userProfileData?.data?.relationships?.educations ||
         []) as Education[];
-    const workExperiencesFromProfile = (userProfileData?.data?.relationships?.workExperiences ||
-        []) as WorkExperience[];
+
+    const workExperiencesFromProfile = (
+        (userProfileData?.data?.relationships?.workExperiences || []) as WorkExperience[]
+    ).map((exp: any) => {
+        const userDescription = exp.description?.trim();
+        return {
+            ...exp,
+            description:
+                userDescription && userDescription.length > 0 ? userDescription : undefined,
+        };
+    });
 
     if (isLoading) return <AboutPageSkeleton />;
     if (!userProfileData?.data) return <div>User not found</div>;
@@ -269,11 +278,17 @@ const UserProfilePage = () => {
                                             </span>
                                         </div>
 
-                                        {edu.description && (
-                                            <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-                                                {edu.description}
-                                            </p>
-                                        )}
+                                        <div className="mt-2">
+                                            {edu.description && edu.description.trim() ? (
+                                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                                    {edu.description}
+                                                </p>
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground/60 italic">
+                                                    No description provided
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
