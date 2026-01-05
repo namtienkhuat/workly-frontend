@@ -55,6 +55,7 @@ export interface AuthorData {
     id: string;
     name: string;
     imageUrl?: string
+    avatarUrl?: string
     headline?: string;
 }
 

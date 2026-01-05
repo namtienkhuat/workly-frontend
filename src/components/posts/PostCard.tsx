@@ -241,8 +241,8 @@ const PostCard = ({
                     <div className="relative">
                         <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover/author:opacity-100 transition-opacity duration-300"></div>
                         <Avatar className="h-14 w-14 border-2 border-primary/20 group-hover/author:border-primary/40 transition-all duration-300 relative z-10 shadow-md">
-                            {post.author?.imageUrl && (
-                                <AvatarImage src={post.author.imageUrl} alt={post.author.name} />
+                            {post.author?.imageUrl || post.author?.avatarUrl && (
+                                <AvatarImage src={post.author.imageUrl || post.author.avatarUrl} alt={post.author.name} />
                             )}
                             <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold text-base">
                                 {getInitials(post.author?.name || '?')}
